@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>The Cozy House · 3D isometric preview</title>
+<title>The Cozy House</title>
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; background: #1c1a2a; font-family: Georgia, serif; color: #f6e7cf; }
   canvas { display: block; }
@@ -14,15 +14,54 @@
   #hud { top: 14px; left: 14px; }
   #hud .title { font-size: 20px; letter-spacing: .5px; }
   #clock { opacity: .85; margin-top: 2px; font-size: 14px; }
-  #status { top: 14px; right: 14px; font-size: 14px; line-height: 1.7; min-width: 220px; }
+  #status { top: 14px; right: 14px; font-size: 14px; line-height: 1.6; min-width: 240px; max-width: 340px; }
   #status b { font-weight: normal; color: #ffd9a0; display: inline-block; width: 64px; }
+  #status .row { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #status .cmdrow { display: flex; gap: 8px; align-items: center; margin: 3px 0 0 64px; }
+  #status .bar { height: 3px; width: 170px; margin: 5px 0 9px 64px; border-radius: 2px; background: rgba(255,220,170,.1); overflow: hidden; }
+  #status .bar div { height: 100%; width: 0; background: linear-gradient(90deg, #f0b46a, #e8877a); transition: width .6s; }
+  .pick { display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px 4px 12px; border-radius: 999px; font-size: 12.5px;
+          background: rgba(255,214,160,.08); border: 1px solid rgba(255,220,170,.2); transition: background .2s, border-color .2s; }
+  .pick:hover { background: rgba(255,214,160,.18); }
+  .pick.on { background: linear-gradient(135deg, rgba(232,162,90,.45), rgba(201,118,63,.32)); border-color: rgba(255,210,150,.5); }
+  .pick .car { font-size: 9px; opacity: .6; }
+  #menu { position: absolute; width: 336px; max-height: 72vh; overflow: auto; padding: 14px; border-radius: 18px; display: none; pointer-events: auto;
+          background: rgba(46,31,25,.96); border: 1px solid rgba(255,220,170,.2); box-shadow: 0 14px 44px rgba(0,0,0,.45); backdrop-filter: blur(8px); z-index: 10; }
+  #menu.open { display: block; animation: pop .16s ease-out; }
+  @keyframes pop { from { opacity: 0; transform: translateY(-6px) scale(.98); } }
+  #menu h4 { margin: 0 0 4px; font-weight: normal; font-size: 15px; color: #ffd9a0; }
+  #menu .sec { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; opacity: .55; margin: 12px 2px 6px; }
+  #menu .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .chip { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 9px 4px 8px; border-radius: 12px; font-size: 11.5px; line-height: 1.2;
+          background: rgba(255,214,160,.06); border: 1px solid rgba(255,220,170,.1); transition: transform .15s, background .15s; }
+  .chip .e { font-size: 21px; }
+  .chip:hover { background: rgba(255,214,160,.18); transform: translateY(-2px); }
+  .chip.together { background: rgba(232,140,150,.1); border-color: rgba(240,170,170,.28); }
+  .chip.together:hover { background: rgba(232,140,150,.22); }
+  .chip.cur { border-color: #f0b46a; box-shadow: 0 0 0 1px #f0b46a inset; }
+  .free { width: 100%; padding: 8px; border-radius: 12px; font-size: 12.5px; margin-top: 8px; background: rgba(255,214,160,.08); }
+  .seg { display: inline-flex; border-radius: 999px; border: 1px solid rgba(255,220,170,.2); overflow: hidden; vertical-align: middle; margin-left: 4px; }
+  .seg button { border: 0; border-radius: 0; padding: 3px 10px; font-size: 12px; background: transparent; }
+  .seg button.on { background: rgba(240,180,106,.35); }
+  @media (max-width: 760px) { #menu { width: calc(100vw - 32px); } }
+  #status .cats { border-top: 1px solid rgba(255,220,170,.15); padding-top: 6px; margin-top: 2px; }
+  #status .left { opacity: .7; font-size: 12px; }
+  select { font: inherit; font-size: 12.5px; color: #f6e7cf; background: rgba(255, 200, 140, .12); border: 1px solid rgba(255, 220, 170, .25);
+           border-radius: 8px; padding: 3px 6px; max-width: 200px; cursor: pointer; }
+  select option, select optgroup { background: #3a2a22; color: #f6e7cf; }
+  #durRow { font-size: 12.5px; opacity: .85; margin-top: 4px; }
+  @media (max-width: 760px) {
+    #status { top: auto; bottom: 86px; right: 8px; left: 8px; max-width: none; font-size: 12.5px; }
+    #hud { top: 8px; left: 8px; padding: 6px 10px; } #hud .title { font-size: 16px; }
+    #controls { bottom: 12px; flex-wrap: wrap; justify-content: center; width: calc(100% - 40px); } #note { display: none; }
+  }
   #controls { bottom: 28px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; padding: 8px; }
   button { font: inherit; font-size: 14px; color: #f6e7cf; background: rgba(255, 200, 140, .12); border: 1px solid rgba(255, 220, 170, .25);
            border-radius: 10px; padding: 7px 12px; cursor: pointer; }
   button:hover { background: rgba(255, 200, 140, .25); }
   #note { bottom: 16px; right: 14px; font-size: 12px; opacity: .7; }
 </style>
-<script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.164.0/build/three.module.js" } }</script>
+<script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.164.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.164.0/examples/jsm/" } }</script>
 </head>
 <body>
 <div id="ui">
@@ -37,10 +76,12 @@
   <button id="speed">Speed 1×</button>
   <button id="music">♪ Music: off</button>
 </div>
+<div id="menu"></div>
 <div id="note" class="panel">Drag to move around · scroll wheel or pinch to zoom · two-finger swipe to pan</div>
 </div>
 <script type="module">
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 // ---------------------------------------------------------------- renderer / camera
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -64,7 +105,9 @@ function resize() {
 }
 addEventListener('resize', resize); resize();
 // ---- pan (drag / arrow keys) + zoom (scroll / pinch / buttons)
-const camTarget = new THREE.Vector3(0, .3, 0);
+const QV = new URLSearchParams(location.search);   // optional ?zoom=&x=&z= starting view
+const camTarget = new THREE.Vector3(+(QV.get('x') ?? 0), .3, +(QV.get('z') ?? 0));
+if (QV.has('zoom')) { camera.zoom = +QV.get('zoom'); camera.updateProjectionMatrix(); }
 const zoomBy = f => { camera.zoom = Math.min(3, Math.max(.5, camera.zoom * f)); camera.updateProjectionMatrix(); };
 function panBy(dxPx, dyPx) {
   const k = (camera.top - camera.bottom) / camera.zoom / innerHeight;
@@ -92,6 +135,7 @@ cv.addEventListener('pointerup', endPointer); cv.addEventListener('pointercancel
 // mouse wheel zooms; trackpad two-finger swipe pans; trackpad pinch (ctrlKey) zooms
 const isTrackpad = e => e.deltaX !== 0 || (e.wheelDeltaY ? e.wheelDeltaY === -3 * e.deltaY : e.deltaMode === 0 && Math.abs(e.deltaY) < 40);
 addEventListener('wheel', e => {
+  if (e.target.closest && e.target.closest('#menu') && !e.ctrlKey) return;   // let the activity menu scroll
   e.preventDefault();
   if (e.ctrlKey) zoomBy(Math.exp(-e.deltaY * .01));
   else if (isTrackpad(e)) panBy(-e.deltaX, -e.deltaY);
@@ -103,7 +147,7 @@ cv.addEventListener('contextmenu', e => e.preventDefault());   // right-drag pan
 const vv = window.visualViewport;
 if (vv) { const pinUI = () => { document.getElementById('ui').style.transform = `translate(${vv.offsetLeft}px, ${vv.offsetTop}px) scale(${1 / vv.scale})`; }; vv.addEventListener('resize', pinUI); vv.addEventListener('scroll', pinUI); pinUI(); }
 const keys = new Set();
-addEventListener('keydown', e => { keys.add(e.key.toLowerCase()); if (e.key === '+' || e.key === '=') zoomBy(1.15); if (e.key === '-') zoomBy(1 / 1.15); });
+addEventListener('keydown', e => { if (e.target.tagName === 'SELECT') return; keys.add(e.key.toLowerCase()); if (e.key === '+' || e.key === '=') zoomBy(1.15); if (e.key === '-') zoomBy(1 / 1.15); });
 addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
 function keyPan(dt) {
   const v = 500 * dt, k = n => keys.has(n);
@@ -192,6 +236,18 @@ const EXT = [
   { n: [1, 0], a: [5, -3.575], b: [5, 3.575], inside: 1, open: [win(1.575, 1.0), win(5.175, .8)] },  // east: kitchen + studio windows
 ];
 const sillPlant = (g, s, inside, kind) => { const p = plant(kind, 0, 0, .8, g); p.position.set(s, 1.04, inside * .12); };
+const tvTex = canvasTex(160, 90, () => {}), tvCtx = tvTex.userData.canvas.getContext('2d');
+const tvMat = new THREE.MeshBasicMaterial({ map: tvTex, color: '#111111' });
+const TV_SCENES = [['#f4ad6c', '#c96a68', '#2f5a7a', '#1f3f5a'], ['#cfe6da', '#8fbf9a', '#4f7a43', '#2f4f2f'], ['#dfe6f2', '#9fb0cf', '#f4f6fa', '#b9c4d6']];
+function drawTV(t) {   // a slow nature film: sky, drifting sun, parallax hills, birds
+  const g = tvCtx, [a, b, c, d] = TV_SCENES[Math.floor(t / 14) % 3];
+  const gr = g.createLinearGradient(0, 0, 0, 90); gr.addColorStop(0, b); gr.addColorStop(1, a); g.fillStyle = gr; g.fillRect(0, 0, 160, 90);
+  g.fillStyle = 'rgba(255,240,200,.9)'; g.beginPath(); g.arc((t * 6) % 200 - 20, 30, 9, 0, 7); g.fill();
+  [[c, 55, .5, 12], [d, 68, 1.2, 9]].forEach(([col, base, sp, amp]) => { g.fillStyle = col; g.beginPath(); g.moveTo(0, 90); for (let x = 0; x <= 160; x += 4) g.lineTo(x, base + Math.sin((x + t * sp * 20) / 25) * amp); g.lineTo(160, 90); g.fill(); });
+  g.strokeStyle = 'rgba(40,30,30,.7)'; g.lineWidth = 1;
+  for (let i = 0; i < 3; i++) { const bx = (t * 14 + i * 22) % 190 - 15, by = 20 + i * 6 + Math.sin(t * 3 + i) * 2; g.beginPath(); g.moveTo(bx - 3, by - 2); g.lineTo(bx, by); g.lineTo(bx + 3, by - 2); g.stroke(); }
+  tvTex.needsUpdate = true;
+}
 const wallDecor = [
   g => { // north: shelf + trailing pothos + herbs on kitchen sill, frame above bed side
     B(3.0, .05, .28, darkWood, 7.05, 1.9, .2, g);
@@ -204,7 +260,8 @@ const wallDecor = [
   g => { sillPlant(g, 1.5, -1, 'succulent'); sillPlant(g, 1.95, -1, 'small'); sillPlant(g, 8.1, -1, 'small'); },
   g => { // west: chimney breast, mantel art, hanging planter, bedroom sill
     B(1.2, 1.4, .4, stone, 5.325, 1.9, -.25, g);
-    B(.6, .45, .04, frameMat, 5.325, 1.95, -.47, g); B(.52, .37, .02, M('#d98a5a'), 5.325, 1.95, -.49, g);
+    B(1.05, .62, .05, M('#1a1614'), 5.325, 1.95, -.47, g);
+    const scr = add(new THREE.PlaneGeometry(.97, .55), tvMat, 5.325, 1.95, -.5, g); scr.rotation.y = Math.PI; scr.castShadow = false;
     sillPlant(g, 1.7, -1, 'small'); sillPlant(g, 2.1, -1, 'succulent');
     B(.04, .04, .35, darkWood, 3.0, 2.25, -.2, g); add(new THREE.CylinderGeometry(.003, .003, .4), M('#3a2418'), 3.0, 2.05, -.37, g);
     const hp = plant('pothos', 0, 0, .75, g); hp.position.set(3.0, 1.75, -.37);
@@ -287,6 +344,9 @@ const fire = group(-4.5, .06, 1.75);
 [-.4, .4].forEach(r => { const l = C(.05, .05, .5, 6, '#4a2e1e', 0, .05, 0, fire); l.rotation.set(Math.PI / 2, r, 0); });
 const flames = [['#c2401f', .16, .45], ['#f07b2a', .12, .34], ['#ffd05a', .07, .22]].flatMap(([c, r, h], k) =>
   [-.12, 0, .12].map(dz => { const f = add(new THREE.ConeGeometry(r, h, 6), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: .9 }), .02 * k, .1 + h / 2, dz, fire); f.castShadow = false; f.userData = { h, k: k * 3 + dz * 10 }; return f; }));
+const tvLight = new THREE.PointLight('#a8c4ff', 0, 0, 2); tvLight.position.set(-4.0, 1.8, 1.75); scene.add(tvLight);
+const popcorn = group(-2.25, .43, 1.75); popcorn.visible = false;
+C(.11, .07, .08, 12, '#c9512c', 0, .04, 0, popcorn); for (let i = 0; i < 9; i++) Sph(.03, '#f6e7a8', Math.cos(i) * .06, .09 + (i % 3) * .015, Math.sin(i) * .06, popcorn, 5);
 const fireLight = new THREE.PointLight('#ff8a3d', 6, 0, 1.6); fireLight.position.set(-4.0, .7, 1.75); scene.add(fireLight);
 const candleFlames = [1.2, 1.4].map(z => { C(.035, .035, .2, 8, '#efe2c4', -4.5, 1.5, z); const f = Sph(.028, new THREE.MeshBasicMaterial({ color: '#ffcf6b' }), -4.5, 1.63, z, scene, 6); f.castShadow = false; return f; });
 plant('small', -4.5, 0, 1, scene, 1.4).position.z = 2.3;
@@ -336,13 +396,32 @@ plant('fiddle', -2.0, 3.15, 1);
 plant('fern', -4.55, 3.3, .8, scene, 0).position.x = -3.9;
 
 // --- bedroom
-B(1.8, .35, 2.2, wood, -2.5, .175, -2.3);
-B(1.9, 1.1, .12, darkWood, -2.5, .55, -3.38);
-B(1.7, .2, 2.1, M('#f3eadb'), -2.5, .45, -2.3);
-[-2.95, -2.05].forEach(x => B(.6, .12, .35, M('#fff6e6'), x, .62, -3.05));
-const duvet = canvasTex(64, 64, g => { for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { g.fillStyle = ['#c9763f', '#b5543f', '#e6c48a', '#a8432a'][(i * 3 + j) % 4]; g.fillRect(i * 16, j * 16, 16, 16); g.fillStyle = '#f6efe2'; g.fillRect(i * 16, j * 16, 16, 1); g.fillRect(i * 16, j * 16, 1, 16); } });
-duvet.magFilter = THREE.NearestFilter;
-B(1.76, .35, 1.32, M('#ffffff', { map: duvet }), -2.5, .725, -1.84);
+const screenTex = canvasTex(64, 40, (g) => { g.fillStyle = '#2b2f3a'; g.fillRect(0, 0, 64, 40); ['#e6c48a', '#8fbf9a', '#c9a6e8', '#9fc3e8'].forEach((c, i) => { for (let r = 0; r < 3; r++) { g.fillStyle = c; g.fillRect(4 + (r % 2) * 6, 4 + (i * 3 + r) * 3, 18 + ((i + r) * 7) % 30, 1.5); } }); });
+// soft fabric: rounded boxes with smooth shading
+const soft = (w, h, d, r, mat, x, y, z, parent) => add(new RoundedBoxGeometry(w, h, d, 4, r), mat, x, y, z, parent);
+const fabric = (c, o = {}) => M(c, { flatShading: false, roughness: 1, ...o });
+const linenTex = canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = '#ece0cc'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 9000; i++) { g.fillStyle = Math.random() < .5 ? 'rgba(255,255,255,.18)' : 'rgba(150,120,90,.08)'; g.fillRect(Math.random() * w, Math.random() * h, 2, 1); }
+  g.strokeStyle = 'rgba(170,140,105,.35)'; g.lineWidth = 2;                 // soft quilted channels
+  for (let y = 32; y < h; y += 64) { g.setLineDash([6, 5]); g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
+}, [1.5, 1.5]);
+const knitTex = canvasTex(128, 64, (g, w, h) => {
+  g.fillStyle = '#c99333'; g.fillRect(0, 0, w, h);
+  g.strokeStyle = '#e3b552'; g.lineWidth = 3;
+  for (let y = 4; y < h; y += 10) for (let x = 0; x < w; x += 10) { g.beginPath(); g.moveTo(x, y); g.lineTo(x + 5, y + 7); g.lineTo(x + 10, y); g.stroke(); }
+}, [5, 1]);
+soft(1.84, .36, 2.24, .05, wood, -2.5, .18, -2.3);
+soft(1.95, 1.15, .14, .05, darkWood, -2.5, .56, -3.39);
+soft(1.72, .24, 2.1, .06, fabric('#f7f2e8'), -2.5, .46, -2.3);                          // mattress + fitted sheet
+[-2.85, -2.15].forEach((x, i) => {
+  const sham = soft(.66, .48, .14, .07, fabric('#9aab8a'), x, .82, -3.24); sham.rotation.x = -.18;   // sage shams
+  soft(.64, .17, .4, .08, fabric('#fbf8f1'), x + (i ? -.02 : .02), .66, -3.0);                        // sleeping pillows
+});
+soft(.5, .16, .14, .07, fabric('#c46a4a'), -2.5, .74, -2.82).rotation.x = -.3;          // accent cushion
+soft(1.9, .47, 1.42, .09, fabric('#ffffff', { map: linenTex }), -2.5, .69, -1.83);    // duvet draped over the sides
+soft(1.92, .07, .24, .035, fabric('#fbf8f1'), -2.5, .91, -2.46);                         // folded-back top sheet
+soft(1.98, .5, .46, .04, fabric('#ffffff', { map: knitTex }), -2.5, .7, -1.43);         // chunky knit throw across the foot
 [-3.75, -1.25].forEach(x => {
   B(.5, .5, .45, wood, x, .25, -3.1);
   C(.05, .07, .22, 8, '#efe2c8', x, .61, -3.15); shades.push(lampShade(x, .82, -3.15));
@@ -352,6 +431,14 @@ plant('succulent', -1.15, -3.0, 1, scene, .5);
 B(.55, 1.9, 1.1, darkWood, -4.7, .95, -.7); B(.02, 1.7, .02, M('#3a2418'), -4.42, .95, -.7);
 B(2.6, .02, 1.0, M('#e6c48a'), -2.5, .01, -.65);
 plant('snake', -0.4, -3.1, 1.1);
+B(.55, .05, 1.0, lightWood, -.42, .74, -2.25); [[-.66, -2.7], [-.18, -2.7], [-.66, -1.8], [-.18, -1.8]].forEach(([x, z]) => B(.04, .72, .04, darkWood, x, .36, z));
+const monitorMat = new THREE.MeshBasicMaterial({ map: screenTex, color: '#222222' });
+C(.08, .1, .02, 10, '#2a2624', -.28, .775, -2.25); B(.03, .2, .04, M('#2a2624'), -.27, .88, -2.25);
+B(.04, .38, .64, M('#2a2624'), -.25, 1.1, -2.25);
+add(new THREE.PlaneGeometry(.6, .34), monitorMat, -.274, 1.1, -2.25).rotation.y = -Math.PI / 2;
+B(.16, .02, .44, M('#e9e1d2'), -.56, .775, -2.25); B(.09, .02, .06, M('#e9e1d2'), -.56, .775, -1.93);
+C(.04, .035, .09, 8, '#8fa07a', -.55, .81, -2.62); plant('succulent', -.3, -1.95, 1.1, scene, .765);
+chair(-1.0, -2.25, Math.PI / 2, '#b98a5e');
 plant('fern', -4.6, -1.85, .9);
 plant('monstera', -4.55, -3.1, .9);
 
@@ -367,7 +454,15 @@ B(.55, .03, .4, M('#b8bcc0'), 3.6, .96, -3.15);
 B(.4, .025, .26, lightWood, 1.05, .97, -3.12);
 [[.95, '#e07b39'], [1.02, '#e07b39'], [1.15, '#7d9a58']].forEach(([x, c], i) => { const v = C(.022, .015, .14, 6, c, x, 1.0, -3.1 + i * .04); v.rotation.z = Math.PI / 2; });
 B(.16, .01, .03, M('#b8bcc0'), 1.2, .99, -3.2); B(.03, .25, .03, M('#b8bcc0'), 3.6, 1.08, -3.38);
-[3.0, 3.25, 0.55].forEach((x, i) => plant(i === 2 ? 'small' : 'succulent', x, -3.2, i === 2 ? .9 : 1.1, scene, .96));
+[3.25, 0.55].forEach((x, i) => plant(i ? 'small' : 'succulent', x, -3.2, i ? .9 : 1.1, scene, .96));
+// coffee machine
+B(.28, .4, .3, M('#2f2a28'), 2.8, 1.16, -3.27); B(.29, .06, .31, M('#b8bcc0'), 2.8, 1.39, -3.27);
+B(.2, .16, .1, M('#1a1614'), 2.8, 1.04, -3.1); B(.04, .04, .06, M('#b8bcc0'), 2.8, 1.14, -3.1);
+B(.22, .02, .14, M('#b8bcc0'), 2.8, .97, -3.08);
+const coffeeLight = Sph(.015, M('#ff9a3a', { emissive: '#ff7a1a', emissiveIntensity: 0 }), 2.72, 1.3, -3.115, scene, 6);
+const coffeeCup = C(.035, .03, .07, 10, '#efe2c4', 2.8, 1.015, -3.1); coffeeCup.visible = false;
+C(.12, .12, .2, 10, '#c9a36b', 3.05, 1.06, -3.3);   // coffee bean jar
+const coffeeSteam = Array.from({ length: 3 }, (_, i) => { const s = Sph(.025, new THREE.MeshBasicMaterial({ color: '#f3e9da', transparent: true, depthWrite: false }), 2.8, 1.1, -3.1, scene, 6); s.castShadow = false; s.userData.o = i / 3; return s; });
 B(.7, 1.8, .65, M('#e8dfd0'), 4.6, .9, -3.12); B(.03, .5, .03, M('#b8bcc0'), 4.3, 1.2, -2.78);
 const steam = Array.from({ length: 5 }, (_, i) => { const s = Sph(.06, new THREE.MeshBasicMaterial({ color: '#f3e9da', transparent: true, depthWrite: false }), 2.0, 1.3, -3.15, scene, 6); s.castShadow = false; s.userData.o = i / 5; return s; });
 C(.55, .55, .05, 18, wood, 1.6, .75, -1.4); C(.06, .1, .75, 8, darkWood, 1.6, .37, -1.4);
@@ -418,7 +513,12 @@ chair(3.95, 1.15, Math.PI / 2, '#b98a5e');
 
 const desk = group(4.55, 0, 2.75);
 B(.6, .05, 1.0, lightWood, 0, .74, 0, desk); [[-.25, -.45], [.25, -.45], [-.25, .45], [.25, .45]].forEach(([a, b]) => B(.04, .72, .04, darkWood, a, .36, b, desk));
-B(.3, .005, .4, M('#fbf6ec'), -.1, .77, 0, desk);
+B(.24, .005, .3, M('#fbf6ec'), -.12, .77, -.22, desk);
+const laptopMat = new THREE.MeshBasicMaterial({ map: screenTex, color: '#222222' });
+B(.26, .015, .34, M('#b8bcc0'), .08, .775, .1, desk);
+const lid = group(.21, .78, .1, 0, desk); lid.rotation.z = -.22;
+B(.012, .22, .34, M('#b8bcc0'), 0, .11, 0, lid);
+add(new THREE.PlaneGeometry(.31, .19), laptopMat, -.008, .115, 0, lid).rotation.y = -Math.PI / 2;
 C(.04, .04, .1, 8, '#c9763f', .15, .82, .35, desk);
 C(.01, .01, .35, 6, '#3a2418', .18, .93, -.35, desk); shades.push(lampShade(.1, 1.1, -.3, desk, '#e6c48a'));
 pointLight('#ffc27a', 4.3, 1.2, 2.5, 1.8);
@@ -428,6 +528,10 @@ C(.22, .18, .2, 12, '#b98a5e', 2.2, .1, 3.2);
 const yarn = Sph(.08, M('#c96a68', { flatShading: false }), 2.85, .08, 2.0, scene, 12);
 Sph(.06, M('#7d8a58', { flatShading: false }), 2.15, .22, 3.17); Sph(.06, M('#e6c48a', { flatShading: false }), 2.26, .22, 3.23);
 plant('monstera', .4, .4, 1);
+const wand = { active: false, pos: new THREE.Vector3() }, UP = new THREE.Vector3(0, 1, 0), tmpV = new THREE.Vector3();
+const wandStick = add(new THREE.CylinderGeometry(.007, .007, 1, 4), '#8a5634', 0, 0, 0); wandStick.castShadow = false;
+const feather = add(new THREE.ConeGeometry(.04, .17, 5), M('#e85d8a'), 0, 0, 0);
+wandStick.visible = feather.visible = false;
 plant('snake', 4.65, .35, 1);
 plant('fern', 1.8, 3.2, .85);
 plant('fiddle', 1.15, .35, .8);
@@ -483,8 +587,18 @@ C(.05, .07, 2.2, 8, '#2a2624', .5, .7, 7.0); B(.22, .3, .22, M('#ffe2a0', { emis
 const postMat = scene.children[scene.children.length - 1].material;
 const postLight = pointLight('#ffcf8a', .5, 1.7, 7.0, 5);
 
-// trees (leaves fall from these)
 const fallCols = ['#e07b39', '#c9512c', '#f0a640', '#a8432a', '#d9893a', '#b8862a'];
+// garden bench + raked leaf pile
+const bench = group(4.0, -.4, 7.2);
+B(1.3, .06, .45, wood, 0, .45, 0, bench); B(1.3, .4, .06, wood, 0, .72, .22, bench);
+[[-.55, -.18], [.55, -.18], [-.55, .18], [.55, .18]].forEach(([x, z]) => B(.06, .45, .06, darkWood, x, .22, z, bench));
+B(.4, .04, .4, wood, 1.0, .5, 0, bench); B(.05, .5, .05, darkWood, 1.0, .25, 0, bench);
+C(.06, .05, .1, 8, '#efe2c4', 1.0, .57, .05, bench); C(.03, .03, .06, 8, '#b5543f', .9, .55, -.08, bench);
+const leafPile = group(2.65, -.4, 6.75);
+for (let i = 0; i < 40; i++) { const a = rand(0, 6.28), r = Math.sqrt(Math.random()) * .45; const l = Sph(.07, pick(fallCols.map(c => M(c))), Math.cos(a) * r, .05 + (.45 - r) * .35, Math.sin(a) * r, leafPile, 5); l.scale.set(1, .35, .8); }
+let pileLevel = .15;
+
+// trees (leaves fall from these)
 const trees = [];
 function tree(x, z, s, kind = 'fall') {
   const g = group(x, -.4, z), mats = [];
@@ -558,7 +672,17 @@ function makePerson(c) {
   [-.09, .09].forEach(x => { const ch = Sph(.03, M('#e8977a', { transparent: true, opacity: .5 }), x, -.05, .13, head, 6); ch.castShadow = false; });
   const book = B(.26, .2, .03, M('#3f6a6a'), 0, .32, .3, body); book.rotation.x = -.7;
   const mug = C(.045, .04, .09, 8, '#efe2c4', 0, -.44, .05, arms[1]);
-  return { root, body, arms, head, thighs, knees, book, mug };
+  const can = group(0, -.45, .06, 0, arms[1]);
+  B(.1, .11, .15, M('#7d9a8a'), 0, -.02, .02, can); C(.012, .018, .16, 6, '#7d9a8a', 0, .02, .15, can).rotation.x = 1.0;
+  const rake = group(0, -.4, 0, 0, arms[1]);
+  C(.014, .014, 1.2, 5, '#a8784a', 0, -.55, 0, rake); B(.32, .03, .06, M('#5a5f64'), 0, -1.15, .03, rake);
+  const broom = group(0, -.4, 0, 0, arms[1]);
+  C(.014, .014, 1.2, 5, '#c9a36b', 0, -.55, 0, broom); B(.26, .14, .08, M('#d9b45a'), 0, -1.17, .03, broom);
+  const vac = group(0, -.4, 0, 0, arms[1]);
+  C(.016, .016, 1.1, 5, '#5a5f64', 0, -.5, 0, vac); B(.3, .06, .12, M('#b5543f'), 0, -1.07, .05, vac);
+  const duster = group(0, -.42, 0, 0, arms[1]);
+  C(.012, .012, .3, 5, '#8a5634', 0, -.12, .05, duster).rotation.x = .4; Sph(.07, M('#e9c9e0'), 0, -.27, .12, duster, 8);
+  return { root, body, arms, head, thighs, knees, book, mug, can, rake, broom, vac, duster };
 }
 function makeCat(col, accent) {
   const root = new THREE.Group(); scene.add(root);
@@ -580,14 +704,20 @@ function makeCat(col, accent) {
 
 // ---------------------------------------------------------------- navigation
 const ORDER = ['B', 'L', 'S', 'K'];
-const DOORS = { 'B-L': { B: [-.8, -.5], L: [-.8, .5] }, 'L-S': { L: [-.5, 2.8], S: [.5, 2.8] }, 'S-K': { S: [3.0, .5], K: [3.0, -.5] } };
-const roomOf = (x, z) => x < 0 ? (z < 0 ? 'B' : 'L') : (z < 0 ? 'K' : 'S');
+const DOORS = { 'B-L': { B: [-.8, -.5], L: [-.8, .5] }, 'L-S': { L: [-.5, 2.8], S: [.5, 2.8] }, 'S-K': { S: [3.0, .5], K: [3.0, -.5] }, 'L-Y': { L: [-1.0, 3.0], Y: [-1.0, 4.4] } };
+const roomOf = (x, z) => Math.abs(x) > 5 || Math.abs(z) > 3.5 ? 'Y' : x < 0 ? (z < 0 ? 'B' : 'L') : (z < 0 ? 'K' : 'S');
+const ADJ = { B: ['L'], L: ['B', 'S', 'Y'], S: ['L', 'K'], K: ['S'], Y: ['L'] };
+function roomRoute(a, b) {   // breadth-first search over rooms
+  const prev = { [a]: null }, q = [a];
+  while (q.length) { const r = q.shift(); if (r === b) break; for (const n of ADJ[r]) if (!(n in prev)) { prev[n] = r; q.push(n); } }
+  const route = []; for (let r = b; r; r = prev[r]) route.unshift(r); return route;
+}
 function buildPath(a, tx, tz, via = [], fromVia = []) {
   const r0 = roomOf(a.x, a.z), r1 = roomOf(tx, tz), pts = [];
   if (r0 !== r1) {
     pts.push(...[...fromVia].reverse());
-    let i = ORDER.indexOf(r0); const j = ORDER.indexOf(r1), st = j > i ? 1 : -1;
-    while (i !== j) { const p = ORDER[i], q = ORDER[i + st], d = DOORS[st > 0 ? `${p}-${q}` : `${q}-${p}`]; pts.push(d[p], d[q]); i += st; }
+    const route = roomRoute(r0, r1);
+    for (let i = 0; i < route.length - 1; i++) { const p = route[i], q = route[i + 1], d = DOORS[`${p}-${q}`] || DOORS[`${q}-${p}`]; pts.push(d[p], d[q]); }
     pts.push(...via);
   }
   pts.push([tx, tz]); return pts;
@@ -605,17 +735,34 @@ function stepPath(a, dt, speed) {
 const LIV = [[-1.3, .6], [-2.9, .8]];
 const SPOTS = {
   cook:   { x: 2.0, z: -2.55, h: Math.PI, pose: 'stand', anim: 'stir', icon: '🍲', label: 'cooking soup' },
+  coffee: { x: 2.8, z: -2.55, h: Math.PI, pose: 'stand', anim: 'coffee', icon: '☕', label: 'making morning coffee' },
   prep:   { x: 1.05, z: -2.55, h: Math.PI, pose: 'stand', anim: 'chop', icon: '🥕', label: 'chopping veggies' },
   wash:   { x: 3.6, z: -2.55, h: Math.PI, pose: 'stand', anim: 'wash', icon: '🫧', label: 'washing up' },
   eat1:   { x: .95, z: -1.4, h: Math.PI / 2, pose: 'sit', anim: 'eat', icon: '🥣', label: 'eating together', via: [[.9, -.6]] },
   eat2:   { x: 2.25, z: -1.4, h: -Math.PI / 2, pose: 'sit', anim: 'eat', icon: '🥣', label: 'eating together' },
   paint:  { x: 1.75, z: 1.8, h: -Math.PI / 2, pose: 'stand', anim: 'brush', icon: '🎨', label: 'painting' },
   sew:    { x: 3.95, z: 1.15, h: Math.PI / 2, pose: 'sit', anim: 'sew', icon: '🧵', label: 'sewing a quilt' },
-  draw:   { x: 3.95, z: 2.75, h: Math.PI / 2, pose: 'sit', anim: 'draw', icon: '✏️', label: 'sketching' },
+  draw:   { x: 3.95, z: 2.75, h: Math.PI / 2, pose: 'sit', anim: 'draw', icon: '✏️', label: 'sketching', share: 'laptop' },
+  laptop: { x: 3.95, z: 2.75, h: Math.PI / 2, pose: 'sit', anim: 'type', icon: '💻', label: 'on the laptop', share: 'draw' },
+  computer: { x: -1.0, z: -2.25, h: Math.PI / 2, pose: 'sit', anim: 'type', icon: '🖥️', label: 'working on the computer' },
+  playcats: { x: -1.6, z: -.65, h: -Math.PI / 2, pose: 'floor', anim: 'wand', icon: '🪶', label: 'playing with the cats' },
+  tv1:    { x: -2.2, z: 1.4, h: -Math.PI / 2, pose: 'sit', anim: 'watch', icon: '📺', label: 'watching TV', via: LIV, share: 'knit' },
+  tv2:    { x: -2.2, z: 2.1, h: -Math.PI / 2, pose: 'sit', anim: 'watch', icon: '📺', label: 'watching TV', via: LIV, share: 'tea' },
   read:   { x: -3.82, z: .6, h: -.6, pose: 'sit', anim: 'read', icon: '📖', label: 'reading by the fire', via: [[-1.3, .6]] },
-  knit:   { x: -2.2, z: 1.4, h: -Math.PI / 2, pose: 'sit', anim: 'knit', icon: '🧶', label: 'knitting', via: LIV },
-  tea:    { x: -2.2, z: 2.1, h: -Math.PI / 2, pose: 'sit', anim: 'tea', icon: '☕', label: 'sipping tea', via: LIV },
+  knit:   { x: -2.2, z: 1.4, h: -Math.PI / 2, pose: 'sit', anim: 'knit', icon: '🧶', label: 'knitting', via: LIV, share: 'tv1' },
+  tea:    { x: -2.2, z: 2.1, h: -Math.PI / 2, pose: 'sit', anim: 'tea', icon: '☕', label: 'sipping tea', via: LIV, share: 'tv2' },
   warm:   { x: -3.75, z: 1.75, h: -Math.PI / 2, pose: 'stand', anim: 'warm', icon: '🔥', label: 'warming up by the fire', via: LIV },
+  rake:   { x: 2.2, z: 6.4, h: .9, pose: 'stand', anim: 'rake', icon: '🍂', label: 'raking leaves in the garden' },
+  bench1: { x: 3.7, z: 7.2, h: Math.PI, pose: 'sit', anim: 'tea', icon: '🍵', label: 'enjoying the garden' },
+  bench2: { x: 4.3, z: 7.2, h: Math.PI, pose: 'sit', anim: 'tea', icon: '🍵', label: 'enjoying the garden' },
+  mums:   { x: -3.7, z: 4.55, h: Math.PI, pose: 'stand', anim: 'water', icon: '🌼', label: 'watering the mums', via: [[-2.0, 4.9]] },
+  stroll1: { x: 0, z: 6.0, h: Math.PI / 2, pose: 'stand', anim: 'stroll', icon: '🚶', label: 'going for a walk', loop: { cx: 0, cz: 0, rx: 7.5, rz: 6.0, speed: .8, laps: 1 } },
+  stroll2: { x: 0, z: 6.4, h: Math.PI / 2, pose: 'stand', anim: 'stroll', icon: '🚶', label: 'going for a walk', loop: { cx: 0, cz: 0, rx: 7.9, rz: 6.4, speed: .8, laps: 1 } },
+  jog:    { x: 0, z: 5.6, h: Math.PI / 2, pose: 'stand', anim: 'jog', icon: '🏃', label: 'going for a run', loop: { cx: 0, cz: 0, rx: 7.1, rz: 5.6, speed: 2.2, laps: 2 } },
+  sweep:  { x: 1.6, z: -.65, h: Math.PI / 2, pose: 'stand', anim: 'sweep', icon: '🧹', label: 'sweeping the kitchen', loop: { cx: 1.6, cz: -1.4, rx: 1.1, rz: .75, speed: .35, laps: 2 } },
+  vacuum: { x: -3.2, z: 2.55, h: Math.PI / 2, pose: 'stand', anim: 'vacuum', icon: '✨', label: 'vacuuming the living room', via: LIV, loop: { cx: -3.2, cz: 1.75, rx: .65, rz: .8, speed: .3, laps: 2 } },
+  dust:   { x: -4.25, z: 2.95, h: -Math.PI / 2, pose: 'stand', anim: 'dust', icon: '🪶', label: 'dusting the bookshelf', via: LIV },
+  makebed: { x: -2.5, z: -.95, h: Math.PI, pose: 'stand', anim: 'makebed', icon: '🛏️', label: 'making the bed' },
   plants: { x: -.75, z: 1.5, h: Math.PI / 2, pose: 'stand', anim: 'water', icon: '🪴', label: 'watering the plants' },
   nook:   { x: 2.95, z: 3.2, h: Math.PI, pose: 'sit', anim: 'read', icon: '📖', label: 'curled up in the reading nook' },
   browse: { x: 2.0, z: .85, h: Math.PI, pose: 'stand', anim: 'browse', icon: '📚', label: 'browsing the bookshelf' },
@@ -624,17 +771,19 @@ const SPOTS = {
 };
 const CAT_SPOTS = {
   catbed:  { x: -3.4, z: 2.95, y: .1, h: .8, act: 'nap', via: LIV },
-  bedfoot: { x: -2.5, z: -1.55, y: .92, h: Math.PI / 2, act: 'nap' },
-  sofa:    { x: -2.2, z: 2.05, y: .44, h: -2.4, act: 'nap', via: LIV, blockedBy: 'tea' },
-  nook:    { x: 3.55, z: 3.2, y: .5, h: -Math.PI / 2, act: 'nap' },
+  bedfoot: { x: -2.5, z: -1.5, y: .95, h: Math.PI / 2, act: 'nap' },
+  sofa:    { x: -2.2, z: 2.05, y: .44, h: -2.4, act: 'nap', via: LIV, blockedBy: ['tea', 'tv2'] },
+  nookcat: { x: 3.55, z: 3.2, y: .5, h: -Math.PI / 2, act: 'nap' },
   bowl1:   { x: 4.15, z: -.3, y: 0, h: Math.PI, act: 'eat' },
   bowl2:   { x: 4.6, z: -.3, y: 0, h: Math.PI, act: 'eat' },
   beg:     { x: 2.55, z: -2.3, y: 0, h: -Math.PI / 2, act: 'beg' },
 };
-const OPEN = { B: [[-1.0, -1.0], [-3.5, -.6], [-.8, -2.6]], L: [[-1.2, 1.2], [-3.0, 1.2], [-1.2, 3.0], [-3.2, 2.4]],
+const OPEN = { B: [[-1.0, -1.0], [-3.5, -.6], [-3.6, -1.0]], L: [[-1.2, 1.2], [-3.0, 1.2], [-1.2, 3.0], [-3.2, 2.4]],
                S: [[2.5, 1.0], [3.0, 2.2], [2.0, 2.6], [3.2, .8]], K: [[3.4, -1.2], [.9, -2.5], [2.8, -2.2], [.5, -.6]] };
-const PLAY = { x: 2.85, z: 2.0 };
-const ROOM_NAME = { B: 'bedroom', L: 'living room', S: 'studio', K: 'kitchen' };
+const PLAY = { x: 2.85, z: 2.0 }, PLAY_SPOTS = [PLAY, { x: -1.15, z: 2.0 }];
+const LAP = { knit: .56, tea: .56, tv1: .56, tv2: .56, read: .56, nook: .64 };   // lap height per seat
+const WAND_AT = { x: -2.95, z: -.65 };
+const ROOM_NAME = { B: 'bedroom', L: 'living room', S: 'studio', K: 'kitchen', Y: 'garden' };
 
 const ICON = {};
 function bubbleMat(emoji) {
@@ -655,8 +804,20 @@ let simT = 0, hour = +(Q.get('hour') ?? 17.3), speed = +(Q.get('speed') ?? 1);
 const night = () => hour >= 22 || hour < 6.5;
 const bedtime = p => hour >= p.bed || hour < p.wake;   // each person has their own bed/wake time
 // household routine: someone cooks at each mealtime, then both sit down and eat together
-const MEALS = [[7, 'breakfast', '🥞'], [12.5, 'lunch', '🥪'], [18.5, 'dinner', '🍲']];
+const MEALS = [[7.75, 'breakfast', '🥞'], [12.5, 'lunch', '🥪'], [18.5, 'dinner', '🍲']];
 const house = { meal: null, lastMeal: null };
+function startTV() { house.tv = { until: rand(21.2, 21.6) }; SPOTS.tv1.label = SPOTS.tv2.label = 'movie night together'; SPOTS.tv1.icon = SPOTS.tv2.icon = '🍿'; popcorn.visible = true; }
+function endTV() { house.tv = null; SPOTS.tv1.label = SPOTS.tv2.label = 'watching TV'; SPOTS.tv1.icon = SPOTS.tv2.icon = '📺'; popcorn.visible = false; }
+function updateBenchMood() {
+  const [label, icon] = hour < 17 ? ['enjoying the garden', '🍵'] : hour < 19.3 ? ['watching the sunset', '🌅'] : ['stargazing in the garden', '✨'];
+  Object.assign(SPOTS.bench1, { label, icon }); Object.assign(SPOTS.bench2, { label, icon });
+}
+function updateTV() {   // most evenings after dinner they curl up on the sofa for a movie
+  updateBenchMood();
+  if (hour < 19 || hour >= 23) { house.tvDecided = false; if (house.tv) endTV(); return; }
+  if (!house.tvDecided && hour >= 19.8) { house.tvDecided = true; if (Q.has('movie') || Math.random() < (weekend() ? .9 : .6)) startTV(); }
+  if (house.tv && hour >= house.tv.until) endTV();
+}
 function updateHouse() {
   const m = MEALS.find(([h]) => hour >= h && hour < h + .5);
   if (!m) { house.lastMeal = null; return; }
@@ -680,11 +841,24 @@ const cats = [
   { name: 'Biscuit', rig: makeCat('#e0913f', '#f7e8d4'), x: -1.2, z: 1.2 },
   { name: 'Mochi', rig: makeCat('#8d8a86', '#f2efe9'), x: -3.4, z: 2.95 },
 ];
-people.forEach((p, i) => Object.assign(p, { bed: 21.6 + i * .5 + rand(0, .3), wake: 6.2 + i * .4 + rand(0, .3) }));
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+let dayIdx = +(Q.get('day') ?? 4);   // start on a Friday
+const weekend = () => dayIdx % 7 >= 5;
+const FAVS = ['paint', 'sew', 'draw', 'laptop', 'computer', 'read', 'nook', 'knit', 'tea', 'playcats', 'rake', 'bench1', 'mums', 'browse'];
+function mood() {   // each day everyone fancies different things
+  const m = {}; for (const k in SPOTS) m[k] = rand(.4, 1.6);
+  m.fav = pick(FAVS); m[m.fav] *= 3.5; m.bench2 = m.bench1; return m;
+}
+function planDay(p, i) {
+  Object.assign(p, { mood: mood(), recent: [], wake: 6.2 + i * .4 + rand(0, .4) + (weekend() ? 1.2 : 0), bed: 21.6 + i * .4 + rand(0, .4) + (weekend() ? .6 : 0) });
+}
+function newDay() { dayIdx++; house.gardenDay = Math.random() < .5; house.cleanDay = dayIdx % 7 === 5 || Math.random() < .2; pileLevel = .15; people.forEach(planDay); }
+house.gardenDay = Math.random() < .5; house.cleanDay = Q.has('clean') || dayIdx % 7 === 5 || Math.random() < .2;
+people.forEach(planDay);
 for (const a of [...people, ...cats]) Object.assign(a, { heading: 0, y: 0, path: [], mode: 'idle', timer: 0, spot: null, walkPhase: 0, ph: rand(0, 6), bubble: bubbleSprite(), bubbleT: 0, last: null });
 
 const taken = {};
-const free = (k, a) => !taken[k] || taken[k] === a;
+const free = (k, a) => (!taken[k] || taken[k] === a) && !(SPOTS[k] && SPOTS[k].share && taken[SPOTS[k].share] && taken[SPOTS[k].share] !== a);
 function release(a) { for (const k in taken) if (taken[k] === a) delete taken[k]; }
 function goTo(a, key, table, speedMul = 1) {
   const sp = table[key], from = a.spot && table[a.spot] ? table[a.spot].via : (a.spot && SPOTS[a.spot] ? SPOTS[a.spot].via : []);
@@ -695,13 +869,26 @@ function goTo(a, key, table, speedMul = 1) {
 function weighted(w) { const keys = Object.keys(w).filter(k => w[k] > 0); let r = Math.random() * keys.reduce((s, k) => s + w[k], 0); for (const k of keys) if ((r -= w[k]) <= 0) return k; return keys[0]; }
 
 function choosePerson(p) {
-  if (bedtime(p)) { const k = ['sleep1', 'sleep2'].find(k => free(k, p)); if (p.spot !== k) return goTo(p, k, SPOTS); p.timer = 5; return; }
+  if (p.cmd) { if (simT < p.cmd.until) return goTo(p, p.cmd.key, SPOTS); endCommand(p); }   // the player asked for this
+  if (Q.has('do') && p === people[0] && !p.didForce) { p.didForce = true; return goTo(p, Q.get('do'), SPOTS); }   // testing aid: ?do=<activity>
+  if (bedtime(p)) { p.hadCoffee = false; const k = ['sleep1', 'sleep2'].find(k => free(k, p)); if (p.spot !== k) return goTo(p, k, SPOTS); p.timer = 5; return; }
   const hm = house.meal;
   if (hm && hm.stage === 'cook' && p === hm.cook) return goTo(p, 'cook', SPOTS);
   if (hm && hm.stage === 'cook' && p === hm.helper) return goTo(p, 'prep', SPOTS);
   if (hm && hm.stage === 'eat' && !hm.ate.has(p)) { const k = ['eat1', 'eat2'].find(k => free(k, p)); if (k) return goTo(p, k, SPOTS); }
+  if (house.tv && !hm) { const k = ['tv1', 'tv2'].find(k => free(k, p)); if (k) return goTo(p, k, SPOTS); }
+  if (house.walkInvite === p) { house.walkInvite = null; return goTo(p, 'stroll2', SPOTS); }
+  if (hour < 11 && !p.hadCoffee && free('coffee', p)) return goTo(p, 'coffee', SPOTS);   // one coffee every morning
   const evening = hour > 17 || hour < 9;
-  const w = { paint: 3, sew: 3, draw: 3, read: 2, nook: 3, browse: 1, knit: 2, tea: 2, plants: 1.2, warm: evening ? 2 : .5, wash: .2 };
+  const w = { paint: 3, sew: 3, draw: 2.5, laptop: 2, computer: 2.5, read: 2, nook: 3, browse: 1, knit: 2, tea: 2, plants: 1.2, warm: evening ? 2 : .5, wash: .2,
+              playcats: cats.some(wandReady) ? 2.5 : 0, tv1: .5 };
+  const g = (house.gardenDay ? 2 : 1) * (weekend() ? 1.5 : 1), partnerOnBench = people.some(q => q !== p && q.mode === 'act' && /^bench/.test(q.spot));
+  if (hour >= 9 && hour < 17.5) Object.assign(w, { rake: 1.2 * g, mums: .8 * g, stroll1: 1.2 * g });            // garden time on nice afternoons
+  if (hour >= 9 && hour < 21) w.bench1 = w.bench2 = (partnerOnBench ? 6 : hour >= 17.5 ? 1.8 : 1) * g;          // incl. sunset + stargazing
+  if ((hour >= 7 && hour < 10) || (hour >= 16 && hour < 18)) w.jog = hour < 10 ? 1.6 : .8;                    // morning / late-afternoon runs
+  const c = house.cleanDay ? 4 : .35;                                                                            // cleaning, mostly on cleaning days
+  Object.assign(w, { sweep: c, vacuum: c, dust: c * .8, makebed: hour < 12 ? 1 + c : 0 });
+  for (const k in w) w[k] *= (p.mood[k] ?? 1) * (p.recent.includes(k) ? .25 : 1);
   if (p.last === 'eat1' || p.last === 'eat2') w.wash = 6;
   if (p.last) w[p.last] = 0;
   for (const k in w) if (!free(k, p)) w[k] = 0;
@@ -709,24 +896,57 @@ function choosePerson(p) {
 }
 function startPersonAct(p) {
   const sp = SPOTS[p.target]; p.spot = p.target; p.last = p.target; p.mode = 'act';
-  p.x = sp.x; p.z = sp.z; p.heading = sp.h; p.timer = sp.pose === 'lie' ? 9e9 : p.target === 'cook' || p.target === 'prep' || sp.anim === 'eat' ? rand(14, 20) : rand(20, 35); p.bubbleT = 0;
+  p.x = sp.x; p.z = sp.z; p.heading = sp.h; p.timer = sp.pose === 'lie' ? 9e9 : p.target === 'cook' || p.target === 'prep' || sp.anim === 'eat' ? rand(25, 35) : p.target === 'coffee' ? rand(18, 24) : rand(45, 75); p.callT = 0; p.bubbleT = 0; p.dur = p.timer; if (p.target === 'coffee') p.hadCoffee = true;
+  p.recent = [p.target, ...(p.recent || [])].slice(0, 4);
+  if (sp.loop) { p.loopA = Math.PI / 2; p.timer = p.dur = sp.loop.laps * 2 * Math.PI * (sp.loop.rx + sp.loop.rz) / 2 / sp.loop.speed; }
+  if (p.target === 'stroll1' && p.cmd && p.cmd.together === 'walk') { const q = people.find(o => o !== p); p.waitFor = q; p.waitT = 60; }
+  else if (p.target === 'stroll1' && !p.cmd) {   // sometimes ask the other one to come along
+    SPOTS.stroll1.label = SPOTS.stroll2.label = 'going for a walk';
+    const q = people.find(o => o !== p);
+    if (Math.random() < .55 && !bedtime(q) && !house.meal && !house.tv && q.mode === 'act' && SPOTS[q.spot].pose !== 'lie') {
+      house.walkInvite = q; q.timer = Math.min(q.timer, 1.5); p.waitFor = q; p.waitT = 25;
+    }
+  }
   if (p.target === 'eat1' || p.target === 'eat2') bowls[p.target === 'eat1' ? 0 : 1].visible = true;
+  if (p.target === 'playcats') cats.filter(wandReady).forEach((c, i) => { if (i === 0 || Math.random() < .65) joinWand(c, i); });
 }
 
 let play = null;
+const walkingTo = (c, ...acts) => c.mode === 'walk' && acts.includes(c.pendingAct);
+const catBusy = c => c.mode === 'playing' || c.mode === 'playWait' || walkingTo(c, 'playWait', 'wand', 'lap') || (c.mode === 'act' && ['nap', 'lap', 'wand', 'eat'].includes(c.act));
+const wandReady = c => !(c.mode === 'playing' || c.mode === 'playWait' || walkingTo(c, 'playWait', 'wand', 'lap') || (c.mode === 'act' && ['lap', 'wand'].includes(c.act))) && !night();
+function leaveCatSpot(c) {
+  if (c.lapOf) { if (c.lapOf.lapCat === c) c.lapOf.lapCat = null; c.lapOf = null; }
+  const from = c.spot && CAT_SPOTS[c.spot] ? CAT_SPOTS[c.spot].via || [] : [];
+  release(c); c.spot = null; c.target = null; return from;
+}
+function joinWand(c, i) {
+  const from = leaveCatSpot(c);
+  c.path = buildPath(c, WAND_AT.x + (i ? .2 : -.2), WAND_AT.z, [], from); c.mode = 'walk'; c.pendingAct = 'wand';
+}
 function chooseCat(c) {
+  if (c.lapOf) { if (c.lapOf.lapCat === c) c.lapOf.lapCat = null; c.lapOf = null; }
   const other = cats.find(o => o !== c), cooking = people.some(p => p.spot === 'cook' && p.mode === 'act');
-  const otherFree = other.mode !== 'act' || other.act !== 'nap';
-  const w = { nap: night() ? 8 : 3, eat: house.meal && house.meal.stage === 'eat' ? 5 : 1.5, wander: 2.5, groom: 1.5, play: !night() && !play && otherFree ? 2 : 0, beg: cooking && free('beg', c) ? 4 : 0 };
+  const laps = people.filter(p => p.mode === 'act' && LAP[p.spot] !== undefined && !p.lapCat);
+  const w = { nap: night() ? 8 : 3, eat: house.meal && house.meal.stage === 'eat' ? 5 : 1.5, wander: 2.5, groom: 1.5, play: !night() && !play && !catBusy(other) ? 3 : 0,
+              beg: cooking && free('beg', c) ? 4 : 0, lap: laps.length ? 3 : 0 };
+  if (c.last === 'lap') w.lap = 0;
+  if (w.lap && weighted(w) === 'lap') {   // climb into someone's lap
+    const p = pick(laps), sp = SPOTS[p.spot], from = leaveCatSpot(c);
+    c.lapOf = p; p.lapCat = c; c.lapSpot = p.spot;
+    c.lapPos = { x: sp.x + Math.sin(sp.h) * .25, z: sp.z + Math.cos(sp.h) * .25, y: LAP[p.spot], h: sp.h + Math.PI / 2 };
+    c.path = buildPath(c, c.lapPos.x, c.lapPos.z, sp.via || [], from); c.mode = 'walk'; c.pendingAct = 'lap'; return;
+  }
+  w.lap = 0;
   if (c.last === 'eat') w.eat = 0; if (c.last === 'play') w.play = 0; if (c.last === 'beg') w.beg = 0;
   const choice = weighted(w);
-  if (choice === 'play') return startPlay(c, other);
+  if (choice === 'play') return startPlay(c, other, pick(PLAY_SPOTS));
   if (choice === 'wander' || choice === 'groom') {
     release(c); const [x, z] = pick(OPEN[pick(ORDER)]);
     const from = c.spot && CAT_SPOTS[c.spot] ? CAT_SPOTS[c.spot].via : [];
     c.path = buildPath(c, x, z, [], from || []); c.mode = 'walk'; c.target = null; c.spot = null; c.pendingAct = choice === 'groom' ? 'groom' : 'idle'; return;
   }
-  const keys = Object.keys(CAT_SPOTS).filter(k => CAT_SPOTS[k].act === choice && free(k, c) && !(CAT_SPOTS[k].blockedBy && taken[CAT_SPOTS[k].blockedBy]));
+  const keys = Object.keys(CAT_SPOTS).filter(k => CAT_SPOTS[k].act === choice && free(k, c) && !(CAT_SPOTS[k].blockedBy || []).some(b => taken[b]));
   if (!keys.length) { c.mode = 'act'; c.act = 'groom'; c.timer = 8; return; }
   const key = night() && choice === 'nap' && free('bedfoot', c) ? 'bedfoot' : pick(keys);
   goTo(c, key, CAT_SPOTS); c.pendingAct = null;
@@ -734,21 +954,92 @@ function chooseCat(c) {
 function startCatAct(c) {
   if (c.target) { const sp = CAT_SPOTS[c.target]; c.spot = c.target; c.x = sp.x; c.z = sp.z; c.heading = sp.h; c.act = sp.act; c.last = sp.act; }
   else { c.act = c.pendingAct; c.last = c.act === 'idle' ? 'wander' : c.act; }
+  if (c.act === 'lap') { c.x = c.lapPos.x; c.z = c.lapPos.z; c.heading = c.lapPos.h; }
   c.mode = 'act'; c.bubbleT = 0;
-  c.timer = { nap: rand(40, 80), eat: rand(10, 16), groom: rand(8, 12), idle: rand(3, 7), beg: rand(10, 16) }[c.act];
+  c.timer = { nap: rand(70, 140), eat: rand(15, 25), groom: rand(10, 16), idle: rand(4, 9), beg: rand(15, 25), lap: rand(60, 110), wand: 9e9 }[c.act];
 }
-function startPlay(a, b) {
-  play = { cats: [a, b], start: null };
+function startPlay(a, b, at) {
+  play = { cats: [a, b], start: null, at };
   [a, b].forEach((c, i) => {
-    const from = c.spot && CAT_SPOTS[c.spot] ? CAT_SPOTS[c.spot].via : [];
-    release(c); c.spot = null; c.target = null;
-    c.path = buildPath(c, PLAY.x + (i ? .5 : -.5), PLAY.z, [], from || []); c.mode = 'walk'; c.pendingAct = 'playWait';
+    const from = leaveCatSpot(c);
+    c.path = buildPath(c, at.x + (i ? .5 : -.5), at.z, [], from); c.mode = 'walk'; c.pendingAct = 'playWait';
   });
 }
 
+// ---------------------------------------------------------------- player choices (dropdown per character)
+const MENU = [
+  ['Together', [['T:cook', '🍲 Cook together'], ['T:eat', '🥣 Eat together'], ['T:movie', '🍿 Movie night'], ['T:walk', '🚶 Walk together'], ['T:bench', '🌅 Sit in the garden together'], ['T:sleep', '💤 Go to bed']]],
+  ['Creative', [['paint', '🎨 Paint'], ['sew', '🧵 Sew'], ['draw', '✏️ Sketch'], ['knit', '🧶 Knit']]],
+  ['Cozy', [['read', '📖 Read by the fire'], ['nook', '📚 Reading nook'], ['tea', '☕ Tea on the sofa'], ['tv1', '📺 Watch TV'], ['warm', '🔥 Warm up by the fire'], ['coffee', '☕ Make coffee'], ['browse', '📚 Browse the bookshelf']]],
+  ['Work', [['laptop', '💻 Laptop'], ['computer', '🖥️ Computer']]],
+  ['Cats', [['playcats', '🪶 Play with the cats']]],
+  ['Outdoors', [['stroll1', '🚶 Go for a walk'], ['jog', '🏃 Go for a run'], ['rake', '🍂 Rake leaves'], ['mums', '🌼 Water the mums'], ['bench1', '🍵 Sit in the garden']]],
+  ['Chores', [['cook', '🍲 Cook'], ['sweep', '🧹 Sweep the kitchen'], ['vacuum', '✨ Vacuum'], ['dust', '🪶 Dust'], ['makebed', '🛏️ Make the bed'], ['plants', '🪴 Water the plants'], ['wash', '🫧 Wash up']]],
+];
+const TOGETHER = { cook: ['cook', 'prep'], eat: ['eat1', 'eat2'], movie: ['tv1', 'tv2'], walk: ['stroll1', 'stroll2'], bench: ['bench1', 'bench2'], sleep: ['sleep1', 'sleep2'] };
+const statusEl = document.getElementById('status'), menuEl = document.getElementById('menu');
+const LABEL = Object.fromEntries(MENU.flatMap(([, items]) => items));
+let chosenDur = 60;   // in-game minutes (= sim seconds)
+statusEl.innerHTML = people.map((p, i) => `<div class="row"><b>${p.name}</b><span id="st${i}"></span></div>
+  <div class="cmdrow"><button class="pick" id="pick${i}"><span class="lbl"></span><span class="car">▼</span></button><span class="left" id="left${i}"></span></div>
+  <div class="bar"><div id="bar${i}"></div></div>`).join('')
+  + `<div class="cats">${cats.map((c, i) => `<div class="row"><b>${c.name}</b><span id="cst${i}"></span></div>`).join('')}</div>
+  <div id="durRow">Chosen activities last <span class="seg">${[[30, '30m'], [60, '1h'], [120, '2h']].map(([d, l]) => `<button data-d="${d}" class="${d === 60 ? 'on' : ''}">${l}</button>`).join('')}</span></div>`;
+document.querySelectorAll('.seg button').forEach(b => b.onclick = () => { chosenDur = +b.dataset.d; document.querySelectorAll('.seg button').forEach(o => o.classList.toggle('on', o === b)); });
+const selects = people.map((p, i) => {   // pill button per character; .value mirrors the chosen activity
+  const el = document.getElementById(`pick${i}`);
+  const pk = { el, _v: '', get value() { return this._v; }, set value(v) { this._v = v; el.querySelector('.lbl').textContent = LABEL[v] || '✨ Let them be'; el.classList.toggle('on', !!v); } };
+  pk.value = ''; el.onclick = e => { e.stopPropagation(); openMenu(i); }; return pk;
+});
+let menuFor = -1;
+function openMenu(i) {
+  if (menuFor === i && menuEl.classList.contains('open')) return closeMenu();
+  menuFor = i; const cur = selects[i].value;
+  menuEl.innerHTML = `<h4>What should ${people[i].name} do?</h4>` + MENU.map(([g, items]) => `<div class="sec">${g === 'Together' ? '💞 Together' : g}</div><div class="grid">${items.map(([v, l]) => {
+    const [e, ...t] = l.split(' '); return `<button class="chip${v.startsWith('T:') ? ' together' : ''}${v === cur ? ' cur' : ''}" data-v="${v}"><span class="e">${e}</span>${t.join(' ')}</button>`; }).join('')}</div>`).join('')
+    + `<button class="free" data-v="">✨ Let them go about their day</button>`;
+  menuEl.querySelectorAll('[data-v]').forEach(b => b.onclick = e => { e.stopPropagation(); command(people[i], b.dataset.v); closeMenu(); });
+  const r = selects[i].el.getBoundingClientRect(), w = Math.min(336, innerWidth - 32);
+  menuEl.style.left = Math.max(16, Math.min(r.right - w, innerWidth - w - 16)) + 'px';
+  menuEl.style.top = Math.min(r.bottom + 8, innerHeight - 200) + 'px';
+  menuEl.classList.add('open');
+}
+function closeMenu() { menuEl.classList.remove('open'); menuFor = -1; }
+addEventListener('pointerdown', e => { if (!menuEl.contains(e.target) && !e.target.closest('.pick')) closeMenu(); });
+addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+function interrupt(p) {   // stop whatever they're doing right now
+  if (p.spot === 'eat1' || p.spot === 'eat2') bowls[p.spot === 'eat1' ? 0 : 1].visible = false;
+  release(p); p.waitFor = null; p.mode = 'idle'; p.spot = null;
+}
+function endCommand(p) {
+  const together = p.cmd && p.cmd.together; p.cmd = null; selects[people.indexOf(p)].value = '';
+  if (together) for (const q of people) if (q.cmd && q.cmd.together === together) { q.cmd = null; selects[people.indexOf(q)].value = ''; q.timer = Math.min(q.timer, 0); }
+}
+function command(p, value) {
+  const dur = chosenDur;   // in-game minutes = sim seconds
+  if (p.cmd && p.cmd.together) { const t = p.cmd.together; people.forEach(q => { if (q.cmd && q.cmd.together === t) { q.cmd = null; selects[people.indexOf(q)].value = ''; if (q !== p) q.timer = 0; } }); }
+  p.cmd = null;
+  if (!value) { p.timer = Math.min(p.timer, 0); return; }
+  if (value.startsWith('T:')) {   // together: lock both characters into the pair of spots
+    const t = value.slice(2), pair = TOGETHER[t], q = people.find(o => o !== p);
+    [p, q].forEach((who, i) => { if (who.cmd && who.cmd.together !== t) who.cmd = null; interrupt(who); who.cmd = { key: pair[i], until: simT + dur, dur, together: t }; selects[people.indexOf(who)].value = value; });
+    goTo(p, pair[0], SPOTS); goTo(q, pair[1], SPOTS);
+    return;
+  }
+  const sp = SPOTS[value];
+  for (const k of [value, sp.share].filter(Boolean)) {   // bump the other person off this spot (unless the player put them there)
+    const q = taken[k];
+    if (q && q !== p && people.includes(q)) { if (q.cmd) { q.cmd = null; selects[people.indexOf(q)].value = ''; } interrupt(q); }
+  }
+  interrupt(p); p.cmd = { key: value, until: simT + dur, dur }; goTo(p, value, SPOTS);
+}
+
 // initial state
-Object.assign(people[0], { target: 'paint' }); taken.paint = people[0]; startPersonAct(people[0]);
-Object.assign(people[1], { target: 'sew' }); taken.sew = people[1]; startPersonAct(people[1]);
+// start asleep in bed if the page opens at night, otherwise painting and sewing
+people.forEach((p, i) => {
+  if (i === 0 && Q.has('do')) { p.x = 1.5; p.z = 1.5; p.didForce = true; return goTo(p, Q.get('do'), SPOTS); }   // testing aid: ?do=<activity>
+  const k = bedtime(p) ? ['sleep1', 'sleep2'][i] : ['paint', 'sew'][i]; p.target = k; taken[k] = p; startPersonAct(p);
+});
 Object.assign(cats[1], { target: 'catbed' }); taken.catbed = cats[1]; startCatAct(cats[1]);
 chooseCat(cats[0]);
 bowls.forEach(b => b.visible = false);
@@ -759,11 +1050,34 @@ function updatePerson(p, dt) {
   else if (p.mode === 'act') {
     p.timer -= dt;
     const hm = house.meal, sp = SPOTS[p.spot], eating = p.spot === 'eat1' || p.spot === 'eat2';
-    if (sp.pose === 'lie' && !bedtime(p)) p.timer = 0;
-    if (bedtime(p) && sp.pose !== 'lie') p.timer = Math.min(p.timer, 2);
-    if (hm && hm.stage === 'cook' && p === hm.cook && p.spot !== 'cook') p.timer = Math.min(p.timer, 1.5);
-    if (hm && hm.stage === 'cook' && p === hm.helper) p.timer = p.spot === 'prep' ? Math.max(p.timer, 1) : Math.min(p.timer, 1.5);
-    if (hm && hm.stage === 'eat' && !hm.ate.has(p) && !eating && sp.pose !== 'lie') p.timer = Math.min(p.timer, 1.5);
+    if (sp.pose === 'lie' && !bedtime(p) && !p.cmd) p.timer = 0;
+    if (bedtime(p) && sp.pose !== 'lie' && !p.cmd) p.timer = Math.min(p.timer, 2);
+    if (hm && hm.stage === 'cook' && p === hm.cook && p.spot !== 'cook' && p.spot !== 'coffee') p.timer = Math.min(p.timer, 1.5);
+    if (hm && hm.stage === 'cook' && p === hm.helper && p.spot !== 'coffee') p.timer = p.spot === 'prep' ? Math.max(p.timer, 1) : Math.min(p.timer, 1.5);
+    if (hm && hm.stage === 'eat' && !hm.ate.has(p) && !eating && sp.pose !== 'lie' && p.spot !== 'coffee') p.timer = Math.min(p.timer, 1.5);
+    const atTV = p.spot === 'tv1' || p.spot === 'tv2';
+    if (house.tv && !hm && atTV) p.timer = Math.max(p.timer, 1);
+    if (house.tv && !hm && !atTV && sp.pose !== 'lie') p.timer = Math.min(p.timer, 1.5);
+    if (p.cmd) {   // player's choice overrides the routine until its time is up
+      if (simT >= p.cmd.until) { endCommand(p); p.timer = 0; }
+      else if (p.spot === p.cmd.key) p.timer = Math.max(p.timer, 1);
+    }
+    if (p.spot === 'playcats' && !cats.some(c => c.mode === 'act' && c.act === 'wand')) {
+      p.callT += dt;
+      if (p.callT < 20) p.timer += dt;   // calling "here kitty kitty" while they trot over
+      else p.timer = Math.min(p.timer, 1);
+    }
+    if (sp.loop) {
+      if (p.waitFor) {   // waiting at the start for the partner to join the walk
+        const q = p.waitFor; p.timer += dt;
+        if (q.mode === 'act' && q.spot === 'stroll2') { p.waitFor = null; q.loopA = p.loopA; q.timer = p.timer; SPOTS.stroll1.label = SPOTS.stroll2.label = 'going for a walk together'; }
+        else if ((p.waitT -= dt) < 0 || house.walkInvite !== q && !(q.mode === 'walk' && q.target === 'stroll2')) p.waitFor = null;
+      } else {
+        const L = sp.loop; p.loopA += L.speed * dt / ((L.rx + L.rz) / 2);
+        p.x = L.cx + L.rx * Math.cos(p.loopA); p.z = L.cz + L.rz * Math.sin(p.loopA);
+        p.heading = Math.atan2(-L.rx * Math.sin(p.loopA), L.rz * Math.cos(p.loopA)); p.walkPhase += dt * L.speed * (L.speed > 1 ? 7 : 11);
+      }
+    }
     if (p.spot === 'paint' && Math.random() < dt * 1.2) paintStroke();
     if (p.timer <= 0) {
       if (hm && p.spot === 'cook' && hm.stage === 'cook') hm.stage = 'eat';
@@ -774,11 +1088,18 @@ function updatePerson(p, dt) {
 
   const r = p.rig, sp = p.mode === 'act' ? SPOTS[p.spot] : null, T = simT + p.ph;
   let hipY = .76, th = [0, 0], kn = [0, 0], ax = [0, 0], az = [0, 0], hx = 0, bob = 0, lie = false;
-  r.book.visible = r.mug.visible = false;
+  r.book.visible = r.mug.visible = r.can.visible = r.rake.visible = r.broom.visible = r.vac.visible = r.duster.visible = false;
   if (p.mode === 'walk') { const s = Math.sin(p.walkPhase); th = [s * .45, -s * .45]; kn = [Math.max(0, -s) * .6, Math.max(0, s) * .6]; ax = [-s * .35, s * .35]; bob = Math.abs(Math.cos(p.walkPhase)) * .025; }
   else if (sp) {
+    if (sp.loop && !p.waitFor) {
+      const s = Math.sin(p.walkPhase), amp = sp.anim === 'jog' ? .8 : sp.anim === 'stroll' ? .45 : .25;
+      th = [s * amp, -s * amp]; kn = [Math.max(0, -s) * amp * 1.4, Math.max(0, s) * amp * 1.4]; ax = [-s * amp * .8, s * amp * .8];
+      bob = Math.abs(Math.cos(p.walkPhase)) * (sp.anim === 'jog' ? .06 : .025);
+      if (sp.anim === 'jog') ax = [-.6 - s * .6, -.6 + s * .6];
+    }
     if (sp.pose === 'sit') { hipY = .48; th = [-Math.PI / 2, -Math.PI / 2]; kn = [Math.PI / 2, Math.PI / 2]; }
     if (sp.pose === 'lie') lie = true;
+    if (sp.pose === 'floor') { hipY = .14; th = [-Math.PI / 2, -Math.PI / 2]; kn = [0, 0]; }
     switch (sp.anim) {
       case 'stir': ax = [-.3, -1.1]; az = [0, Math.sin(T * 3) * .35]; hx = .25; break;
       case 'chop': ax = [-.9, -1.0 + Math.abs(Math.sin(T * 7)) * .35]; az = [.2, -.1]; hx = .4; break;
@@ -792,8 +1113,23 @@ function updatePerson(p, dt) {
       case 'tea': ax = [0, -1.0 - Math.max(0, Math.sin(T * .6)) * .9]; r.mug.visible = true; break;
       case 'warm': ax = [-1.3, -1.3]; az = [.15, -.15]; break;
       case 'browse': ax = [0, -2.3 + Math.sin(T * .8) * .25]; az = [0, -.1]; hx = -.15; break;
-      case 'water': ax = [0, -1.2]; r.mug.visible = true; hx = .2; p.heading = sp.h + Math.sin(T * .3) * .8; break;
+      case 'coffee':   // brew at the machine, then sip
+        if (p.timer > p.dur * .55) { ax = [0, -1.25]; hx = .2; }
+        else { ax = [0, -1.0 - Math.max(0, Math.sin(T * .9)) * .9]; r.mug.visible = true; p.heading = sp.h + .6; }
+        break;
+      case 'type': ax = [-1.05 + Math.sin(T * 9) * .04, -1.05 - Math.sin(T * 9 + 1) * .04]; az = [.22, -.22]; hx = .1; break;
+      case 'watch': ax = [-.35, -.35]; az = [.15, -.15]; hx = -.05; break;
+      case 'wand': ax = [0, -1.0 + Math.sin(T * 2.6) * .2]; az = [0, Math.sin(T * 1.3) * .35]; hx = .25; break;
+      case 'sweep': ax = [-.5 + Math.sin(T * 3) * .25, -.55 + Math.sin(T * 3) * .25]; az = [.2, -.2]; hx = .3; r.broom.visible = true; break;
+      case 'vacuum': ax = [0, -.65 + Math.sin(T * 2) * .15]; hx = .25; r.vac.visible = true; break;
+      case 'dust': ax = [0, -2.3 + Math.sin(T * 4) * .2]; az = [0, Math.sin(T * 3) * .3]; hx = -.2; r.duster.visible = true; break;
+      case 'makebed': ax = [-1.3 + Math.sin(T * 2) * .15, -1.3 - Math.sin(T * 2) * .15]; hx = .45; break;
+      case 'water': ax = [0, -1.2]; r.can.visible = true; hx = .2; p.heading = sp.h + Math.sin(T * .3) * .8; break;
+      case 'rake': { const sw = Math.sin(T * 1.5) * .25; ax = [-.55 + sw, -.6 + sw]; az = [.15, -.15]; hx = .35; r.rake.visible = true; pileLevel = Math.min(1, pileLevel + dt / 60); break; }
     }
+  }
+  if (p.lapCat && p.lapCat.mode === 'act' && p.lapCat.act === 'lap') {   // petting the cat on their lap
+    ax = [-.6, -.75 + Math.sin(T * 1.8) * .15]; az = [.35, -.25]; hx = .4; r.book.visible = r.mug.visible = false;
   }
   const breathe = Math.sin(T * (lie ? 1.2 : 2)) * .012;
   r.body.position.y = hipY + bob; r.body.scale.set(1, 1 + breathe, 1);
@@ -801,14 +1137,33 @@ function updatePerson(p, dt) {
   r.arms.forEach((a, i) => { a.rotation.x = ax[i]; a.rotation.z = az[i]; });
   r.head.rotation.x = hx;
   r.head.rotation.y = sp && sp.anim === 'chop' && Math.sin(T * .5) > .7 ? -.6 : 0;
-  r.root.position.set(p.x, lie ? .72 : 0, p.z); r.root.rotation.set(lie ? -Math.PI / 2 : 0, p.heading, 0);
+  p.gy = (p.gy || 0) + ((roomOf(p.x, p.z) === 'Y' ? -.4 : 0) - (p.gy || 0)) * Math.min(1, dt * 6);
+  r.root.position.set(p.x, (lie ? .72 : 0) + p.gy, p.z); r.root.rotation.set(lie ? -Math.PI / 2 : 0, p.heading, 0);
+  if (sp && sp.anim === 'wand') {   // feather toy dances in front of them; stick runs from hand to toy
+    wand.active = true; wandStick.visible = feather.visible = true;
+    wand.pos.set(WAND_AT.x + Math.sin(T * 1.3) * .45, .06 + Math.abs(Math.sin(T * 2.6)) * .3, WAND_AT.z + Math.sin(T * .9) * .3);
+    r.arms[1].children[1].getWorldPosition(tmpV);
+    const dir = wand.pos.clone().sub(tmpV), len = dir.length();
+    wandStick.position.copy(tmpV).addScaledVector(dir, .5); wandStick.scale.y = len; wandStick.quaternion.setFromUnitVectors(UP, dir.normalize());
+    feather.position.copy(wand.pos); feather.rotation.set(Math.sin(T * 5) * .6, 0, Math.PI + Math.sin(T * 3) * .5);
+  }
 }
 
 function updateCat(c, dt) {
   if (c.mode === 'walk') { c.y += (0 - c.y) * Math.min(1, dt * 8); if (stepPath(c, dt, c.pendingAct === 'playWait' ? 1.1 : .8)) { if (c.pendingAct === 'playWait') { c.mode = 'playWait'; } else startCatAct(c); } }
   else if (c.mode === 'act') {
-    const sp = c.spot && CAT_SPOTS[c.spot]; c.y += ((sp ? sp.y : 0) - c.y) * Math.min(1, dt * 6);
+    const sp = c.spot && CAT_SPOTS[c.spot]; c.y += ((c.act === 'lap' ? c.lapPos.y : sp ? sp.y : 0) - c.y) * Math.min(1, dt * 6);
     c.timer -= dt;
+    if (c.act === 'lap' && (!c.lapOf || c.lapOf.mode !== 'act' || c.lapOf.spot !== c.lapSpot)) c.timer = 0;
+    if (c.act === 'wand') {
+      if (!wand.active) c.timer = 0;
+      else {   // chase the feather
+        const i = cats.indexOf(c), tx = wand.pos.x + (i ? .17 : -.17), tz = wand.pos.z + (i ? .1 : -.1), dx = tx - c.x, dz = tz - c.z, d = Math.hypot(dx, dz);
+        if (d > .04) { const st = Math.min(d, 1.6 * dt); c.x += dx / d * st; c.z += dz / d * st; c.walkPhase += dt * 16; }
+        c.heading = lerpAngle(c.heading, Math.atan2(wand.pos.x - c.x, wand.pos.z - c.z), Math.min(1, dt * 10));
+        c.wandMoving = d > .12;
+      }
+    }
     if (c.act === 'beg' && !people.some(p => p.spot === 'cook' && p.mode === 'act')) c.timer = Math.min(c.timer, 1);
     if (c.act === 'nap' && night()) c.timer = Math.max(c.timer, 5);
     if (c.timer <= 0) chooseCat(c);
@@ -820,9 +1175,14 @@ function updateCat(c, dt) {
   if (walking) { swing = Math.sin(c.walkPhase) * .6; bodyY += Math.abs(Math.sin(c.walkPhase)) * .012; tailRX = -1.0; }
   if (c.mode === 'playing' && play.phase === 1) { hop = Math.max(0, Math.sin(T * 5 + (c === play.cats[0] ? 0 : Math.PI))) * .22; bodyRX = -hop; tailRZ = Math.sin(T * 9) * .6; }
   if (c.mode === 'act') {
-    if (c.act === 'nap') { legS = .01; bodyY = .1; ts = [.95, .72 + Math.sin(T * 1.1) * .02, 1.25]; headY = .02; headRX = .5; tailRX = -1.55; tailRZ = 1.3; }
+    if (c.act === 'nap' || c.act === 'lap') { legS = .01; bodyY = .1; ts = [.95, .72 + Math.sin(T * 1.1) * .02, 1.25]; headY = .02; headRX = .5; tailRX = -1.55; tailRZ = 1.3; }
     if (c.act === 'eat') { headRX = .75 + Math.sin(T * 7) * .08; bodyRX = .15; }
     if (c.act === 'groom' || c.act === 'beg') { bodyRX = -.55; bodyY = .23; tailRX = -1.5; headRX = c.act === 'groom' ? (Math.sin(T * 4) > .2 ? .55 : .1) : -.25 + Math.sin(T * 2) * .1; }
+  }
+  if (c.mode === 'act' && c.act === 'wand') {
+    if (c.wandMoving) { swing = Math.sin(c.walkPhase) * .7; tailRX = -1.0; }
+    else { hop = Math.max(0, Math.sin(T * 5)) * .2; bodyRX = -hop * 1.5; }
+    tailRZ = Math.sin(T * 8) * .6;
   }
   r.body.position.y = bodyY + hop; r.body.rotation.x = bodyRX;
   r.torso.scale.set(...ts); r.head.position.y = headY; r.head.rotation.x = headRX;
@@ -838,15 +1198,16 @@ function updatePlay(dt) {
   const e = simT - play.start; play.phase = Math.floor(e / 4) % 2;
   if (play.phase === 0) {
     const ang = e * 1.3;
-    [[a, ang], [b, ang - 1.0]].forEach(([c, t]) => { c.x = PLAY.x + Math.cos(t) * .5; c.z = PLAY.z + Math.sin(t) * .4; c.heading = Math.atan2(-Math.sin(t) * .5, Math.cos(t) * .4); c.walkPhase += dt * 14; });
-    yarn.position.set(PLAY.x + Math.cos(ang + .5) * .5, .08, PLAY.z + Math.sin(ang + .5) * .4); yarn.rotation.x += dt * 6;
+    const at = play.at;
+    [[a, ang], [b, ang - 1.0]].forEach(([c, t]) => { c.x = at.x + Math.cos(t) * .5; c.z = at.z + Math.sin(t) * .4; c.heading = Math.atan2(-Math.sin(t) * .5, Math.cos(t) * .4); c.walkPhase += dt * 14; });
+    if (at === PLAY) { yarn.position.set(PLAY.x + Math.cos(ang + .5) * .5, .08, PLAY.z + Math.sin(ang + .5) * .4); yarn.rotation.x += dt * 6; }
   } else {
     a.heading = Math.atan2(b.x - a.x, b.z - a.z); b.heading = Math.atan2(a.x - b.x, a.z - b.z);
   }
-  if (e > 20) { play = null; [a, b].forEach(c => { c.mode = 'idle'; c.last = 'play'; }); yarn.position.set(PLAY.x, .08, PLAY.z); }
+  if (e > 40) { play = null; [a, b].forEach(c => { c.mode = 'idle'; c.last = 'play'; }); yarn.position.set(PLAY.x, .08, PLAY.z); }
 }
-const CAT_ICON = { nap: '💤', eat: '🐟', groom: '✨', beg: '❤️' };
-const CAT_LABEL = { nap: 'napping', eat: 'eating', groom: 'grooming', beg: 'begging for a treat', idle: 'exploring' };
+const CAT_ICON = { nap: '💤', eat: '🐟', groom: '✨', beg: '❤️', lap: '💕', wand: '🪶' };
+const CAT_LABEL = { nap: 'napping', eat: 'eating', groom: 'grooming', beg: 'begging for a treat', idle: 'exploring', wand: 'chasing the feather toy' };
 
 function updateBubble(a, isCat, dt) {
   a.bubbleT += dt;
@@ -891,7 +1252,7 @@ function updateDay() {
   shades.forEach(m => m.emissiveIntensity = lampLevel * .9);
   postMat.emissiveIntensity = lampLevel * 1.5;
   const hh = Math.floor(hour), mm = Math.floor((hour % 1) * 60);
-  document.getElementById('clock').textContent = `${(hh % 12) || 12}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'am' : 'pm'} · Fall · ${night() ? 'night' : hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening'}`;
+  document.getElementById('clock').textContent = `${(hh % 12) || 12}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'am' : 'pm'} · ${DAYS[dayIdx % 7]} · Fall · ${night() ? 'night' : hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening'}`;
 }
 
 // ---------------------------------------------------------------- music (generated in the browser, no files)
@@ -955,7 +1316,8 @@ const clock = new THREE.Clock();
 let lastStatus = '';
 function frame() {
   const dt = Math.min(.05, clock.getDelta()), T = clock.elapsedTime, sdt = dt * speed;
-  simT += sdt; hour = (hour + sdt / 20) % 24;
+  simT += sdt; hour += sdt / 60;   // 1 in-game minute = 1 second at 1x if (hour >= 24) { hour -= 24; newDay(); }
+  leafPile.scale.set(1, pileLevel, 1).multiplyScalar(.5 + pileLevel * .5);
 
   camAz += (camAzTarget - camAz) * Math.min(1, dt * 4);
   const cd = new THREE.Vector3(Math.sin(camAz) * Math.cos(CAM_EL), Math.sin(CAM_EL), Math.cos(camAz) * Math.cos(CAM_EL));
@@ -973,6 +1335,13 @@ function frame() {
   fireLight.intensity = (4 + lampLevel * 6) * flick;
   flames.forEach(f => { const s = 1 + Math.sin(T * 10 + f.userData.k) * .18; f.scale.set(1, s, 1); f.position.y = .1 + f.userData.h * s / 2; });
   candleFlames.forEach((c, i) => c.scale.setScalar(1 + Math.sin(T * 12 + i) * .15)); tableCandle.scale.setScalar(1 + Math.sin(T * 13) * .15);
+  const using = k => people.some(p => p.mode === 'act' && p.spot === k);
+  const brewing = people.some(p => p.mode === 'act' && p.spot === 'coffee' && p.timer > p.dur * .55);
+  coffeeLight.material.emissiveIntensity = brewing ? 2 : 0; coffeeCup.visible = brewing;
+  coffeeSteam.forEach(s => { s.visible = brewing; const pr = (T * .5 + s.userData.o) % 1; s.position.set(2.8 + Math.sin(T * 2 + s.userData.o * 7) * .02, 1.07 + pr * .3, -3.1); s.material.opacity = .5 * (1 - pr); });
+  const tvOn = using('tv1') || using('tv2');
+  tvMat.color.set(tvOn ? '#ffffff' : '#111111'); tvLight.intensity = tvOn ? .9 + Math.sin(T * 2.3) * .25 : 0; if (tvOn) drawTV(T);
+  laptopMat.color.set(using('laptop') ? '#ffffff' : '#222222'); monitorMat.color.set(using('computer') ? '#ffffff' : '#222222');
   const cooking = people.some(p => p.spot === 'cook' && p.mode === 'act');
   stoveGlow.intensity = cooking ? 1.2 : 0; ovenGlow.material.emissiveIntensity = cooking ? .8 : 0;
   steam.forEach(s => { s.visible = cooking; const pr = (T * .3 + s.userData.o) % 1; s.position.set(2.0 + Math.sin(T + s.userData.o * 9) * .08, 1.3 + pr, -3.15); s.scale.setScalar(1 + pr * 2); s.material.opacity = .45 * (1 - pr); });
@@ -991,17 +1360,27 @@ function frame() {
   });
   fl.instanceMatrix.needsUpdate = true;
 
-  updateHouse();
+  updateHouse(); updateTV();
+  wand.active = false; wandStick.visible = feather.visible = false;
   people.forEach(p => updatePerson(p, sdt));
   updatePlay(sdt);
   cats.forEach(c => updateCat(c, sdt));
   people.forEach(p => updateBubble(p, false, sdt)); cats.forEach(c => updateBubble(c, true, sdt));
 
   const st = [
-    ...people.map(p => `<b>${p.name}</b>${p.mode === 'act' ? SPOTS[p.spot].icon + ' ' + SPOTS[p.spot].label : '🚶 heading to the ' + ROOM_NAME[roomOf(SPOTS[p.target].x, SPOTS[p.target].z)]}`),
-    ...cats.map(c => `<b>${c.name}</b>${c.mode === 'playing' || c.mode === 'playWait' || c.pendingAct === 'playWait' && c.mode === 'walk' ? '🧶 playing with ' + cats.find(o => o !== c).name
-      : c.mode === 'act' ? (CAT_ICON[c.act] || '🐾') + ' ' + CAT_LABEL[c.act] : '🐾 trotting around'}`)].join('<br>');
-  if (st !== lastStatus) { document.getElementById('status').innerHTML = st; lastStatus = st; }
+    ...people.map(p => `${p.mode === 'act' ? SPOTS[p.spot].icon + ' ' + SPOTS[p.spot].label + (p.lapCat && p.lapCat.act === 'lap' && p.lapCat.mode === 'act' ? ` · ${p.lapCat.name} on lap` : '') : '🚶 heading to the ' + ROOM_NAME[roomOf(SPOTS[p.target].x, SPOTS[p.target].z)]}`),
+    ...cats.map(c => `${c.mode === 'playing' || c.mode === 'playWait' || c.pendingAct === 'playWait' && c.mode === 'walk' ? '🧶 playing with ' + cats.find(o => o !== c).name
+      : c.mode === 'act' ? (CAT_ICON[c.act] || '🐾') + ' ' + (c.act === 'lap' ? `curled up on ${c.lapOf ? c.lapOf.name + "'s" : 'a'} lap` : CAT_LABEL[c.act]) : '🐾 trotting around'}`)];
+  const left = people.map(p => p.cmd ? `${Math.max(1, Math.ceil(p.cmd.until - simT))} min left` : '');
+  const key = st.join('|') + left.join('|');
+  if (key !== lastStatus) {
+    lastStatus = key;
+    people.forEach((p, i) => {
+      document.getElementById(`st${i}`).textContent = st[i]; document.getElementById(`left${i}`).textContent = left[i];
+      document.getElementById(`bar${i}`).style.width = p.cmd ? `${100 * Math.max(0, p.cmd.until - simT) / p.cmd.dur}%` : '0%';
+    });
+    cats.forEach((c, i) => document.getElementById(`cst${i}`).textContent = st[people.length + i]);
+  }
 
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
