@@ -37,7 +37,7 @@
   <button id="speed">Speed 1×</button>
   <button id="music">♪ Music: off</button>
 </div>
-<div id="note" class="panel">Drag to look around · scroll or pinch to zoom</div>
+<div id="note" class="panel">Drag to move around · scroll wheel or pinch to zoom · two-finger swipe to pan</div>
 </div>
 <script type="module">
 import * as THREE from 'three';
@@ -89,7 +89,15 @@ cv.addEventListener('pointermove', e => {
 const endPointer = e => { pointers.delete(e.pointerId); if (!pointers.size) cv.style.cursor = 'grab'; };
 cv.addEventListener('pointerup', endPointer); cv.addEventListener('pointercancel', endPointer);
 // zoom the house (never the browser page) on scroll or trackpad pinch (ctrlKey) anywhere on the page
-addEventListener('wheel', e => { e.preventDefault(); zoomBy(Math.exp(-e.deltaY * (e.ctrlKey ? .01 : .0015))); }, { passive: false });
+// mouse wheel zooms; trackpad two-finger swipe pans; trackpad pinch (ctrlKey) zooms
+const isTrackpad = e => e.deltaX !== 0 || (e.wheelDeltaY ? e.wheelDeltaY === -3 * e.deltaY : e.deltaMode === 0 && Math.abs(e.deltaY) < 40);
+addEventListener('wheel', e => {
+  e.preventDefault();
+  if (e.ctrlKey) zoomBy(Math.exp(-e.deltaY * .01));
+  else if (isTrackpad(e)) panBy(-e.deltaX, -e.deltaY);
+  else zoomBy(Math.exp(-e.deltaY * .0015));
+}, { passive: false });
+cv.addEventListener('contextmenu', e => e.preventDefault());   // right-drag pans too
 ['gesturestart', 'gesturechange'].forEach(t => addEventListener(t, e => e.preventDefault()));
 // if the browser is zoomed anyway, keep the panels pinned to the visible corners
 const vv = window.visualViewport;
@@ -355,7 +363,10 @@ B(.6, .02, .5, M('#2a2624'), 2.0, .97, -3.15);
 B(.55, .4, .03, M('#3a3432'), 2.0, .45, -2.83);
 const ovenGlow = B(.35, .15, .02, M('#a85a2a', { emissive: '#ff7a2a', emissiveIntensity: 0 }), 2.0, .5, -2.81);
 C(.15, .13, .2, 12, '#8a8f94', 2.0, 1.08, -3.15); C(.16, .16, .02, 12, '#b8bcc0', 2.0, 1.19, -3.15);
-B(.55, .03, .4, M('#b8bcc0'), 3.6, .96, -3.15); B(.03, .25, .03, M('#b8bcc0'), 3.6, 1.08, -3.38);
+B(.55, .03, .4, M('#b8bcc0'), 3.6, .96, -3.15);
+B(.4, .025, .26, lightWood, 1.05, .97, -3.12);
+[[.95, '#e07b39'], [1.02, '#e07b39'], [1.15, '#7d9a58']].forEach(([x, c], i) => { const v = C(.022, .015, .14, 6, c, x, 1.0, -3.1 + i * .04); v.rotation.z = Math.PI / 2; });
+B(.16, .01, .03, M('#b8bcc0'), 1.2, .99, -3.2); B(.03, .25, .03, M('#b8bcc0'), 3.6, 1.08, -3.38);
 [3.0, 3.25, 0.55].forEach((x, i) => plant(i === 2 ? 'small' : 'succulent', x, -3.2, i === 2 ? .9 : 1.1, scene, .96));
 B(.7, 1.8, .65, M('#e8dfd0'), 4.6, .9, -3.12); B(.03, .5, .03, M('#b8bcc0'), 4.3, 1.2, -2.78);
 const steam = Array.from({ length: 5 }, (_, i) => { const s = Sph(.06, new THREE.MeshBasicMaterial({ color: '#f3e9da', transparent: true, depthWrite: false }), 2.0, 1.3, -3.15, scene, 6); s.castShadow = false; s.userData.o = i / 5; return s; });
@@ -594,6 +605,7 @@ function stepPath(a, dt, speed) {
 const LIV = [[-1.3, .6], [-2.9, .8]];
 const SPOTS = {
   cook:   { x: 2.0, z: -2.55, h: Math.PI, pose: 'stand', anim: 'stir', icon: '🍲', label: 'cooking soup' },
+  prep:   { x: 1.05, z: -2.55, h: Math.PI, pose: 'stand', anim: 'chop', icon: '🥕', label: 'chopping veggies' },
   wash:   { x: 3.6, z: -2.55, h: Math.PI, pose: 'stand', anim: 'wash', icon: '🫧', label: 'washing up' },
   eat1:   { x: .95, z: -1.4, h: Math.PI / 2, pose: 'sit', anim: 'eat', icon: '🥣', label: 'eating together', via: [[.9, -.6]] },
   eat2:   { x: 2.25, z: -1.4, h: -Math.PI / 2, pose: 'sit', anim: 'eat', icon: '🥣', label: 'eating together' },
@@ -652,8 +664,11 @@ function updateHouse() {
   house.lastMeal = m[1];
   const awake = people.filter(p => !bedtime(p));
   if (!awake.length) return;
-  house.meal = { name: m[1], stage: 'cook', cook: pick(awake), ate: new Set() };
-  Object.assign(SPOTS.cook, { label: `cooking ${m[1]}`, icon: m[2] });
+  const cook = pick(awake), others = awake.filter(p => p !== cook);
+  const helper = others.length && (Q.has('together') || Math.random() < .5) ? others[0] : null;   // sometimes they cook together
+  house.meal = { name: m[1], stage: 'cook', cook, helper, ate: new Set() };
+  Object.assign(SPOTS.cook, { label: helper ? `cooking ${m[1]} together` : `cooking ${m[1]}`, icon: m[2] });
+  SPOTS.prep.label = `chopping veggies for ${m[1]}`;
   SPOTS.eat1.label = SPOTS.eat2.label = `having ${m[1]} together`;
 }
 
@@ -683,6 +698,7 @@ function choosePerson(p) {
   if (bedtime(p)) { const k = ['sleep1', 'sleep2'].find(k => free(k, p)); if (p.spot !== k) return goTo(p, k, SPOTS); p.timer = 5; return; }
   const hm = house.meal;
   if (hm && hm.stage === 'cook' && p === hm.cook) return goTo(p, 'cook', SPOTS);
+  if (hm && hm.stage === 'cook' && p === hm.helper) return goTo(p, 'prep', SPOTS);
   if (hm && hm.stage === 'eat' && !hm.ate.has(p)) { const k = ['eat1', 'eat2'].find(k => free(k, p)); if (k) return goTo(p, k, SPOTS); }
   const evening = hour > 17 || hour < 9;
   const w = { paint: 3, sew: 3, draw: 3, read: 2, nook: 3, browse: 1, knit: 2, tea: 2, plants: 1.2, warm: evening ? 2 : .5, wash: .2 };
@@ -693,7 +709,7 @@ function choosePerson(p) {
 }
 function startPersonAct(p) {
   const sp = SPOTS[p.target]; p.spot = p.target; p.last = p.target; p.mode = 'act';
-  p.x = sp.x; p.z = sp.z; p.heading = sp.h; p.timer = sp.pose === 'lie' ? 9e9 : p.target === 'cook' || sp.anim === 'eat' ? rand(14, 20) : rand(20, 35); p.bubbleT = 0;
+  p.x = sp.x; p.z = sp.z; p.heading = sp.h; p.timer = sp.pose === 'lie' ? 9e9 : p.target === 'cook' || p.target === 'prep' || sp.anim === 'eat' ? rand(14, 20) : rand(20, 35); p.bubbleT = 0;
   if (p.target === 'eat1' || p.target === 'eat2') bowls[p.target === 'eat1' ? 0 : 1].visible = true;
 }
 
@@ -746,6 +762,7 @@ function updatePerson(p, dt) {
     if (sp.pose === 'lie' && !bedtime(p)) p.timer = 0;
     if (bedtime(p) && sp.pose !== 'lie') p.timer = Math.min(p.timer, 2);
     if (hm && hm.stage === 'cook' && p === hm.cook && p.spot !== 'cook') p.timer = Math.min(p.timer, 1.5);
+    if (hm && hm.stage === 'cook' && p === hm.helper) p.timer = p.spot === 'prep' ? Math.max(p.timer, 1) : Math.min(p.timer, 1.5);
     if (hm && hm.stage === 'eat' && !hm.ate.has(p) && !eating && sp.pose !== 'lie') p.timer = Math.min(p.timer, 1.5);
     if (p.spot === 'paint' && Math.random() < dt * 1.2) paintStroke();
     if (p.timer <= 0) {
@@ -764,6 +781,7 @@ function updatePerson(p, dt) {
     if (sp.pose === 'lie') lie = true;
     switch (sp.anim) {
       case 'stir': ax = [-.3, -1.1]; az = [0, Math.sin(T * 3) * .35]; hx = .25; break;
+      case 'chop': ax = [-.9, -1.0 + Math.abs(Math.sin(T * 7)) * .35]; az = [.2, -.1]; hx = .4; break;
       case 'wash': ax = [-1.0, -1.0]; az = [Math.sin(T * 4) * .15, -Math.sin(T * 4) * .15]; hx = .3; break;
       case 'eat': ax = [-.6, -1.0 - (Math.sin(T * 1.6) * .5 + .5) * .9]; hx = .15; break;
       case 'brush': ax = [-.3, -1.5 + Math.sin(T * 1.3) * .25]; az = [0, Math.sin(T * 2.1) * .3]; hx = Math.sin(T * .4) * .08; break;
@@ -782,6 +800,7 @@ function updatePerson(p, dt) {
   r.thighs.forEach((t, i) => { t.position.y = hipY + bob; t.rotation.x = th[i]; r.knees[i].rotation.x = kn[i]; });
   r.arms.forEach((a, i) => { a.rotation.x = ax[i]; a.rotation.z = az[i]; });
   r.head.rotation.x = hx;
+  r.head.rotation.y = sp && sp.anim === 'chop' && Math.sin(T * .5) > .7 ? -.6 : 0;
   r.root.position.set(p.x, lie ? .72 : 0, p.z); r.root.rotation.set(lie ? -Math.PI / 2 : 0, p.heading, 0);
 }
 
