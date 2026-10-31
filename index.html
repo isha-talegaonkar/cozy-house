@@ -23,6 +23,15 @@
 <div id="menu"></div>
 <div id="note" class="panel">Drag to move around · scroll wheel or pinch to zoom · two-finger swipe to pan</div>
 </div>
-<script type="module" src="src/main.js"></script>
+<script>
+  // Show startup problems on screen (handy on phones, where there are no dev tools).
+  function showError(msg) {
+    const put = () => { let d = document.getElementById('err'); if (!d) { d = document.createElement('div'); d.id = 'err'; document.body.appendChild(d); } d.textContent = '⚠️ ' + msg; };
+    document.body ? put() : addEventListener('DOMContentLoaded', put);
+  }
+  addEventListener('error', e => showError(e.message + (e.filename ? ' (' + e.filename.split('/').pop() + ':' + e.lineno + ')' : '')));
+  addEventListener('unhandledrejection', e => showError(String(e.reason)));
+</script>
+<script type="module" src="src/main.js" onerror="showError('Could not load the house code (src/main.js). Check your connection and reload.')"></script>
 </body>
 </html>

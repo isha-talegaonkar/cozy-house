@@ -2,7 +2,8 @@ import * as THREE from 'three';
 
 // ---------------------------------------------------------------- renderer / camera
 export const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const phone = matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 820;
+renderer.setPixelRatio(Math.min(devicePixelRatio, phone ? 1.5 : 2));   // a little lighter on phones to save graphics memory
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -77,3 +78,6 @@ function keyPan(dt) {
   const v = 500 * dt, k = n => keys.has(n);
   panBy((k('arrowleft') || k('a') ? v : 0) - (k('arrowright') || k('d') ? v : 0), (k('arrowup') || k('w') ? v : 0) - (k('arrowdown') || k('s') ? v : 0));
 }
+
+// if the phone runs out of graphics memory and drops the 3D view, say so instead of leaving a blank page
+renderer.domElement.addEventListener('webglcontextlost', e => { e.preventDefault(); window.showError?.('The 3D view was stopped by the browser (probably low graphics memory). Close other tabs and reload.'); });
