@@ -214,8 +214,8 @@ const floors = {
 for (const t of Object.values(floors)) t.magFilter = THREE.NearestFilter;
 floors.K.magFilter = THREE.NearestFilter;
 B(10.4, .4, 7.4, stone, 0, -.25, 0);
-[['B', -2.5, -1.75], ['L', -2.5, 1.75], ['K', 2.5, -1.75], ['S', 2.5, 1.75]].forEach(([k, x, z]) =>
-  B(5, .1, 3.5, M('#ffffff', { map: floors[k], flatShading: false }), x, -.04, z));
+[['B', -2.5, -1.75, 3.5], ['L', -2.5, 1.75, 3.5], ['K', 2.5, -2.05, 2.9], ['S', 2.5, 1.45, 4.1]].forEach(([k, x, z, d]) =>
+  B(5, .1, d, M('#ffffff', { map: floors[k], flatShading: false }), x, -.04, z));
 
 // monstera leaf: heart shape with midrib, veins, edge splits and holes cut out (alpha), gently cupped
 const monsteraTex = canvasTex(256, 256, (g) => {
@@ -354,6 +354,11 @@ function drawTV(t) {   // a slow nature film: sky, drifting sun, parallax hills,
   for (let i = 0; i < 3; i++) { const bx = (t * 14 + i * 22) % 190 - 15, by = 20 + i * 6 + Math.sin(t * 3 + i) * 2; g.beginPath(); g.moveTo(bx - 3, by - 2); g.lineTo(bx, by); g.lineTo(bx + 3, by - 2); g.stroke(); }
   tvTex.needsUpdate = true;
 }
+function hangingPlant(g, s, inside, y = 1.8) {   // pothos in a hanging pot on a wall bracket
+  B(.04, .04, .34, darkWood, s, y + .5, inside * .17, g);
+  C(.004, .004, .46, 4, '#8a7a60', s, y + .27, inside * .32, g);
+  const p = plant('hanging', 0, 0, .85, g); p.position.set(s, y, inside * .32);
+}
 const wallDecor = [
   g => { // north: shelf + trailing pothos + herbs on kitchen sill, frame above bed side
     B(1.7, .05, .28, darkWood, 6.1, 1.9, .2, g);   // ends well short of the kitchen window
@@ -361,19 +366,20 @@ const wallDecor = [
     const p1 = plant('pothos', 0, 0, .8, g); p1.position.set(5.45, 1.93, .2);
     const p2 = plant('pothos', 0, 0, .7, g); p2.position.set(6.75, 1.93, .2);
     sillPlant(g, 8.6, 1, 'small', 1.04); sillPlant(g, 2.3, 1, 'succulent'); sillPlant(g, 3.0, 1, 'small');
+    hangingPlant(g, 4.2, 1); hangingPlant(g, 9.75, 1, 2.05);
     B(.5, .6, .04, frameMat, .9, 1.7, .08, g); B(.42, .52, .02, M('#e6b77a'), .9, 1.7, .1, g); Sph(.12, M('#c9763f'), .9, 1.68, .11, g).scale.z = .2;
   },
-  g => { sillPlant(g, 1.5, -1, 'succulent'); sillPlant(g, 1.95, -1, 'small'); sillPlant(g, 8.1, -1, 'small'); },
+  g => { sillPlant(g, 1.5, -1, 'succulent'); sillPlant(g, 1.95, -1, 'small'); sillPlant(g, 8.1, -1, 'small'); hangingPlant(g, 2.7, -1); hangingPlant(g, 9.2, -1); },
   g => { // west: chimney breast, mantel art, hanging planter, bedroom sill
     B(1.2, 1.4, .4, stone, 5.325, 1.9, -.25, g);
     B(1.05, .62, .05, M('#1a1614'), 5.325, 1.95, -.47, g);
     const scr = add(new THREE.PlaneGeometry(.97, .55), tvMat, 5.325, 1.95, -.5, g); scr.rotation.y = Math.PI; scr.castShadow = false;
-    sillPlant(g, 1.7, -1, 'small'); sillPlant(g, 2.1, -1, 'succulent');
+    sillPlant(g, 1.7, -1, 'small'); sillPlant(g, 2.1, -1, 'succulent'); hangingPlant(g, 4.3, -1);
     B(.04, .04, .35, darkWood, 3.0, 2.25, -.2, g); add(new THREE.CylinderGeometry(.003, .003, .4), M('#3a2418'), 3.0, 2.05, -.37, g);
     const hp = plant('pothos', 0, 0, .75, g); hp.position.set(3.0, 1.75, -.37);
   },
   g => { // east: kitchen + studio sills, pin board
-    sillPlant(g, 2.07, 1, 'small', 1.04); sillPlant(g, 5.55, 1, 'succulent');
+    sillPlant(g, 2.07, 1, 'small', 1.04); sillPlant(g, 5.55, 1, 'succulent'); hangingPlant(g, 4.0, 1); hangingPlant(g, 6.6, 1);
     B(.9, .6, .04, M('#b98a5e'), 4.1, 1.75, .09, g);
     ['#f6efe2', '#e6c48a', '#c9763f', '#8fa07a'].forEach((c, i) => B(.22, .26, .01, M(c), 3.8 + (i % 2) * .38, 1.62 + Math.floor(i / 2) * .28, .12, g));
   },
@@ -385,7 +391,8 @@ const walls = EXT.map((w, i) => ({
 }));
 // interior walls are always cut away (Sims-style)
 buildWall(0, -3.5, 0, 3.5, LOW_H, [door(5.9)]);
-buildWall(-5, 0, 5, 0, LOW_H, [door(3.8), door(7.6)]);
+buildWall(-5, 0, 0, 0, LOW_H, [door(3.8)]);
+buildWall(0, -.6, 5, -.6, LOW_H, [door(2.6)]);   // kitchen / hobby room wall, set back to give the hobby room more space
 
 // ---------------------------------------------------------------- plants
 function plant(kind, x, z, s = 1, parent = scene, y = 0) {
@@ -407,7 +414,9 @@ function plant(kind, x, z, s = 1, parent = scene, y = 0) {
   } else if (kind === 'fiddle') {
     C(.18, .14, .34, 18, pot, 0, .17, 0, g);
     C(.025, .03, 1.3, 6, '#5a3d28', 0, .95, 0, g);
-    for (let i = 0; i < 11; i++) leaf('fiddle', g, 0, .75 + i * .085, 0, i * 2.4, rand(.55, .95), .9 + (i % 3) * .1);
+    [[.5, .9], [-.6, 1.05]].forEach(([tilt, yy], b) => { const br = group(0, yy, 0, b * 2.6, g); C(.012, .016, .35, 5, '#5a3d28', 0, .16, 0, br).rotation.z = tilt;
+      for (let i = 0; i < 5; i++) leaf('fiddle', br, -Math.sin(tilt) * .3, .28 + i * .03, 0, i * 1.3, rand(.5, 1.0), rand(1.0, 1.25)); });
+    for (let i = 0; i < 20; i++) leaf('fiddle', g, 0, .6 + i * .05, 0, i * 2.4, rand(.45, 1.05), rand(1.05, 1.35));
   } else if (kind === 'pothos' || kind === 'hanging') {   // trailing vines of heart leaves
     C(.1, .08, .14, 18, pot, 0, .07, 0, g);
     for (let i = 0; i < 7; i++) leaf('heart', g, 0, .13, 0, i / 7 * Math.PI * 2, rand(.6, 1.1), 1.2);
@@ -458,7 +467,7 @@ const fire = group(-4.5, .06, 1.75);
 const flames = [['#c2401f', .16, .45], ['#f07b2a', .12, .34], ['#ffd05a', .07, .22]].flatMap(([c, r, h], k) =>
   [-.12, 0, .12].map(dz => { const f = add(new THREE.ConeGeometry(r, h, 6), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: .9 }), .02 * k, .1 + h / 2, dz, fire); f.castShadow = false; f.userData = { h, k: k * 3 + dz * 10 }; return f; }));
 const tvLight = new THREE.PointLight('#a8c4ff', 0, 0, 2); tvLight.position.set(-4.0, 1.8, 1.75); scene.add(tvLight);
-const popcorn = group(-2.25, .43, 1.75); popcorn.visible = false;
+const popcorn = group(-2.25, .43, 1.65); popcorn.visible = false;
 C(.11, .07, .08, 12, '#c9512c', 0, .04, 0, popcorn); for (let i = 0; i < 9; i++) Sph(.03, '#f6e7a8', Math.cos(i) * .06, .09 + (i % 3) * .015, Math.sin(i) * .06, popcorn, 5);
 const fireLight = new THREE.PointLight('#ff8a3d', 6, 0, 1.6); fireLight.position.set(-4.0, .7, 1.75); scene.add(fireLight);
 const candleFlames = [1.2, 1.4].map(z => { C(.035, .035, .2, 8, '#efe2c4', -4.5, 1.5, z); const f = Sph(.028, new THREE.MeshBasicMaterial({ color: '#ffcf6b' }), -4.5, 1.63, z, scene, 6); f.castShadow = false; return f; });
@@ -468,14 +477,22 @@ const rug = C(1.1, 1.1, .02, 32, '#8e3b2f', -3.25, .01, 1.75); rug.scale.z = .8;
 C(.9, .9, .025, 32, '#c46a4a', -3.25, .01, 1.75).scale.z = .8;
 
 const sofaMat = fabric('#6f7d4e'), sofaBase = fabric('#5d6840');
-soft(.86, .26, 1.62, .07, sofaBase, -2.15, .13, 1.75);                                  // base
-[1.4, 2.1].forEach(z => soft(.74, .17, .69, .08, sofaMat, -2.19, .335, z));            // seat cushions
-soft(.26, .96, 1.62, .1, sofaBase, -1.84, .48, 1.75);                                   // back frame
-[1.4, 2.1].forEach(z => soft(.2, .44, .67, .09, sofaMat, -1.99, .62, z).rotation.z = -.12);   // back cushions
-[.96, 2.54].forEach(z => soft(.88, .56, .22, .1, sofaBase, -2.15, .28, z));            // rolled arms
+// L-shaped sofa: main run faces the fireplace, the return wraps around toward it at the far end
+soft(.86, .26, 1.82, .07, sofaBase, -2.15, .13, 1.85);                                  // main base
+[1.35, 1.95].forEach(z => soft(.74, .17, .6, .08, sofaMat, -2.19, .335, z));           // main seat cushions
+soft(.74, .17, .5, .08, sofaMat, -2.19, .335, 2.5);                                     // corner cushion
+soft(.26, .96, 1.82, .1, sofaBase, -1.84, .48, 1.85);                                   // main back
+[1.35, 1.95, 2.5].forEach(z => soft(.2, .44, .58, .09, sofaMat, -1.99, .62, z).rotation.z = -.12);
+soft(.88, .56, .22, .1, sofaBase, -2.15, .28, .96);                                     // arm by the window
+soft(.8, .26, .82, .07, sofaBase, -2.95, .13, 2.35);                                    // return base
+soft(.74, .17, .62, .08, sofaMat, -2.95, .335, 2.28);                                   // return cushion
+soft(.84, .96, .26, .1, sofaBase, -2.97, .48, 2.64);                                    // return back
+soft(.67, .44, .2, .09, sofaMat, -2.95, .62, 2.48).rotation.x = .12;
+soft(.22, .56, .82, .1, sofaBase, -3.37, .28, 2.35);                                    // return arm
 soft(.16, .3, .36, .08, fabric('#c9763f'), -2.02, .66, 1.12).rotation.set(.2, 0, -.15);
-soft(.16, .3, .36, .08, fabric('#e6c48a'), -2.02, .66, 2.38).rotation.set(-.2, 0, -.15);
-soft(.62, .04, .7, .02, fabric('#e6c48a'), -2.2, .45, 2.2);                            // throw blanket
+soft(.32, .3, .16, .08, fabric('#e6c48a'), -2.15, .66, 2.48).rotation.set(-.15, .7, 0);
+soft(.32, .3, .16, .08, fabric('#b5543f'), -3.15, .66, 2.47).rotation.set(-.15, 0, 0);
+soft(.6, .04, .5, .02, fabric('#e6c48a'), -2.85, .44, 2.25);                            // throw blanket on the return
 
 const arm = group(-3.85, 0, .55, -.6);
 soft(.72, .26, .72, .07, fabric('#a04a37'), 0, .13, 0, arm); soft(.56, .16, .58, .08, fabric('#b5543f'), 0, .34, .04, arm);
@@ -548,14 +565,6 @@ plant('succulent', -1.15, -3.0, 1, scene, .5);
 B(.55, 1.9, 1.1, darkWood, -4.7, .95, -.7); B(.02, 1.7, .02, M('#3a2418'), -4.42, .95, -.7);
 B(2.6, .02, 1.0, M('#e6c48a'), -2.5, .01, -.65);
 plant('snake', -0.4, -3.1, 1.1);
-B(.55, .05, 1.0, lightWood, -.42, .74, -2.25); [[-.66, -2.7], [-.18, -2.7], [-.66, -1.8], [-.18, -1.8]].forEach(([x, z]) => B(.04, .72, .04, darkWood, x, .36, z));
-const monitorMat = new THREE.MeshBasicMaterial({ map: screenTex, color: '#222222' });
-C(.08, .1, .02, 10, '#2a2624', -.28, .775, -2.25); B(.03, .2, .04, M('#2a2624'), -.27, .88, -2.25);
-B(.04, .38, .64, M('#2a2624'), -.25, 1.1, -2.25);
-add(new THREE.PlaneGeometry(.6, .34), monitorMat, -.274, 1.1, -2.25).rotation.y = -Math.PI / 2;
-B(.16, .02, .44, M('#e9e1d2'), -.56, .775, -2.25); B(.09, .02, .06, M('#e9e1d2'), -.56, .775, -1.93);
-C(.04, .035, .09, 8, '#8fa07a', -.55, .81, -2.62); plant('succulent', -.3, -1.95, 1.1, scene, .765);
-chair(-1.0, -2.25, Math.PI / 2, '#b98a5e');
 plant('fern', -4.6, -1.85, .9);
 plant('monstera', -4.55, -3.1, .9);
 
@@ -586,21 +595,20 @@ C(.12, .12, .2, 10, '#c9a36b', 3.05, 1.06, -3.3);   // coffee bean jar
 const coffeeSteam = Array.from({ length: 3 }, (_, i) => { const s = Sph(.025, new THREE.MeshBasicMaterial({ color: '#f3e9da', transparent: true, depthWrite: false }), 2.8, 1.1, -3.1, scene, 6); s.castShadow = false; s.userData.o = i / 3; return s; });
 B(.7, 1.8, .65, M('#e8dfd0'), 4.6, .9, -3.12); B(.03, .5, .03, M('#b8bcc0'), 4.3, 1.2, -2.78);
 const steam = Array.from({ length: 5 }, (_, i) => { const s = Sph(.06, new THREE.MeshBasicMaterial({ color: '#f3e9da', transparent: true, depthWrite: false }), 2.0, 1.3, -3.15, scene, 6); s.castShadow = false; s.userData.o = i / 5; return s; });
-C(.55, .55, .05, 18, wood, 1.6, .75, -1.4); C(.06, .1, .75, 8, darkWood, 1.6, .37, -1.4);
-chair(.95, -1.4, Math.PI / 2); chair(2.25, -1.4, -Math.PI / 2);
-const bowls = [1.25, 1.95].map(x => { C(.1, .07, .06, 12, '#efe2c4', x, .81, -1.4); return C(.085, .085, .01, 12, '#c9763f', x, .84, -1.4); });
-C(.03, .03, .18, 8, '#efe2c4', 1.6, .87, -1.25); const tableCandle = Sph(.028, new THREE.MeshBasicMaterial({ color: '#ffcf6b' }), 1.6, .99, -1.25, scene, 6);
-plant('succulent', 1.6, -1.6, 1.2, scene, .78);
-add(new THREE.CylinderGeometry(.005, .005, .8), '#3a2418', 1.6, 2.2, -1.4);
-shades.push(lampShade(1.6, 1.75, -1.4, scene, '#e6c48a'));
-pointLight('#ffc27a', 1.6, 1.6, -1.4, 2.5);
+C(.5, .5, .05, 18, wood, 1.6, .75, -1.65); C(.06, .1, .75, 8, darkWood, 1.6, .37, -1.65);
+chair(.95, -1.65, Math.PI / 2); chair(2.25, -1.65, -Math.PI / 2);
+const bowls = [1.27, 1.93].map(x => { C(.1, .07, .06, 12, '#efe2c4', x, .81, -1.65); return C(.085, .085, .01, 12, '#c9763f', x, .84, -1.65); });
+C(.03, .03, .18, 8, '#efe2c4', 1.6, .87, -1.5); const tableCandle = Sph(.028, new THREE.MeshBasicMaterial({ color: '#ffcf6b' }), 1.6, .99, -1.5, scene, 6);
+plant('succulent', 1.6, -1.82, 1.2, scene, .78);
+add(new THREE.CylinderGeometry(.005, .005, .8), '#3a2418', 1.6, 2.2, -1.65);
+shades.push(lampShade(1.6, 1.75, -1.65, scene, '#e6c48a'));
+pointLight('#ffc27a', 1.6, 1.6, -1.65, 2.5);
 const stoveGlow = new THREE.PointLight('#ffb070', 0, 0, 2); stoveGlow.position.set(2.0, 1.4, -2.8); scene.add(stoveGlow);
-[[4.15, '#6a8aa8'], [4.6, '#c98a9a']].forEach(([x, c]) => { C(.1, .08, .06, 12, c, x, .03, -.68); C(.08, .08, .01, 12, '#8a5a3a', x, .06, -.68); });
-B(.8, .01, .35, M('#c9a36b'), 4.38, .005, -.68);
-plant('fiddle', .35, -.35, .95);
-plant('monstera', 4.6, -1.55, .85);
+[[-1.2, '#6a8aa8'], [-1.65, '#c98a9a']].forEach(([z, c]) => { C(.1, .08, .06, 12, c, 4.62, .03, z); C(.08, .08, .01, 12, '#8a5a3a', 4.62, .06, z); });
+B(.35, .01, .8, M('#c9a36b'), 4.62, .005, -1.42);
+plant('fiddle', .35, -1.05, .95);
 
-// --- studio: easel, sewing table, drawing desk
+// --- studio: easel, crochet chair, drawing desk
 const paintTex = canvasTex(96, 128, (g, w, h) => { g.fillStyle = '#f6efe2'; g.fillRect(0, 0, w, h); });
 const paintCtx = paintTex.userData.canvas.getContext('2d');
 let strokes = 0;
@@ -625,12 +633,15 @@ B(.4, .55, .4, darkWood, 1.0, .275, 2.55); B(.25, .02, .18, M('#efe2c8'), 1.0, .
 ['#c9512c', '#3f6a6a', '#f0a640', '#7d8a58'].forEach((c, i) => C(.02, .02, .01, 8, c, .93 + (i % 2) * .1, .58, 2.5 + Math.floor(i / 2) * .08));
 for (let i = 0; i < 3; i++) B(.04, .6 - i * .08, .5, M(['#e9e1d2', '#c9763f', '#7d8a58'][i]), 1.0 + i * .06, .3 - i * .04, 3.2).rotation.z = .2;
 
-const sew = group(4.55, 0, 1.15);
-B(.6, .05, .95, lightWood, 0, .74, 0, sew); [[-.25, -.42], [.25, -.42], [-.25, .42], [.25, .42]].forEach(([a, b]) => B(.04, .72, .04, darkWood, a, .36, b, sew));
-B(.2, .14, .38, M('#e9e1d2'), .05, .84, -.05, sew); B(.2, .2, .08, M('#e9e1d2'), .05, 1.0, -.2, sew); B(.2, .07, .3, M('#e9e1d2'), .05, 1.08, -.05, sew);
-B(.32, .01, .4, M('#c96a68'), -.12, .77, .2, sew);
-C(.06, .06, .08, 10, '#3f6a6a', .15, .81, .38, sew);
-chair(3.95, 1.15, Math.PI / 2, '#b98a5e');
+// crochet corner: a soft armchair facing into the room, yarn basket and a granny-square throw
+const cro = group(.5, 0, -.12, Math.PI / 4);
+soft(.68, .26, .68, .07, fabric('#c98a8a'), 0, .13, 0, cro); soft(.54, .16, .56, .08, fabric('#d9a0a0'), 0, .34, .04, cro);
+soft(.7, .88, .2, .1, fabric('#c98a8a'), 0, .44, -.29, cro); soft(.16, .56, .68, .08, fabric('#c98a8a'), -.33, .28, 0, cro); soft(.16, .56, .68, .08, fabric('#c98a8a'), .33, .28, 0, cro);
+const granny = canvasTex(64, 64, g => { const cs = ['#efe2c8', '#c9763f', '#7d9a8a', '#e6c48a', '#b5543f']; for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) for (let r = 0; r < 3; r++) { g.fillStyle = cs[(i + j + r) % 5]; g.fillRect(i * 16 + r * 2.5, j * 16 + r * 2.5, 16 - r * 5, 16 - r * 5); } });
+granny.magFilter = THREE.NearestFilter;
+soft(.5, .03, .55, .015, M('#ffffff', { map: granny, flatShading: false }), .05, .62, -.2, cro).rotation.x = .9;
+C(.18, .15, .2, 14, '#b98a5e', 1.15, .1, -.35);
+[['#c96a68', 1.1, -.39], ['#7d9a8a', 1.21, -.35], ['#e6c48a', 1.13, -.27]].forEach(([c, x, z]) => Sph(.06, fabric(c), x, .22, z, scene, 12));
 
 const desk = group(4.55, 0, 2.75);
 B(.6, .05, 1.0, lightWood, 0, .74, 0, desk); [[-.25, -.45], [.25, -.45], [-.25, .45], [.25, .45]].forEach(([a, b]) => B(.04, .72, .04, darkWood, a, .36, b, desk));
@@ -644,21 +655,36 @@ C(.04, .04, .1, 8, '#c9763f', .15, .82, .35, desk);
 C(.01, .01, .35, 6, '#3a2418', .18, .93, -.35, desk); shades.push(lampShade(.1, 1.1, -.3, desk, '#e6c48a'));
 pointLight('#ffc27a', 4.3, 1.2, 2.5, 1.8);
 chair(3.95, 2.75, Math.PI / 2, '#b98a5e');
-C(.9, .9, .02, 28, '#d9a46a', 2.85, .01, 2.0).scale.z = .75;
+const hobbyRug = canvasTex(256, 256, (g) => {   // round woven rug: sage field, cream and terracotta rings, little dots
+  const ring = (r, c) => { g.fillStyle = c; g.beginPath(); g.arc(128, 128, r, 0, 7); g.fill(); };
+  ring(128, '#efe2c8'); ring(118, '#8fa58a'); ring(104, '#efe2c8'); ring(98, '#c97a5a'); ring(90, '#9fb39a'); ring(56, '#efe2c8'); ring(50, '#d9a46a'); ring(20, '#efe2c8');
+  for (let i = 0; i < 18; i++) { const a = i / 18 * Math.PI * 2; g.fillStyle = i % 2 ? '#c97a5a' : '#efe2c8'; g.beginPath(); g.arc(128 + Math.cos(a) * 74, 128 + Math.sin(a) * 74, 6, 0, 7); g.fill(); }
+  for (let i = 0; i < 2500; i++) { g.fillStyle = `rgba(${Math.random() < .5 ? '255,255,255' : '60,40,30'},.06)`; g.fillRect(Math.random() * 256, Math.random() * 256, 2, 2); }
+});
+add(new THREE.CylinderGeometry(.95, .95, .02, 48), new THREE.MeshStandardMaterial({ map: hobbyRug, roughness: 1 }), 2.85, .01, 2.0).scale.z = .78;
 C(.22, .18, .2, 12, '#b98a5e', 1.45, .1, 3.2);
 const yarn = Sph(.08, M('#c96a68', { flatShading: false }), 2.85, .08, 2.0, scene, 12);
 Sph(.06, M('#7d8a58', { flatShading: false }), 1.4, .22, 3.17); Sph(.06, M('#e6c48a', { flatShading: false }), 1.51, .22, 3.23);
-plant('monstera', .4, .4, 1);
+plant('monstera', .35, 1.4, .9);
 const wand = { active: false, pos: new THREE.Vector3() }, UP = new THREE.Vector3(0, 1, 0), tmpV = new THREE.Vector3();
 const wandStick = add(new THREE.CylinderGeometry(.007, .007, 1, 4), '#8a5634', 0, 0, 0); wandStick.castShadow = false;
 const feather = add(new THREE.ConeGeometry(.04, .17, 5), M('#e85d8a'), 0, 0, 0);
 wandStick.visible = feather.visible = false;
 plant('snake', 4.65, .35, 1);
-plant('fern', .35, 1.25, .8);
-plant('fiddle', 1.15, .35, .8);
+plant('monstera', 4.6, -.25, .85);
+plant('fiddle', 3.8, -.3, .8);
 
 // studio bookshelf (against the kitchen-side wall)
-const sShelf = bookcase(2.0, .25, 0, 1.1, 1);
+const sShelf = bookcase(2.1, -.38, 0, 1.1, 1);
+// computer desk (moved here from the bedroom)
+const pcDesk = group(4.55, 0, 1.1, -Math.PI / 2);   // local +z faces the person at the desk
+B(1.0, .05, .55, lightWood, 0, .74, 0, pcDesk); [[-.46, -.23], [.46, -.23], [-.46, .23], [.46, .23]].forEach(([x, z]) => B(.04, .72, .04, darkWood, x, .36, z, pcDesk));
+const monitorMat = new THREE.MeshBasicMaterial({ map: screenTex, color: '#222222' });
+C(.1, .08, .02, 10, '#2a2624', 0, .775, -.17, pcDesk); B(.04, .2, .03, M('#2a2624'), 0, .88, -.18, pcDesk);
+B(.64, .38, .04, M('#2a2624'), 0, 1.1, -.21, pcDesk); add(new THREE.PlaneGeometry(.6, .34), monitorMat, 0, 1.1, -.187, pcDesk);
+B(.44, .02, .16, M('#e9e1d2'), 0, .775, .11, pcDesk); B(.06, .02, .09, M('#e9e1d2'), .32, .775, .11, pcDesk);
+C(.04, .035, .09, 8, '#8fa07a', -.4, .81, -.14, pcDesk); plant('succulent', .38, -.17, 1.1, pcDesk, .765);
+chair(3.95, 1.1, Math.PI / 2, '#b98a5e');
 plant('pothos', 0, 0, .9, sShelf, 1.82).position.x = -.3;
 plant('small', 0, 0, .8, sShelf, 1.82).position.x = .3;
 plant('succulent', 0, 0, 1.1, sShelf, .52).position.x = .3;
@@ -868,7 +894,8 @@ function makePerson(c) {
   C(.012, .012, .3, 5, '#8a5634', 0, -.12, .05, duster).rotation.x = .4; Sph(.07, M('#e9c9e0'), 0, -.27, .12, duster, 8);
   const pad = group(.23, -.42, .06, 0, arms[0]); B(.2, .04, .1, M('#2a2a32'), 0, 0, 0, pad); Sph(.012, M('#e85d5d'), .05, .025, 0, pad, 6); Sph(.012, M('#5d9ae8'), -.05, .025, 0, pad, 6);
   const bowl = group(.2, -.44, .1, 0, arms[0]); C(.09, .06, .08, 14, smooth('#efe2c8'), 0, 0, 0, bowl); C(.075, .075, .01, 14, smooth('#e8d2a0'), 0, .035, 0, bowl);
-  return { root, body, arms, head, thighs, knees, book, mug, can, rake, broom, vac, duster, pad, bowl };
+  const yarn = group(.2, -.44, .08, 0, arms[0]); Sph(.05, fabric('#c96a68'), 0, 0, 0, yarn, 10); C(.006, .006, .14, 5, '#d9c9a0', -.1, .03, 0, yarn).rotation.z = 1.2;
+  return { root, body, arms, head, thighs, knees, book, mug, can, rake, broom, vac, duster, pad, bowl, yarn };
 }
 function makeCat(col, accent) {
   const root = new THREE.Group(); scene.add(root);
@@ -890,8 +917,8 @@ function makeCat(col, accent) {
 
 // ---------------------------------------------------------------- navigation
 const ORDER = ['B', 'L', 'S', 'K'];
-const DOORS = { 'B-L': { B: [-.8, -.5], L: [-.8, .5] }, 'L-S': { L: [-.5, 2.8], S: [.5, 2.8] }, 'S-K': { S: [3.0, .5], K: [3.0, -.5] }, 'L-Y': { L: [-1.0, 3.0], Y: [-1.0, 4.4] } };
-const roomOf = (x, z) => Math.abs(x) > 5 || Math.abs(z) > 3.5 ? 'Y' : x < 0 ? (z < 0 ? 'B' : 'L') : (z < 0 ? 'K' : 'S');
+const DOORS = { 'B-L': { B: [-.8, -.5], L: [-.8, .5] }, 'L-S': { L: [-.5, 2.8], S: [.5, 2.8] }, 'S-K': { S: [3.0, -.1], K: [3.0, -1.1] }, 'L-Y': { L: [-1.0, 3.0], Y: [-1.0, 4.4] } };
+const roomOf = (x, z) => Math.abs(x) > 5 || Math.abs(z) > 3.5 ? 'Y' : x < 0 ? (z < 0 ? 'B' : 'L') : (z < -.6 ? 'K' : 'S');
 const ADJ = { B: ['L'], L: ['B', 'S', 'Y'], S: ['L', 'K'], K: ['S'], Y: ['L'] };
 function roomRoute(a, b) {   // breadth-first search over rooms
   const prev = { [a]: null }, q = [a];
@@ -925,21 +952,21 @@ const SPOTS = {
   prep:   { x: 1.05, z: -2.55, h: Math.PI, pose: 'stand', anim: 'chop', icon: '🥕', label: 'chopping veggies', share: ['bake'] },
   bake:   { x: 1.05, z: -2.55, h: Math.PI, pose: 'stand', anim: 'mix', icon: '🧁', label: 'baking cookies', share: ['prep'] },
   wash:   { x: 3.6, z: -2.55, h: Math.PI, pose: 'stand', anim: 'wash', icon: '🫧', label: 'washing up' },
-  eat1:   { x: .95, z: -1.4, h: Math.PI / 2, pose: 'sit', anim: 'eat', icon: '🥣', label: 'eating together', via: [[.9, -.6]] },
-  eat2:   { x: 2.25, z: -1.4, h: -Math.PI / 2, pose: 'sit', anim: 'eat', icon: '🥣', label: 'eating together' },
+  eat1:   { x: .95, z: -1.65, h: Math.PI / 2, pose: 'sit', anim: 'eat', icon: '🥣', label: 'eating together', via: [[.95, -1.1]] },
+  eat2:   { x: 2.25, z: -1.65, h: -Math.PI / 2, pose: 'sit', anim: 'eat', icon: '🥣', label: 'eating together' },
   paint:  { x: 1.75, z: 1.8, h: -Math.PI / 2, pose: 'stand', anim: 'brush', icon: '🎨', label: 'painting' },
-  sew:    { x: 3.95, z: 1.15, h: Math.PI / 2, pose: 'sit', anim: 'sew', icon: '🧵', label: 'sewing a quilt' },
+  crochet: { x: .53, z: -.09, h: Math.PI / 4, pose: 'sit', anim: 'crochet', icon: '🧶', label: 'crocheting a blanket' },
   draw:   { x: 3.95, z: 2.75, h: Math.PI / 2, pose: 'sit', anim: 'draw', icon: '✏️', label: 'sketching', share: ['laptop'] },
   laptop: { x: 3.95, z: 2.75, h: Math.PI / 2, pose: 'sit', anim: 'type', icon: '💻', label: 'on the laptop', share: ['draw'] },
-  computer: { x: -1.0, z: -2.25, h: Math.PI / 2, pose: 'sit', anim: 'type', icon: '🖥️', label: 'working on the computer' },
+  computer: { x: 3.95, z: 1.1, h: Math.PI / 2, pose: 'sit', anim: 'type', icon: '🖥️', label: 'working on the computer' },
   playcats: { x: -1.6, z: -.65, h: -Math.PI / 2, pose: 'floor', anim: 'wand', icon: '🪶', label: 'playing with the cats' },
-  tv1:    { x: -2.2, z: 1.4, h: -Math.PI / 2, pose: 'sit', anim: 'watch', icon: '📺', label: 'watching TV', via: LIV, share: ['knit', 'games'] },
-  tv2:    { x: -2.2, z: 2.1, h: -Math.PI / 2, pose: 'sit', anim: 'watch', icon: '📺', label: 'watching TV', via: LIV, share: ['tea', 'football', 'sofa'] },
-  games:  { x: -2.2, z: 1.4, h: -Math.PI / 2, pose: 'sit', anim: 'gamepad', icon: '🎮', label: 'playing video games', via: LIV, share: ['knit', 'tv1'] },
-  football: { x: -2.2, z: 2.1, h: -Math.PI / 2, pose: 'sit', anim: 'football', icon: '⚽', label: 'watching football', via: LIV, share: ['tea', 'tv2', 'sofa'] },
+  tv1:    { x: -2.2, z: 1.35, h: -Math.PI / 2, pose: 'sit', anim: 'watch', icon: '📺', label: 'watching TV', via: LIV, share: ['knit', 'games'] },
+  tv2:    { x: -2.2, z: 1.95, h: -Math.PI / 2, pose: 'sit', anim: 'watch', icon: '📺', label: 'watching TV', via: LIV, share: ['tea', 'football', 'sofa'] },
+  games:  { x: -2.2, z: 1.35, h: -Math.PI / 2, pose: 'sit', anim: 'gamepad', icon: '🎮', label: 'playing video games', via: LIV, share: ['knit', 'tv1'] },
+  football: { x: -2.2, z: 1.95, h: -Math.PI / 2, pose: 'sit', anim: 'football', icon: '⚽', label: 'watching football', via: LIV, share: ['tea', 'tv2', 'sofa'] },
   read:   { x: -3.82, z: .6, h: -.6, pose: 'sit', anim: 'read', icon: '📖', label: 'reading by the fire', via: [[-1.3, .6]] },
-  knit:   { x: -2.2, z: 1.4, h: -Math.PI / 2, pose: 'sit', anim: 'knit', icon: '🧶', label: 'knitting', via: LIV, share: ['tv1', 'games'] },
-  tea:    { x: -2.2, z: 2.1, h: -Math.PI / 2, pose: 'sit', anim: 'tea', icon: '☕', label: 'sipping tea', via: LIV, share: ['tv2', 'football', 'sofa'] },
+  knit:   { x: -2.2, z: 1.35, h: -Math.PI / 2, pose: 'sit', anim: 'knit', icon: '🧶', label: 'knitting', via: LIV, share: ['tv1', 'games'] },
+  tea:    { x: -2.2, z: 1.95, h: -Math.PI / 2, pose: 'sit', anim: 'tea', icon: '☕', label: 'sipping tea', via: LIV, share: ['tv2', 'football', 'sofa'] },
   warm:   { x: -3.75, z: 1.75, h: -Math.PI / 2, pose: 'stand', anim: 'warm', icon: '🔥', label: 'warming up by the fire', via: LIV },
   patio1: { x: -4.75, z: 7.4, h: Math.PI / 2, pose: 'sit', anim: 'tea', icon: '☕', label: 'tea on the patio' },
   patio2: { x: -3.65, z: 7.4, h: -Math.PI / 2, pose: 'sit', anim: 'tea', icon: '☕', label: 'tea on the patio' },
@@ -950,29 +977,29 @@ const SPOTS = {
   stroll1: { x: 0, z: 6.0, h: Math.PI / 2, pose: 'stand', anim: 'stroll', icon: '🚶', label: 'going for a walk', loop: { cx: 0, cz: 0, rx: 7.5, rz: 6.0, speed: .8, laps: 1 } },
   stroll2: { x: 0, z: 6.4, h: Math.PI / 2, pose: 'stand', anim: 'stroll', icon: '🚶', label: 'going for a walk', loop: { cx: 0, cz: 0, rx: 7.9, rz: 6.4, speed: .8, laps: 1 } },
   jog:    { x: 0, z: 5.6, h: Math.PI / 2, pose: 'stand', anim: 'jog', icon: '🏃', label: 'going for a run', loop: { cx: 0, cz: 0, rx: 7.1, rz: 5.6, speed: 2.2, laps: 2 } },
-  sweep:  { x: 1.6, z: -.65, h: Math.PI / 2, pose: 'stand', anim: 'sweep', icon: '🧹', label: 'sweeping the kitchen', loop: { cx: 1.6, cz: -1.4, rx: 1.1, rz: .75, speed: .35, laps: 2 } },
-  vacuum: { x: -3.2, z: 2.55, h: Math.PI / 2, pose: 'stand', anim: 'vacuum', icon: '✨', label: 'vacuuming the living room', via: LIV, loop: { cx: -3.2, cz: 1.75, rx: .65, rz: .8, speed: .3, laps: 2 } },
+  sweep:  { x: 1.6, z: -1.05, h: Math.PI / 2, pose: 'stand', anim: 'sweep', icon: '🧹', label: 'sweeping the kitchen', loop: { cx: 1.6, cz: -1.65, rx: 1.1, rz: .6, speed: .35, laps: 2 } },
+  vacuum: { x: -3.35, z: 1.9, h: Math.PI / 2, pose: 'stand', anim: 'vacuum', icon: '✨', label: 'vacuuming the living room', via: LIV, loop: { cx: -3.35, cz: 1.45, rx: .45, rz: .45, speed: .25, laps: 3 } },
   dust:   { x: -4.25, z: 2.95, h: -Math.PI / 2, pose: 'stand', anim: 'dust', icon: '🪶', label: 'dusting the bookshelf', via: LIV },
   makebed: { x: -2.5, z: -.95, h: Math.PI, pose: 'stand', anim: 'makebed', icon: '🛏️', label: 'making the bed' },
   plants: { x: -.75, z: 1.5, h: Math.PI / 2, pose: 'stand', anim: 'water', icon: '🪴', label: 'watering the plants' },
   nook:   { x: 2.3, z: 3.2, h: Math.PI, pose: 'sit', anim: 'read', icon: '📖', label: 'curled up in the reading nook' },
-  browse: { x: 2.0, z: .85, h: Math.PI, pose: 'stand', anim: 'browse', icon: '📚', label: 'browsing the bookshelf' },
+  browse: { x: 2.1, z: .3, h: Math.PI, pose: 'stand', anim: 'browse', icon: '📚', label: 'browsing the bookshelf' },
   sleep1: { x: -2.95, z: -1.3, h: 0, pose: 'lie', anim: 'sleep', icon: '💤', label: 'sleeping' },
   sleep2: { x: -2.05, z: -1.3, h: 0, pose: 'lie', anim: 'sleep', icon: '💤', label: 'sleeping' },
 };
 const CAT_SPOTS = {
   catbed:  { x: -3.4, z: 2.95, y: .1, h: .8, act: 'nap', via: LIV },
   bedfoot: { x: -2.5, z: -1.5, y: .95, h: Math.PI / 2, act: 'nap' },
-  sofa:    { x: -2.2, z: 2.05, y: .44, h: -2.4, act: 'nap', via: LIV, blockedBy: ['tea', 'tv2', 'football'] },
+  sofa:    { x: -2.95, z: 2.3, y: .44, h: -Math.PI / 2, act: 'nap', via: LIV },   // curled up on the sofa's return
   nookcat: { x: 2.9, z: 3.2, y: .5, h: -Math.PI / 2, act: 'nap' },
-  bowl1:   { x: 4.15, z: -.3, y: 0, h: Math.PI, act: 'eat' },
-  bowl2:   { x: 4.6, z: -.3, y: 0, h: Math.PI, act: 'eat' },
+  bowl1:   { x: 4.25, z: -1.2, y: 0, h: Math.PI / 2, act: 'eat' },
+  bowl2:   { x: 4.25, z: -1.65, y: 0, h: Math.PI / 2, act: 'eat' },
   beg:     { x: 2.55, z: -2.3, y: 0, h: -Math.PI / 2, act: 'beg' },
 };
 const OPEN = { B: [[-1.0, -1.0], [-3.5, -.6], [-3.6, -1.0]], L: [[-1.2, 1.2], [-3.0, 1.2], [-1.2, 3.0], [-3.2, 2.4]],
-               S: [[2.5, 1.0], [3.0, 2.2], [2.0, 2.6], [3.2, .8]], K: [[3.4, -1.2], [.9, -2.5], [2.8, -2.2], [.5, -.6]] };
+               S: [[2.5, 1.0], [3.0, 2.2], [2.0, 2.6], [3.2, .8], [2.0, .6]], K: [[3.4, -1.4], [.9, -2.5], [2.8, -2.2], [.5, -1.1]] };
 const PLAY = { x: 2.85, z: 2.0 }, PLAY_SPOTS = [PLAY, { x: -1.15, z: 2.0 }];
-const LAP = { knit: .56, tea: .56, tv1: .56, tv2: .56, games: .56, football: .56, read: .56, nook: .64 };   // lap height per seat
+const LAP = { crochet: .56, knit: .56, tea: .56, tv1: .56, tv2: .56, games: .56, football: .56, read: .56, nook: .64 };   // lap height per seat
 const WAND_AT = { x: -2.95, z: -.65 };
 const ROOM_NAME = { B: 'bedroom', L: 'living room', S: 'studio', K: 'kitchen', Y: 'garden' };
 
@@ -1035,9 +1062,9 @@ const cats = [
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 let dayIdx = +(Q.get('day') ?? 4);   // start on a Friday
 const weekend = () => dayIdx % 7 >= 5;
-const FAVS = ['paint', 'sew', 'draw', 'laptop', 'computer', 'read', 'nook', 'knit', 'tea', 'playcats', 'rake', 'bench1', 'mums', 'browse', 'bake', 'games', 'football'];
+const FAVS = ['paint', 'crochet', 'draw', 'laptop', 'computer', 'read', 'nook', 'knit', 'tea', 'playcats', 'rake', 'bench1', 'mums', 'browse', 'bake', 'games', 'football'];
 // things each person never chooses (and that don't appear in their menu)
-const DISLIKES = { June: ['games', 'football'], Theo: ['paint', 'sew', 'draw', 'knit', 'bake'] };
+const DISLIKES = { June: ['games', 'football'], Theo: ['paint', 'crochet', 'draw', 'knit', 'bake'] };
 const likes = (p, k) => !(DISLIKES[p.name] || []).includes(k);
 function mood(p) {   // each day everyone fancies different things
   const m = {}; for (const k in SPOTS) m[k] = rand(.4, 1.6);
@@ -1075,7 +1102,7 @@ function choosePerson(p) {
   if (house.walkInvite === p) { house.walkInvite = null; return goTo(p, 'stroll2', SPOTS); }
   if (hour < 11 && !p.hadCoffee && free('coffee', p)) return goTo(p, 'coffee', SPOTS);   // one coffee every morning
   const evening = hour > 17 || hour < 9;
-  const w = { paint: 3, sew: 3, draw: 2.5, laptop: 2, computer: 2.5, bake: weekend() ? 3 : 2, games: 3, football: weekend() && hour > 12 ? 4 : 1.2, read: 2, nook: 3, browse: 1, knit: 2, tea: 2, plants: 1.2, warm: evening ? 2 : .5, wash: .2,
+  const w = { paint: 3, crochet: 3, draw: 2.5, laptop: 2, computer: 2.5, bake: weekend() ? 3 : 2, games: 3, football: weekend() && hour > 12 ? 4 : 1.2, read: 2, nook: 3, browse: 1, knit: 2, tea: 2, plants: 1.2, warm: evening ? 2 : .5, wash: .2,
               playcats: cats.some(wandReady) ? 2.5 : 0, tv1: .5 };
   const g = (house.gardenDay ? 2 : 1) * (weekend() ? 1.5 : 1), partnerOnBench = people.some(q => q !== p && q.mode === 'act' && /^bench/.test(q.spot));
   if (hour >= 9 && hour < 17.5) Object.assign(w, { rake: 1.2 * g, mums: .8 * g, stroll1: 1.2 * g });            // garden time on nice afternoons
@@ -1167,7 +1194,7 @@ function startPlay(a, b, at) {
 // ---------------------------------------------------------------- player choices (dropdown per character)
 const MENU = [
   ['Together', [['T:cook', '🍲 Cook together'], ['T:eat', '🥣 Eat together'], ['T:movie', '🍿 Movie night'], ['T:walk', '🚶 Walk together'], ['T:bench', '🌅 Sit in the garden together'], ['T:patio', '☕ Tea on the patio'], ['T:sleep', '💤 Go to bed']]],
-  ['Creative', [['paint', '🎨 Paint'], ['sew', '🧵 Sew'], ['draw', '✏️ Sketch'], ['knit', '🧶 Knit'], ['bake', '🧁 Bake']]],
+  ['Creative', [['paint', '🎨 Paint'], ['crochet', '🧶 Crochet'], ['draw', '✏️ Sketch'], ['knit', '🧶 Knit'], ['bake', '🧁 Bake']]],
   ['Fun', [['games', '🎮 Video games'], ['football', '⚽ Watch football']]],
   ['Cozy', [['read', '📖 Read by the fire'], ['nook', '📚 Reading nook'], ['tea', '☕ Tea on the sofa'], ['tv1', '📺 Watch TV'], ['warm', '🔥 Warm up by the fire'], ['coffee', '☕ Make coffee'], ['browse', '📚 Browse the bookshelf']]],
   ['Work', [['laptop', '💻 Laptop'], ['computer', '🖥️ Computer']]],
@@ -1239,7 +1266,7 @@ function command(p, value) {
 }
 
 // initial state
-// start asleep in bed if the page opens at night, otherwise painting and sewing
+// start asleep in bed if the page opens at night, otherwise painting and on the laptop
 people.forEach((p, i) => {
   if (i === 0 && Q.has('do')) { p.x = 1.5; p.z = 1.5; p.didForce = true; return goTo(p, Q.get('do'), SPOTS); }   // testing aid: ?do=<activity>
   const k = bedtime(p) ? ['sleep1', 'sleep2'][i] : ['paint', 'laptop'][i]; p.target = k; taken[k] = p; startPersonAct(p);
@@ -1292,7 +1319,7 @@ function updatePerson(p, dt) {
 
   const r = p.rig, sp = p.mode === 'act' ? SPOTS[p.spot] : null, T = simT + p.ph;
   let hipY = .76, th = [0, 0], kn = [0, 0], ax = [0, 0], az = [0, 0], hx = 0, bob = 0, lie = false;
-  r.book.visible = r.mug.visible = r.can.visible = r.rake.visible = r.broom.visible = r.vac.visible = r.duster.visible = r.pad.visible = r.bowl.visible = false;
+  r.book.visible = r.mug.visible = r.can.visible = r.rake.visible = r.broom.visible = r.vac.visible = r.duster.visible = r.pad.visible = r.bowl.visible = r.yarn.visible = false;
   if (p.mode === 'walk') { const s = Math.sin(p.walkPhase); th = [s * .45, -s * .45]; kn = [Math.max(0, -s) * .6, Math.max(0, s) * .6]; ax = [-s * .35, s * .35]; bob = Math.abs(Math.cos(p.walkPhase)) * .025; }
   else if (sp) {
     if (sp.loop && !p.waitFor) {
@@ -1310,7 +1337,7 @@ function updatePerson(p, dt) {
       case 'wash': ax = [-1.0, -1.0]; az = [Math.sin(T * 4) * .15, -Math.sin(T * 4) * .15]; hx = .3; break;
       case 'eat': ax = [-.6, -1.0 - (Math.sin(T * 1.6) * .5 + .5) * .9]; hx = .15; break;
       case 'brush': ax = [-.3, -1.5 + Math.sin(T * 1.3) * .25]; az = [0, Math.sin(T * 2.1) * .3]; hx = Math.sin(T * .4) * .08; break;
-      case 'sew': ax = [-1.1 + Math.sin(T * 6) * .04, -1.1 - Math.sin(T * 6) * .04]; az = [.25, -.25]; hx = .35; break;
+      case 'crochet': ax = [-1.0, -1.05 + Math.sin(T * 6) * .08]; az = [.32, -.3 + Math.sin(T * 6 + 1) * .08]; hx = .35; r.yarn.visible = true; break;
       case 'draw': ax = [-.9, -1.0 + Math.sin(T * 4) * .06]; az = [.2, Math.sin(T * 2.3) * .12 - .1]; hx = .4; break;
       case 'read': ax = [-1.1, -1.1]; az = [.35, -.35]; hx = .3; r.book.visible = true; break;
       case 'knit': ax = [-1.0, -1.0]; az = [.3 + Math.sin(T * 5) * .08, -.3 + Math.sin(T * 5 + 1.5) * .08]; hx = .3; break;
