@@ -9,4 +9,3 @@ Runs entirely in the browser (Three.js, no build step). Open `index.html` or vis
 - ♪ generated ambient music + fire crackle
 - Scroll to zoom
 
-`style-previews/` holds the early style explorations.

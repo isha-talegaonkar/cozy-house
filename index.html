@@ -319,7 +319,7 @@ const door = (s, w = .8) => ({ s, w, y0: 0, y1: 2.15 });
 // in each wall's local frame: x runs along the wall, +z is inside (sign given)
 const EXT = [
   { n: [0, -1], a: [-5.075, -3.5], b: [5.075, -3.5], inside: 1, open: [win(1.775), win(7.775, 1.6, 1.0)] },  // north: bedroom + kitchen windows
-  { n: [0, 1], a: [-5.075, 3.5], b: [5.075, 3.5], inside: -1, open: [win(.975), door(3.675), win(7.375)] }, // south: living window, front door, studio window
+  { n: [0, 1], a: [-5.075, 3.5], b: [5.075, 3.5], inside: -1, open: [win(.975), door(3.675), win(6.825)] }, // south: living window, front door, studio window
   { n: [-1, 0], a: [-5, -3.575], b: [-5, 3.575], inside: -1, open: [win(1.125, 1.3)] },              // west: bedroom window
   { n: [1, 0], a: [5, -3.575], b: [5, 3.575], inside: 1, open: [win(1.375, 1.4, 1.0), win(5.025, 1.1)] },  // east: kitchen + studio windows
 ];
@@ -650,16 +650,16 @@ C(.01, .01, .35, 6, '#3a2418', .18, .93, -.35, desk); shades.push(lampShade(.1, 
 pointLight('#ffc27a', 4.3, 1.2, 2.5, 1.8);
 chair(3.95, 2.75, Math.PI / 2, '#b98a5e');
 C(.9, .9, .02, 28, '#d9a46a', 2.85, .01, 2.0).scale.z = .75;
-C(.22, .18, .2, 12, '#b98a5e', 2.2, .1, 3.2);
+C(.22, .18, .2, 12, '#b98a5e', 1.45, .1, 3.2);
 const yarn = Sph(.08, M('#c96a68', { flatShading: false }), 2.85, .08, 2.0, scene, 12);
-Sph(.06, M('#7d8a58', { flatShading: false }), 2.15, .22, 3.17); Sph(.06, M('#e6c48a', { flatShading: false }), 2.26, .22, 3.23);
+Sph(.06, M('#7d8a58', { flatShading: false }), 1.4, .22, 3.17); Sph(.06, M('#e6c48a', { flatShading: false }), 1.51, .22, 3.23);
 plant('monstera', .4, .4, 1);
 const wand = { active: false, pos: new THREE.Vector3() }, UP = new THREE.Vector3(0, 1, 0), tmpV = new THREE.Vector3();
 const wandStick = add(new THREE.CylinderGeometry(.007, .007, 1, 4), '#8a5634', 0, 0, 0); wandStick.castShadow = false;
 const feather = add(new THREE.ConeGeometry(.04, .17, 5), M('#e85d8a'), 0, 0, 0);
 wandStick.visible = feather.visible = false;
 plant('snake', 4.65, .35, 1);
-plant('fern', 1.8, 3.2, .85);
+plant('fern', .35, 1.25, .8);
 plant('fiddle', 1.15, .35, .8);
 
 // studio bookshelf (against the kitchen-side wall)
@@ -669,14 +669,14 @@ plant('small', 0, 0, .8, sShelf, 1.82).position.x = .3;
 plant('succulent', 0, 0, 1.1, sShelf, .52).position.x = .3;
 
 // reading nook: a window seat under the studio's south window
-B(1.4, .42, .42, lightWood, 3.2, .21, 3.21);
-soft(1.36, .1, .4, .04, fabric('#7d8a58'), 3.2, .46, 3.21);
-[[2.68, '#c9763f'], [2.98, '#e6c48a'], [3.74, '#b5543f']].forEach(([x, c]) => Sph(.14, M(c, { flatShading: false }), x, .62, 3.33, scene, 12).scale.set(1, .9, .45));
-B(.5, .03, .42, M('#c96a68'), 3.55, .515, 3.21);
-[0, 1, 2].forEach(i => B(.22, .05, .16, M(bookCols[i + 2]), 2.62, .525 + i * .05, 3.12).rotation.y = i * .3);
-C(.14, .16, .03, 12, '#3a2418', 4.05, .02, 3.3); C(.012, .012, 1.4, 6, '#3a2418', 4.05, .7, 3.3);
-shades.push(lampShade(4.05, 1.45, 3.3));
-pointLight('#ffc27a', 3.8, 1.3, 3.0, 1.8);
+B(1.4, .42, .42, lightWood, 2.55, .21, 3.21);
+soft(1.36, .1, .4, .04, fabric('#7d8a58'), 2.55, .46, 3.21);
+[[2.03, '#c9763f'], [2.33, '#e6c48a'], [3.09, '#b5543f']].forEach(([x, c]) => Sph(.14, M(c, { flatShading: false }), x, .62, 3.33, scene, 12).scale.set(1, .9, .45));
+B(.5, .03, .42, M('#c96a68'), 2.9, .515, 3.21);
+[0, 1, 2].forEach(i => B(.22, .05, .16, M(bookCols[i + 2]), 1.97, .525 + i * .05, 3.12).rotation.y = i * .3);
+C(.14, .16, .03, 12, '#3a2418', 3.5, .02, 3.3); C(.012, .012, 1.4, 6, '#3a2418', 3.5, .7, 3.3);
+shades.push(lampShade(3.5, 1.45, 3.3));
+pointLight('#ffc27a', 3.25, 1.3, 3.0, 1.8);
 
 // ---------------------------------------------------------------- yard
 const ground = add(new THREE.CircleGeometry(60, 48), '#6e6a3a', 0, -.42, 0); ground.rotation.x = -Math.PI / 2;
@@ -914,12 +914,12 @@ const SPOTS = {
   computer: { x: -1.0, z: -2.25, h: Math.PI / 2, pose: 'sit', anim: 'type', icon: '🖥️', label: 'working on the computer' },
   playcats: { x: -1.6, z: -.65, h: -Math.PI / 2, pose: 'floor', anim: 'wand', icon: '🪶', label: 'playing with the cats' },
   tv1:    { x: -2.2, z: 1.4, h: -Math.PI / 2, pose: 'sit', anim: 'watch', icon: '📺', label: 'watching TV', via: LIV, share: ['knit', 'games'] },
-  tv2:    { x: -2.2, z: 2.1, h: -Math.PI / 2, pose: 'sit', anim: 'watch', icon: '📺', label: 'watching TV', via: LIV, share: ['tea', 'football'] },
+  tv2:    { x: -2.2, z: 2.1, h: -Math.PI / 2, pose: 'sit', anim: 'watch', icon: '📺', label: 'watching TV', via: LIV, share: ['tea', 'football', 'sofa'] },
   games:  { x: -2.2, z: 1.4, h: -Math.PI / 2, pose: 'sit', anim: 'gamepad', icon: '🎮', label: 'playing video games', via: LIV, share: ['knit', 'tv1'] },
-  football: { x: -2.2, z: 2.1, h: -Math.PI / 2, pose: 'sit', anim: 'football', icon: '⚽', label: 'watching football', via: LIV, share: ['tea', 'tv2'] },
+  football: { x: -2.2, z: 2.1, h: -Math.PI / 2, pose: 'sit', anim: 'football', icon: '⚽', label: 'watching football', via: LIV, share: ['tea', 'tv2', 'sofa'] },
   read:   { x: -3.82, z: .6, h: -.6, pose: 'sit', anim: 'read', icon: '📖', label: 'reading by the fire', via: [[-1.3, .6]] },
   knit:   { x: -2.2, z: 1.4, h: -Math.PI / 2, pose: 'sit', anim: 'knit', icon: '🧶', label: 'knitting', via: LIV, share: ['tv1', 'games'] },
-  tea:    { x: -2.2, z: 2.1, h: -Math.PI / 2, pose: 'sit', anim: 'tea', icon: '☕', label: 'sipping tea', via: LIV, share: ['tv2', 'football'] },
+  tea:    { x: -2.2, z: 2.1, h: -Math.PI / 2, pose: 'sit', anim: 'tea', icon: '☕', label: 'sipping tea', via: LIV, share: ['tv2', 'football', 'sofa'] },
   warm:   { x: -3.75, z: 1.75, h: -Math.PI / 2, pose: 'stand', anim: 'warm', icon: '🔥', label: 'warming up by the fire', via: LIV },
   patio1: { x: -4.75, z: 7.4, h: Math.PI / 2, pose: 'sit', anim: 'tea', icon: '☕', label: 'tea on the patio' },
   patio2: { x: -3.65, z: 7.4, h: -Math.PI / 2, pose: 'sit', anim: 'tea', icon: '☕', label: 'tea on the patio' },
@@ -935,7 +935,7 @@ const SPOTS = {
   dust:   { x: -4.25, z: 2.95, h: -Math.PI / 2, pose: 'stand', anim: 'dust', icon: '🪶', label: 'dusting the bookshelf', via: LIV },
   makebed: { x: -2.5, z: -.95, h: Math.PI, pose: 'stand', anim: 'makebed', icon: '🛏️', label: 'making the bed' },
   plants: { x: -.75, z: 1.5, h: Math.PI / 2, pose: 'stand', anim: 'water', icon: '🪴', label: 'watering the plants' },
-  nook:   { x: 2.95, z: 3.2, h: Math.PI, pose: 'sit', anim: 'read', icon: '📖', label: 'curled up in the reading nook' },
+  nook:   { x: 2.3, z: 3.2, h: Math.PI, pose: 'sit', anim: 'read', icon: '📖', label: 'curled up in the reading nook' },
   browse: { x: 2.0, z: .85, h: Math.PI, pose: 'stand', anim: 'browse', icon: '📚', label: 'browsing the bookshelf' },
   sleep1: { x: -2.95, z: -1.3, h: 0, pose: 'lie', anim: 'sleep', icon: '💤', label: 'sleeping' },
   sleep2: { x: -2.05, z: -1.3, h: 0, pose: 'lie', anim: 'sleep', icon: '💤', label: 'sleeping' },
@@ -944,7 +944,7 @@ const CAT_SPOTS = {
   catbed:  { x: -3.4, z: 2.95, y: .1, h: .8, act: 'nap', via: LIV },
   bedfoot: { x: -2.5, z: -1.5, y: .95, h: Math.PI / 2, act: 'nap' },
   sofa:    { x: -2.2, z: 2.05, y: .44, h: -2.4, act: 'nap', via: LIV, blockedBy: ['tea', 'tv2', 'football'] },
-  nookcat: { x: 3.55, z: 3.2, y: .5, h: -Math.PI / 2, act: 'nap' },
+  nookcat: { x: 2.9, z: 3.2, y: .5, h: -Math.PI / 2, act: 'nap' },
   bowl1:   { x: 4.15, z: -.3, y: 0, h: Math.PI, act: 'eat' },
   bowl2:   { x: 4.6, z: -.3, y: 0, h: Math.PI, act: 'eat' },
   beg:     { x: 2.55, z: -2.3, y: 0, h: -Math.PI / 2, act: 'beg' },
@@ -1196,6 +1196,9 @@ function endCommand(p) {
   const together = p.cmd && p.cmd.together; p.cmd = null; selects[people.indexOf(p)].value = '';
   if (together) for (const q of people) if (q.cmd && q.cmd.together === together) { q.cmd = null; selects[people.indexOf(q)].value = ''; q.timer = Math.min(q.timer, 0); }
 }
+function shooCats(key) {   // a napping cat hops off when someone is sent to sit there
+  for (const k of [key, ...(SPOTS[key].share || [])]) { const c = taken[k]; if (c && cats.includes(c)) { release(c); c.timer = 0; } }
+}
 function command(p, value) {
   const dur = chosenDur;   // in-game minutes = sim seconds
   if (p.cmd && p.cmd.together) { const t = p.cmd.together; people.forEach(q => { if (q.cmd && q.cmd.together === t) { q.cmd = null; selects[people.indexOf(q)].value = ''; if (q !== p) q.timer = 0; } }); }
@@ -1204,7 +1207,7 @@ function command(p, value) {
   if (value.startsWith('T:')) {   // together: lock both characters into the pair of spots
     const t = value.slice(2), pair = TOGETHER[t], q = people.find(o => o !== p);
     [p, q].forEach((who, i) => { if (who.cmd && who.cmd.together !== t) who.cmd = null; interrupt(who); who.cmd = { key: pair[i], until: simT + dur, dur, together: t }; selects[people.indexOf(who)].value = value; });
-    goTo(p, pair[0], SPOTS); goTo(q, pair[1], SPOTS);
+    shooCats(pair[0]); shooCats(pair[1]); goTo(p, pair[0], SPOTS); goTo(q, pair[1], SPOTS);
     return;
   }
   const sp = SPOTS[value];
@@ -1212,7 +1215,7 @@ function command(p, value) {
     const q = taken[k];
     if (q && q !== p && people.includes(q)) { if (q.cmd) { q.cmd = null; selects[people.indexOf(q)].value = ''; } interrupt(q); }
   }
-  interrupt(p); p.cmd = { key: value, until: simT + dur, dur }; goTo(p, value, SPOTS);
+  shooCats(value); interrupt(p); p.cmd = { key: value, until: simT + dur, dur }; goTo(p, value, SPOTS);
 }
 
 // initial state
