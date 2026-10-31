@@ -192,7 +192,6 @@ const lerpAngle = (a, b, k) => { let d = ((b - a + Math.PI) % (Math.PI * 2) + Ma
 const wood = M('#8a5634'), darkWood = M('#5e371f'), lightWood = M('#b98a5e');
 const stone = M('#8f857c'), wallMat = M('#ecdcc0'), frameMat = M('#5a3624');
 const terracotta = smooth('#c2683f'), creamPot = smooth('#efe2c8'), sagePot = smooth('#8fa07a');
-const leafG = [smooth('#4f7a43'), smooth('#3f6a3a'), smooth('#5f8a4a'), smooth('#6f9a52')];
 const glassMat = new THREE.MeshStandardMaterial({ color: '#cfe3ef', transparent: true, opacity: .22, roughness: .1, depthWrite: false, side: THREE.DoubleSide });
 
 // ---------------------------------------------------------------- floors
@@ -218,6 +217,81 @@ B(10.4, .4, 7.4, stone, 0, -.25, 0);
 [['B', -2.5, -1.75], ['L', -2.5, 1.75], ['K', 2.5, -1.75], ['S', 2.5, 1.75]].forEach(([k, x, z]) =>
   B(5, .1, 3.5, M('#ffffff', { map: floors[k], flatShading: false }), x, -.04, z));
 
+// monstera leaf: heart shape with midrib, veins, edge splits and holes cut out (alpha), gently cupped
+const monsteraTex = canvasTex(256, 256, (g) => {
+  g.translate(128, 0);
+  const leaf = () => { g.beginPath(); g.moveTo(0, 12); g.bezierCurveTo(70, 18, 122, 70, 120, 140); g.bezierCurveTo(118, 200, 80, 246, 40, 246);
+    g.bezierCurveTo(18, 246, 6, 230, 0, 214); g.bezierCurveTo(-6, 230, -18, 246, -40, 246); g.bezierCurveTo(-80, 246, -118, 200, -120, 140); g.bezierCurveTo(-122, 70, -70, 18, 0, 12); };
+  const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#5f9450'); gr.addColorStop(1, '#3f7238');
+  leaf(); g.fillStyle = gr; g.fill();
+  g.strokeStyle = 'rgba(190,225,160,.55)'; g.lineCap = 'round';
+  g.lineWidth = 5; g.beginPath(); g.moveTo(0, 214); g.lineTo(0, 20); g.stroke();                              // midrib
+  g.lineWidth = 2;
+  for (let i = 0; i < 6; i++) { const y = 50 + i * 30; [-1, 1].forEach(sd => { g.beginPath(); g.moveTo(0, y + 12); g.quadraticCurveTo(sd * 50, y, sd * 108, y - 6 + i * 4); g.stroke(); }); }
+  g.globalCompositeOperation = 'destination-out';                                                              // fenestrations
+  g.lineWidth = 9;
+  for (let i = 0; i < 5; i++) { const y = 64 + i * 32; [-1, 1].forEach(sd => { g.beginPath(); g.moveTo(sd * 130, y - 4 + i * 4); g.quadraticCurveTo(sd * 80, y + 6, sd * 52, y + 20); g.stroke(); }); }
+  for (let i = 0; i < 4; i++) [-1, 1].forEach(sd => { g.beginPath(); g.ellipse(sd * 26, 70 + i * 34, 5, 9, sd * .4, 0, 7); g.fill(); });
+});
+monsteraTex.anisotropy = 4;
+const monsteraGeo = new THREE.PlaneGeometry(.46, .46, 8, 8);
+{ const pos = monsteraGeo.attributes.position; for (let i = 0; i < pos.count; i++) { const x = pos.getX(i), y = pos.getY(i); pos.setZ(i, -x * x * 1.4 - y * y * .4); } monsteraGeo.computeVertexNormals(); }
+const monsteraMats = ['#ffffff', '#e6f0dc', '#d4e4c4'].map(c => new THREE.MeshStandardMaterial({ color: c, map: monsteraTex, alphaTest: .5, side: THREE.DoubleSide, roughness: .7 }));
+
+// ---- leaf textures (drawn once, shared): alpha-cut shapes with veins
+function leafTex(w, h, draw) { const t = canvasTex(w, h, draw); t.anisotropy = 4; return t; }
+const leafMat = (tex, tints = ['#ffffff', '#e2eed6']) => tints.map(c => new THREE.MeshStandardMaterial({ color: c, map: tex, alphaTest: .5, side: THREE.DoubleSide, roughness: .75 }));
+function leafGeo(w, h, cup = 1.2) {   // plane bent into a gentle trough; +y runs from stem to tip
+  const geo = new THREE.PlaneGeometry(w, h, 6, 6), pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) { const x = pos.getX(i) / w, y = pos.getY(i) / h; pos.setZ(i, (-x * x * cup - y * y * .3) * w); }
+  geo.translate(0, h / 2, 0); geo.computeVertexNormals(); return geo;
+}
+const veins = (g, cx, y0, y1, n, spread, col = 'rgba(200,230,170,.55)') => {
+  g.strokeStyle = col; g.lineCap = 'round'; g.lineWidth = 3; g.beginPath(); g.moveTo(cx, y0); g.lineTo(cx, y1); g.stroke(); g.lineWidth = 1.4;
+  for (let i = 1; i <= n; i++) { const y = y0 + (y1 - y0) * i / (n + 1); [-1, 1].forEach(sd => { g.beginPath(); g.moveTo(cx, y); g.quadraticCurveTo(cx + sd * spread * .5, y - 6, cx + sd * spread, y - 14); g.stroke(); }); }
+};
+const ovalTex = leafTex(64, 128, g => {   // generic pointed oval leaf (small plants)
+  g.beginPath(); g.moveTo(32, 124); g.bezierCurveTo(-6, 90, 4, 30, 32, 4); g.bezierCurveTo(60, 30, 70, 90, 32, 124);
+  const gr = g.createLinearGradient(0, 128, 0, 0); gr.addColorStop(0, '#3f7238'); gr.addColorStop(1, '#6a9e52'); g.fillStyle = gr; g.fill();
+  veins(g, 32, 122, 10, 5, 22);
+});
+const fiddleTex = leafTex(96, 128, g => {   // violin-shaped fiddle-leaf fig leaf
+  g.beginPath(); g.moveTo(48, 126); g.bezierCurveTo(26, 120, 20, 96, 26, 80); g.bezierCurveTo(30, 66, 4, 50, 8, 26); g.bezierCurveTo(12, 6, 40, 2, 48, 6);
+  g.bezierCurveTo(56, 2, 84, 6, 88, 26); g.bezierCurveTo(92, 50, 66, 66, 70, 80); g.bezierCurveTo(76, 96, 70, 120, 48, 126);
+  const gr = g.createLinearGradient(0, 128, 0, 0); gr.addColorStop(0, '#2f5a2c'); gr.addColorStop(1, '#4f7f3c'); g.fillStyle = gr; g.fill();
+  veins(g, 48, 124, 8, 6, 36, 'rgba(190,220,150,.6)');
+});
+const heartTex = leafTex(64, 64, g => {   // pothos: heart leaf with cream variegation
+  g.beginPath(); g.moveTo(32, 62); g.bezierCurveTo(10, 50, 2, 26, 12, 12); g.bezierCurveTo(20, 2, 30, 8, 32, 14); g.bezierCurveTo(34, 8, 44, 2, 52, 12); g.bezierCurveTo(62, 26, 54, 50, 32, 62);
+  g.fillStyle = '#4f8a3a'; g.fill(); g.save(); g.clip();
+  g.strokeStyle = 'rgba(240,230,150,.55)'; g.lineWidth = 3; for (let i = 0; i < 5; i++) { g.beginPath(); g.moveTo(32, 60); g.quadraticCurveTo(10 + i * 11, 34, 6 + i * 13, 4); g.stroke(); }
+  g.restore(); g.strokeStyle = 'rgba(200,230,170,.6)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(32, 60); g.lineTo(32, 14); g.stroke();
+});
+heartTex.flipY = false;   // the heart's point should sit at the stem
+const fernTex = leafTex(64, 256, g => {   // fern frond: stem with tapering leaflets
+  g.strokeStyle = '#4f7a3a'; g.lineWidth = 3; g.beginPath(); g.moveTo(32, 254); g.lineTo(32, 6); g.stroke();
+  for (let y = 246; y > 10; y -= 9) {
+    const len = 26 * Math.sin((254 - y) / 250 * Math.PI) + 3;
+    [-1, 1].forEach(sd => { g.fillStyle = (y / 9) % 2 < 1 ? '#5a8f45' : '#4f8240'; g.beginPath(); g.ellipse(32 + sd * len / 2, y - 3, len / 2, 3.6, sd * -.35, 0, 7); g.fill(); });
+  }
+});
+const snakeTex = leafTex(32, 128, g => {   // snake plant: dark bands, yellow edges
+  g.fillStyle = '#3f6a3a'; g.fillRect(0, 0, 32, 128);
+  g.strokeStyle = '#6f9a5a'; g.lineWidth = 3; for (let y = 6; y < 128; y += 11) { g.beginPath(); g.moveTo(4, y); for (let x = 4; x <= 28; x += 4) g.lineTo(x, y + Math.sin(x * .5 + y) * 2.5); g.stroke(); }
+  g.fillStyle = '#d9c25a'; g.fillRect(0, 0, 3, 128); g.fillRect(29, 0, 3, 128);
+});
+const canopyTex = leafTex(128, 128, g => {   // mottled leafy pattern multiplied with each tree's colour
+  g.fillStyle = '#ffffff'; g.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 900; i++) { const v = 170 + Math.random() * 85 | 0; g.fillStyle = `rgba(${v},${v},${v},.6)`; g.beginPath(); g.ellipse(Math.random() * 128, Math.random() * 128, 2.5 + Math.random() * 3, 1.5 + Math.random() * 2, Math.random() * 3, 0, 7); g.fill(); }
+});
+canopyTex.wrapS = canopyTex.wrapT = THREE.RepeatWrapping; canopyTex.repeat.set(3, 3);
+const MAT = { oval: leafMat(ovalTex), fiddle: leafMat(fiddleTex, ['#ffffff', '#dfe9d2']), heart: leafMat(heartTex, ['#ffffff', '#e8f2d8', '#cfe3bf']), fern: leafMat(fernTex), snake: [new THREE.MeshStandardMaterial({ map: snakeTex, roughness: .7 })] };
+const GEO = { oval: leafGeo(.07, .14), fiddle: leafGeo(.2, .26, .8), heart: leafGeo(.075, .075, .9), fern: leafGeo(.15, .55, 1.6) };
+// a leaf on a little pivot: `yaw` around the stem, `tilt` from upright (0) to horizontal (PI/2)
+function leaf(kind, parent, x, y, z, yaw, tilt, s = 1) {
+  const pv = group(x, y, z, yaw, parent); const m = add(GEO[kind], pick(MAT[kind]), 0, 0, 0, pv); m.rotation.x = tilt; m.scale.setScalar(s); m.castShadow = true; return pv;
+}
+
 // ---------------------------------------------------------------- walls (tall + cutaway versions)
 const WALL_H = 2.6, LOW_H = .5, WT = .15;
 function buildWall(ax, az, bx, bz, h, openings, decorate) {
@@ -240,16 +314,16 @@ function buildWall(ax, az, bx, bz, h, openings, decorate) {
   if (decorate) decorate(g);
   return g;
 }
-const win = (s, w = 1.2) => ({ s, w, y0: 1.0, y1: 2.15 });
+const win = (s, w = 1.6, y0 = .8, y1 = 2.3) => ({ s, w, y0, y1 });   // big windows for lots of light
 const door = (s, w = .8) => ({ s, w, y0: 0, y1: 2.15 });
 // in each wall's local frame: x runs along the wall, +z is inside (sign given)
 const EXT = [
-  { n: [0, -1], a: [-5.075, -3.5], b: [5.075, -3.5], inside: 1, open: [win(1.975), win(8.075)] },  // north: bedroom + kitchen windows
-  { n: [0, 1], a: [-5.075, 3.5], b: [5.075, 3.5], inside: -1, open: [win(1.175), door(3.675), win(7.675)] }, // south: living window, front door, studio window
-  { n: [-1, 0], a: [-5, -3.575], b: [-5, 3.575], inside: -1, open: [win(1.375, 1.0)] },              // west: bedroom window
-  { n: [1, 0], a: [5, -3.575], b: [5, 3.575], inside: 1, open: [win(1.575, 1.0), win(5.175, .8)] },  // east: kitchen + studio windows
+  { n: [0, -1], a: [-5.075, -3.5], b: [5.075, -3.5], inside: 1, open: [win(1.775), win(7.775, 1.6, 1.0)] },  // north: bedroom + kitchen windows
+  { n: [0, 1], a: [-5.075, 3.5], b: [5.075, 3.5], inside: -1, open: [win(.975), door(3.675), win(7.375)] }, // south: living window, front door, studio window
+  { n: [-1, 0], a: [-5, -3.575], b: [-5, 3.575], inside: -1, open: [win(1.125, 1.3)] },              // west: bedroom window
+  { n: [1, 0], a: [5, -3.575], b: [5, 3.575], inside: 1, open: [win(1.375, 1.4, 1.0), win(5.025, 1.1)] },  // east: kitchen + studio windows
 ];
-const sillPlant = (g, s, inside, kind) => { const p = plant(kind, 0, 0, .8, g); p.position.set(s, 1.04, inside * .12); };
+const sillPlant = (g, s, inside, kind, y = .84) => { const p = plant(kind, 0, 0, .8, g); p.position.set(s, y, inside * .12); };
 const tvTex = canvasTex(160, 90, () => {}), tvCtx = tvTex.userData.canvas.getContext('2d');
 const tvMat = new THREE.MeshBasicMaterial({ map: tvTex, color: '#111111' });
 const TV_SCENES = [['#f4ad6c', '#c96a68', '#2f5a7a', '#1f3f5a'], ['#cfe6da', '#8fbf9a', '#4f7a43', '#2f4f2f'], ['#dfe6f2', '#9fb0cf', '#f4f6fa', '#b9c4d6']];
@@ -287,11 +361,11 @@ function drawTV(t) {   // a slow nature film: sky, drifting sun, parallax hills,
 }
 const wallDecor = [
   g => { // north: shelf + trailing pothos + herbs on kitchen sill, frame above bed side
-    B(3.0, .05, .28, darkWood, 7.05, 1.9, .2, g);
+    B(1.7, .05, .28, darkWood, 6.1, 1.9, .2, g);   // ends well short of the kitchen window
     [['#c9a36b', .2], ['#8e3b2f', .15], ['#e6c48a', .17]].forEach(([c, h], i) => C(.07, .07, h, 8, c, 5.9 + i * .45, 1.93 + h / 2, .2, g));
-    const p1 = plant('pothos', 0, 0, .8, g); p1.position.set(7.8, 1.93, .2);
-    const p2 = plant('pothos', 0, 0, .7, g); p2.position.set(8.4, 1.93, .2);
-    sillPlant(g, 8.4, 1, 'small'); sillPlant(g, 2.3, 1, 'succulent'); sillPlant(g, 3.0, 1, 'small');
+    const p1 = plant('pothos', 0, 0, .8, g); p1.position.set(5.45, 1.93, .2);
+    const p2 = plant('pothos', 0, 0, .7, g); p2.position.set(6.75, 1.93, .2);
+    sillPlant(g, 8.6, 1, 'small', 1.04); sillPlant(g, 2.3, 1, 'succulent'); sillPlant(g, 3.0, 1, 'small');
     B(.5, .6, .04, frameMat, .9, 1.7, .08, g); B(.42, .52, .02, M('#e6b77a'), .9, 1.7, .1, g); Sph(.12, M('#c9763f'), .9, 1.68, .11, g).scale.z = .2;
   },
   g => { sillPlant(g, 1.5, -1, 'succulent'); sillPlant(g, 1.95, -1, 'small'); sillPlant(g, 8.1, -1, 'small'); },
@@ -304,7 +378,7 @@ const wallDecor = [
     const hp = plant('pothos', 0, 0, .75, g); hp.position.set(3.0, 1.75, -.37);
   },
   g => { // east: kitchen + studio sills, pin board
-    sillPlant(g, 2.07, 1, 'small'); sillPlant(g, 5.55, 1, 'succulent');
+    sillPlant(g, 2.07, 1, 'small', 1.04); sillPlant(g, 5.55, 1, 'succulent');
     B(.9, .6, .04, M('#b98a5e'), 4.1, 1.75, .09, g);
     ['#f6efe2', '#e6c48a', '#c9763f', '#8fa07a'].forEach((c, i) => B(.22, .26, .01, M(c), 3.8 + (i % 2) * .38, 1.62 + Math.floor(i / 2) * .28, .12, g));
   },
@@ -322,34 +396,41 @@ buildWall(-5, 0, 5, 0, LOW_H, [door(3.8), door(7.6)]);
 function plant(kind, x, z, s = 1, parent = scene, y = 0) {
   const g = group(x, y, z, rand(0, 6), parent); g.scale.setScalar(s);
   const pot = pick([terracotta, creamPot, sagePot]);
-  const lm = () => pick(leafG);
   if (kind === 'monstera') {
     C(.2, .15, .32, 18, pot, 0, .16, 0, g);
     for (let i = 0; i < 7; i++) {
       const a = i / 7 * Math.PI * 2, h = .5 + (i % 3) * .18, L = new THREE.Group(); L.position.set(0, .3, 0); L.rotation.y = a; g.add(L);
       add(new THREE.CylinderGeometry(.01, .01, h), '#4a6a3a', 0, h / 2, .05, L).rotation.x = .3;
-      const leaf = Sph(.2, lm(), 0, h, .22, L, 16); leaf.scale.set(1, .12, 1.2); leaf.rotation.x = .35;
+      const lf = add(monsteraGeo, pick(monsteraMats), 0, h, .2, L); lf.rotation.set(Math.PI / 2 + .3, 0, rand(-.2, .2));
     }
   } else if (kind === 'snake') {
     C(.14, .12, .28, 18, pot, 0, .14, 0, g);
-    for (let i = 0; i < 6; i++) { const b = soft(.07, rand(.5, .8), .025, .012, smooth(i % 2 ? '#3f6a3a' : '#5a7a3a'), rand(-.06, .06), .55, rand(-.06, .06), g); b.rotation.set(rand(-.15, .15), rand(0, 3), rand(-.15, .15)); }
+    for (let i = 0; i < 7; i++) { const h = rand(.5, .8), b = soft(.075, h, .025, .012, MAT.snake[0], rand(-.06, .06), .26 + h / 2, rand(-.06, .06), g); b.rotation.set(rand(-.15, .15), rand(0, 3), rand(-.15, .15)); }
   } else if (kind === 'fern') {
     C(.18, .14, .26, 18, pot, 0, .13, 0, g);
-    for (let i = 0; i < 10; i++) { const L = group(0, .28, 0, i / 10 * Math.PI * 2, g); const f = Sph(.06, lm(), 0, .1, .22, L, 12); f.scale.set(1, .25, 4); f.rotation.x = -.5 + (i % 2) * .25; }
+    for (let i = 0; i < 14; i++) leaf('fern', g, 0, .26, 0, i / 14 * Math.PI * 2 + rand(-.1, .1), rand(.75, 1.15), rand(.8, 1.05));
   } else if (kind === 'fiddle') {
     C(.18, .14, .34, 18, pot, 0, .17, 0, g);
     C(.025, .03, 1.3, 6, '#5a3d28', 0, .95, 0, g);
-    for (let i = 0; i < 9; i++) { const l = Sph(.13, lm(), Math.cos(i * 2.4) * .14, .8 + i * .1, Math.sin(i * 2.4) * .14, g, 14); l.scale.set(1, .5, 1.3); l.rotation.set(rand(-.4, .4), i * 2.4, 0); }
-  } else if (kind === 'pothos') {
+    for (let i = 0; i < 11; i++) leaf('fiddle', g, 0, .75 + i * .085, 0, i * 2.4, rand(.55, .95), .9 + (i % 3) * .1);
+  } else if (kind === 'pothos' || kind === 'hanging') {   // trailing vines of heart leaves
     C(.1, .08, .14, 18, pot, 0, .07, 0, g);
-    Sph(.12, lm(), 0, .17, 0, g, 14).scale.y = .6;
-    for (let v = 0; v < 4; v++) { const a = v / 4 * Math.PI * 2 + .4; for (let k = 0; k < 6; k++) Sph(.045, lm(), Math.cos(a) * (.12 + k * .012), .1 - k * .1, Math.sin(a) * (.12 + k * .012), g, 6); }
+    for (let i = 0; i < 7; i++) leaf('heart', g, 0, .13, 0, i / 7 * Math.PI * 2, rand(.6, 1.1), 1.2);
+    const vines = kind === 'hanging' ? 6 : 4, len = kind === 'hanging' ? 11 : 6;
+    for (let v = 0; v < vines; v++) {
+      const a = v / vines * Math.PI * 2 + .4, n = len - (v % 3) * 2;
+      for (let k = 0; k < n; k++) {
+        const r = .11 + k * .01, yy = .1 - k * .085, sway = Math.sin(k * .9 + v) * .03;
+        if (k % 2 === 0) C(.004, .004, .1, 4, '#4f7a3a', Math.cos(a) * r, yy, Math.sin(a) * r, g);
+        leaf('heart', g, Math.cos(a) * r + sway, yy, Math.sin(a) * r, a + Math.PI / 2 + (k % 2 ? .9 : -.9), Math.PI - .4, rand(.9, 1.2));
+      }
+    }
   } else if (kind === 'succulent') {
     C(.07, .06, .08, 18, pot, 0, .04, 0, g);
     for (let i = 0; i < 6; i++) { const c = add(new THREE.ConeGeometry(.03, .1, 10), smooth('#8fae7a'), Math.cos(i) * .03, .12, Math.sin(i) * .03, g); c.rotation.set(Math.cos(i) * .5, 0, Math.sin(i) * .5); }
-  } else { // small leafy
+  } else { // small leafy: a bushy cluster of oval leaves
     C(.1, .08, .14, 18, pot, 0, .07, 0, g);
-    add(new THREE.IcosahedronGeometry(.13, 2), lm(), 0, .22, 0, g); add(new THREE.IcosahedronGeometry(.09, 2), lm(), .07, .3, .03, g);
+    for (let i = 0; i < 16; i++) leaf('oval', g, rand(-.03, .03), .13 + (i % 4) * .03, rand(-.03, .03), i * 2.39, rand(.2, 1.1), rand(.9, 1.3));
   }
   return g;
 }
@@ -611,7 +692,7 @@ function mum(x, z, c) { Sph(.22, smooth(c), x, -.25, z, scene, 18).scale.y = .7;
 [[-4.3, 3.9, '#e8a23a'], [-3.2, 3.9, '#b5543f'], [1.0, 3.9, '#e8c25a'], [3.2, 3.9, '#c9512c'], [4.4, 3.9, '#e8a23a']].forEach(a => mum(...a));
 // hedges
 [[-5.6, -2.5], [-5.6, -.5], [-5.6, 1.0], [5.6, -2.8], [5.6, -.2], [5.6, 2.6], [-3.5, -4.1], [-1.5, -4.1], [1.0, -4.1], [3.0, -4.1]].forEach(([x, z]) =>
-  add(new THREE.IcosahedronGeometry(.42, 3), pick([smooth('#4f6a3a'), smooth('#5a7040'), smooth('#7a6a30')]), x, -.15, z).scale.y = .8);
+  add(new THREE.IcosahedronGeometry(.42, 3), pick(['#4f6a3a', '#5a7040', '#7a6a30'].map(c => M(c, { flatShading: false, map: canopyTex }))), x, -.15, z).scale.y = .8);
 // fence
 const pickets = new THREE.InstancedMesh(new THREE.BoxGeometry(.09, .7, .05), M('#e9dcc4'), 300);
 let pc = 0; const F = 12;
@@ -634,7 +715,7 @@ const postLight = pointLight('#ffcf8a', .5, 1.7, 7.0, 5);
 
 const fallCols = ['#e07b39', '#c9512c', '#f0a640', '#a8432a', '#d9893a', '#b8862a'];
 // garden bench + raked leaf pile
-const bench = group(4.0, -.4, 7.2);
+const bench = group(4.0, -.4, 7.2, Math.PI);   // faces out over the garden
 B(1.3, .06, .45, wood, 0, .45, 0, bench); B(1.3, .4, .06, wood, 0, .72, .22, bench);
 [[-.55, -.18], [.55, -.18], [-.55, .18], [.55, .18]].forEach(([x, z]) => B(.06, .45, .06, darkWood, x, .22, z, bench));
 B(.4, .04, .4, wood, 1.0, .5, 0, bench); B(.05, .5, .05, darkWood, 1.0, .25, 0, bench);
@@ -642,22 +723,31 @@ C(.06, .05, .1, 8, '#efe2c4', 1.0, .57, .05, bench); C(.03, .03, .06, 8, '#b5543
 const leafPile = group(2.65, -.4, 6.75);
 for (let i = 0; i < 40; i++) { const a = rand(0, 6.28), r = Math.sqrt(Math.random()) * .45; const l = Sph(.07, pick(fallCols.map(c => M(c))), Math.cos(a) * r, .05 + (.45 - r) * .35, Math.sin(a) * r, leafPile, 5); l.scale.set(1, .35, .8); }
 let pileLevel = .15;
+const patio = group(-4.2, -.4, 7.4);
+C(1.25, 1.25, .04, 32, smooth('#b9ad9c'), 0, .02, 0, patio);
+for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2; C(.16, .17, .045, 7, smooth('#a39a8e'), Math.cos(a) * 1.05, .025, Math.sin(a) * 1.05, patio); }
+C(.36, .36, .03, 24, smooth('#3a3a3a'), 0, .73, 0, patio); C(.025, .025, .7, 8, '#3a3a3a', 0, .37, 0, patio); C(.2, .22, .03, 16, '#3a3a3a', 0, .02, 0, patio);
+B(.1, .14, .1, M('#2a2624'), .1, .82, -.08, patio); const lantern = Sph(.035, M('#ffcf6b', { emissive: '#ffb347', emissiveIntensity: 0 }), .1, .82, -.08, patio, 8);
+C(.05, .04, .07, 10, smooth('#efe2c4'), -.12, .78, .1, patio); C(.05, .04, .07, 10, smooth('#efe2c4'), .14, .78, .12, patio);
+plant('small', -.9, -.75, 1.2, patio); plant('fern', .95, -.8, .9, patio);
+[[-.55, Math.PI / 2], [.55, -Math.PI / 2]].forEach(([x, h]) => { const ch = chair(-4.2 + x, 7.4, h, '#3a3a3a'); ch.position.y = -.4; });
+const patioLight = pointLight('#ffcf8a', -4.1, .6, 7.3, 1.5);
 
 // trees (leaves fall from these)
 const trees = [];
 function tree(x, z, s, kind = 'fall') {
   const g = group(x, -.4, z), mats = [];
-  const mm = c => { const m = M(c, { transparent: true, flatShading: false }); mats.push(m); return m; };
+  const mm = (c, leafy) => { const m = M(c, { transparent: true, flatShading: false, ...(leafy ? { map: canopyTex } : {}) }); mats.push(m); return m; };
   if (kind === 'pine') {
     add(new THREE.CylinderGeometry(.12 * s, .18 * s, 1 * s, 6), mm('#3b2418'), 0, .5 * s, 0, g);
-    [[1.3, 1.6, 1.4], [1.0, 1.4, 2.3], [.7, 1.2, 3.1]].forEach(([r, h, y]) => add(new THREE.ConeGeometry(r * s, h * s, 18), mm(pick(['#3f5a3a', '#355034'])), 0, y * s, 0, g));
+    [[1.3, 1.6, 1.4], [1.0, 1.4, 2.3], [.7, 1.2, 3.1]].forEach(([r, h, y]) => add(new THREE.ConeGeometry(r * s, h * s, 18), mm(pick(['#3f5a3a', '#355034']), true), 0, y * s, 0, g));
   } else {
     const trunk = mm('#4a3020');
     add(new THREE.CylinderGeometry(.13 * s, .22 * s, 2 * s, 12), trunk, 0, 1 * s, 0, g);
     const br = add(new THREE.CylinderGeometry(.05 * s, .08 * s, .9 * s, 5), trunk, .25 * s, 1.8 * s, 0, g); br.rotation.z = -.6;
     const cols = [pick(fallCols), pick(fallCols), pick(fallCols)];
     [[0, 2.6, 0, 1.0], [.6, 2.3, .3, .75], [-.6, 2.4, -.2, .8], [.1, 3.2, .1, .7], [-.2, 2.2, .6, .6]].forEach(([dx, dy, dz, r], i) =>
-      add(new THREE.IcosahedronGeometry(r * s, 3), mm(cols[i % 3]), dx * s, dy * s, dz * s, g));
+      add(new THREE.IcosahedronGeometry(r * s, 3), mm(cols[i % 3], true), dx * s, dy * s, dz * s, g));
   }
   trees.push({ g, mats, x, z, top: (kind === 'pine' ? 2.6 : 2.6) * s - .4, r: 1.0 * s, decid: kind !== 'pine', op: 1 });
 }
@@ -831,9 +921,11 @@ const SPOTS = {
   knit:   { x: -2.2, z: 1.4, h: -Math.PI / 2, pose: 'sit', anim: 'knit', icon: '🧶', label: 'knitting', via: LIV, share: ['tv1', 'games'] },
   tea:    { x: -2.2, z: 2.1, h: -Math.PI / 2, pose: 'sit', anim: 'tea', icon: '☕', label: 'sipping tea', via: LIV, share: ['tv2', 'football'] },
   warm:   { x: -3.75, z: 1.75, h: -Math.PI / 2, pose: 'stand', anim: 'warm', icon: '🔥', label: 'warming up by the fire', via: LIV },
+  patio1: { x: -4.75, z: 7.4, h: Math.PI / 2, pose: 'sit', anim: 'tea', icon: '☕', label: 'tea on the patio' },
+  patio2: { x: -3.65, z: 7.4, h: -Math.PI / 2, pose: 'sit', anim: 'tea', icon: '☕', label: 'tea on the patio' },
   rake:   { x: 2.2, z: 6.4, h: .9, pose: 'stand', anim: 'rake', icon: '🍂', label: 'raking leaves in the garden' },
-  bench1: { x: 3.7, z: 7.2, h: Math.PI, pose: 'sit', anim: 'tea', icon: '🍵', label: 'enjoying the garden' },
-  bench2: { x: 4.3, z: 7.2, h: Math.PI, pose: 'sit', anim: 'tea', icon: '🍵', label: 'enjoying the garden' },
+  bench1: { x: 4.3, z: 7.2, h: 0, pose: 'sit', anim: 'tea', icon: '🍵', label: 'enjoying the garden' },
+  bench2: { x: 3.7, z: 7.2, h: 0, pose: 'sit', anim: 'tea', icon: '🍵', label: 'enjoying the garden' },
   mums:   { x: -3.7, z: 4.55, h: Math.PI, pose: 'stand', anim: 'water', icon: '🌼', label: 'watering the mums', via: [[-2.0, 4.9]] },
   stroll1: { x: 0, z: 6.0, h: Math.PI / 2, pose: 'stand', anim: 'stroll', icon: '🚶', label: 'going for a walk', loop: { cx: 0, cz: 0, rx: 7.5, rz: 6.0, speed: .8, laps: 1 } },
   stroll2: { x: 0, z: 6.4, h: Math.PI / 2, pose: 'stand', anim: 'stroll', icon: '🚶', label: 'going for a walk', loop: { cx: 0, cz: 0, rx: 7.9, rz: 6.4, speed: .8, laps: 1 } },
@@ -929,7 +1021,7 @@ const DISLIKES = { June: ['games', 'football'], Theo: ['paint', 'sew', 'draw', '
 const likes = (p, k) => !(DISLIKES[p.name] || []).includes(k);
 function mood(p) {   // each day everyone fancies different things
   const m = {}; for (const k in SPOTS) m[k] = rand(.4, 1.6);
-  m.fav = pick(FAVS.filter(k => likes(p, k))); m[m.fav] *= 3.5; m.bench2 = m.bench1; return m;
+  m.fav = pick(FAVS.filter(k => likes(p, k))); m[m.fav] *= 3.5; m.bench2 = m.bench1; m.patio2 = m.patio1; return m;
 }
 function planDay(p, i) {
   Object.assign(p, { mood: mood(p), recent: [], wake: 6.2 + i * .4 + rand(0, .4) + (weekend() ? 1.2 : 0), bed: 21.6 + i * .4 + rand(0, .4) + (weekend() ? .6 : 0) });
@@ -968,6 +1060,8 @@ function choosePerson(p) {
   const g = (house.gardenDay ? 2 : 1) * (weekend() ? 1.5 : 1), partnerOnBench = people.some(q => q !== p && q.mode === 'act' && /^bench/.test(q.spot));
   if (hour >= 9 && hour < 17.5) Object.assign(w, { rake: 1.2 * g, mums: .8 * g, stroll1: 1.2 * g });            // garden time on nice afternoons
   if (hour >= 9 && hour < 21) w.bench1 = w.bench2 = (partnerOnBench ? 6 : hour >= 17.5 ? 1.8 : 1) * g;          // incl. sunset + stargazing
+  const partnerOnPatio = people.some(q => q !== p && q.mode === 'act' && /^patio/.test(q.spot));
+  if (hour >= 8 && hour < 20.5) w.patio1 = w.patio2 = (partnerOnPatio ? 6 : 1) * g;
   if ((hour >= 7 && hour < 10) || (hour >= 16 && hour < 18)) w.jog = hour < 10 ? 1.6 : .8;                    // morning / late-afternoon runs
   const c = house.cleanDay ? 4 : .35;                                                                            // cleaning, mostly on cleaning days
   Object.assign(w, { sweep: c, vacuum: c, dust: c * .8, makebed: hour < 12 ? 1 + c : 0 });
@@ -1052,16 +1146,16 @@ function startPlay(a, b, at) {
 
 // ---------------------------------------------------------------- player choices (dropdown per character)
 const MENU = [
-  ['Together', [['T:cook', '🍲 Cook together'], ['T:eat', '🥣 Eat together'], ['T:movie', '🍿 Movie night'], ['T:walk', '🚶 Walk together'], ['T:bench', '🌅 Sit in the garden together'], ['T:sleep', '💤 Go to bed']]],
+  ['Together', [['T:cook', '🍲 Cook together'], ['T:eat', '🥣 Eat together'], ['T:movie', '🍿 Movie night'], ['T:walk', '🚶 Walk together'], ['T:bench', '🌅 Sit in the garden together'], ['T:patio', '☕ Tea on the patio'], ['T:sleep', '💤 Go to bed']]],
   ['Creative', [['paint', '🎨 Paint'], ['sew', '🧵 Sew'], ['draw', '✏️ Sketch'], ['knit', '🧶 Knit'], ['bake', '🧁 Bake']]],
   ['Fun', [['games', '🎮 Video games'], ['football', '⚽ Watch football']]],
   ['Cozy', [['read', '📖 Read by the fire'], ['nook', '📚 Reading nook'], ['tea', '☕ Tea on the sofa'], ['tv1', '📺 Watch TV'], ['warm', '🔥 Warm up by the fire'], ['coffee', '☕ Make coffee'], ['browse', '📚 Browse the bookshelf']]],
   ['Work', [['laptop', '💻 Laptop'], ['computer', '🖥️ Computer']]],
   ['Cats', [['playcats', '🪶 Play with the cats']]],
-  ['Outdoors', [['stroll1', '🚶 Go for a walk'], ['jog', '🏃 Go for a run'], ['rake', '🍂 Rake leaves'], ['mums', '🌼 Water the mums'], ['bench1', '🍵 Sit in the garden']]],
+  ['Outdoors', [['stroll1', '🚶 Go for a walk'], ['jog', '🏃 Go for a run'], ['rake', '🍂 Rake leaves'], ['mums', '🌼 Water the mums'], ['bench1', '🍵 Sit in the garden'], ['patio1', '☕ Tea on the patio']]],
   ['Chores', [['cook', '🍲 Cook'], ['sweep', '🧹 Sweep the kitchen'], ['vacuum', '✨ Vacuum'], ['dust', '🪶 Dust'], ['makebed', '🛏️ Make the bed'], ['plants', '🪴 Water the plants'], ['wash', '🫧 Wash up']]],
 ];
-const TOGETHER = { cook: ['cook', 'prep'], eat: ['eat1', 'eat2'], movie: ['tv1', 'tv2'], walk: ['stroll1', 'stroll2'], bench: ['bench1', 'bench2'], sleep: ['sleep1', 'sleep2'] };
+const TOGETHER = { cook: ['cook', 'prep'], eat: ['eat1', 'eat2'], movie: ['tv1', 'tv2'], walk: ['stroll1', 'stroll2'], bench: ['bench1', 'bench2'], patio: ['patio1', 'patio2'], sleep: ['sleep1', 'sleep2'] };
 const statusEl = document.getElementById('status'), menuEl = document.getElementById('menu');
 const LABEL = Object.fromEntries(MENU.flatMap(([, items]) => items));
 let chosenDur = 60;   // in-game minutes (= sim seconds)
@@ -1340,7 +1434,7 @@ function updateDay() {
   sun.position.copy(dir.normalize().multiplyScalar(40));
   lights.forEach(l => l.intensity = l.userData.base * lampLevel);
   shades.forEach(m => m.emissiveIntensity = lampLevel * .9);
-  postMat.emissiveIntensity = lampLevel * 1.5;
+  postMat.emissiveIntensity = lampLevel * 1.5; lantern.material.emissiveIntensity = lampLevel * 2;
   const hh = Math.floor(hour), mm = Math.floor((hour % 1) * 60);
   document.getElementById('clock').textContent = `${(hh % 12) || 12}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'am' : 'pm'} · ${DAYS[dayIdx % 7]} · Fall · ${night() ? 'night' : hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening'}`;
 }
@@ -1399,7 +1493,7 @@ document.getElementById('home').onclick = () => { camTarget.set(0, .3, 0); camer
 document.getElementById('rotL').onclick = () => camAzTarget -= Math.PI / 2;
 document.getElementById('rotR').onclick = () => camAzTarget += Math.PI / 2;
 document.getElementById('speed').innerHTML = `<span class="txt">Speed </span>${speed}×`;
-document.getElementById('speed').onclick = e => { speed = speed === 1 ? 5 : speed === 5 ? 20 : 1; document.getElementById('speed').innerHTML = `<span class="txt">Speed </span>${speed}×`; };
+document.getElementById('speed').onclick = e => { const steps = [1, 2, 5, 20]; speed = steps[(steps.indexOf(speed) + 1) % steps.length]; document.getElementById('speed').innerHTML = `<span class="txt">Speed </span>${speed}×`; };
 
 // ---------------------------------------------------------------- main loop
 const clock = new THREE.Clock();
