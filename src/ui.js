@@ -1,6 +1,6 @@
 import { SEASONS, WEATHER, onSeason, onWeather, setSeason, setWeather, weather } from './season.js';
 import { camTarget, camera, rotateView, zoomBy } from './scene.js';
-import { cats, command, cycleSpeed, hooks, likes, people, speed } from './sim.js';
+import { CAT_ICON, CAT_LABEL, ROOM_NAME, SPOTS, cats, command, cycleSpeed, hooks, likes, people, roomOf, simT, speed } from './sim.js';
 
 // ---------------------------------------------------------------- player choices (dropdown per character)
 const MENU = [
@@ -68,3 +68,22 @@ const weatherEl = document.getElementById('weather');
 weatherEl.innerHTML = Object.entries(WEATHER).map(([k, v]) => `<button data-w="${k}" title="${v.name}">${v.icon}<span class="txt"> ${v.name}</span></button>`).join('');
 weatherEl.querySelectorAll('button').forEach(b => b.onclick = () => setWeather(b.dataset.w));
 onWeather(() => weatherEl.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.w === weather)));
+
+// ---------------------------------------------------------------- household panel text (called every frame, touches the DOM only on change)
+let lastStatus = '';
+export function updateStatus() {
+  const st = [
+    ...people.map(p => `${p.mode === 'act' ? SPOTS[p.spot].icon + ' ' + SPOTS[p.spot].label + (p.lapCat && p.lapCat.act === 'lap' && p.lapCat.mode === 'act' ? ` · ${p.lapCat.name} on lap` : '') : '🚶 heading to the ' + ROOM_NAME[roomOf(SPOTS[p.target].x, SPOTS[p.target].z)]}`),
+    ...cats.map(c => `${c.mode === 'playing' || c.mode === 'playWait' || c.pendingAct === 'playWait' && c.mode === 'walk' ? '🧶 playing with ' + cats.find(o => o !== c).name
+      : c.mode === 'act' ? (CAT_ICON[c.act] || '🐾') + ' ' + (c.act === 'lap' ? `curled up on ${c.lapOf ? c.lapOf.name + "'s" : 'a'} lap` : CAT_LABEL[c.act]) : '🐾 trotting around'}`)];
+  const left = people.map(p => p.cmd ? `${Math.max(1, Math.ceil(p.cmd.until - simT))} min left` : '');
+  const key = st.join('|') + left.join('|');
+  if (key === lastStatus) return;
+  lastStatus = key;
+  people.forEach((p, i) => {
+    document.getElementById(`st${i}`).textContent = st[i]; document.getElementById(`left${i}`).textContent = left[i];
+    document.getElementById(`bar${i}`).style.width = p.cmd ? `${100 * Math.max(0, p.cmd.until - simT) / p.cmd.dur}%` : '0%';
+  });
+  cats.forEach((c, i) => document.getElementById(`cst${i}`).textContent = st[people.length + i]);
+  document.getElementById('mini').textContent = [...people, ...cats].map((a, i) => `${a.name} ${[...st[i]][0] || ''}`).join(' · ');
+}

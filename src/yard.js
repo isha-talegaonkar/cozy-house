@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { scene } from './scene.js';
-import { B, C, M, Sph, add, darkWood, fabric, group, pick, rand, smooth, soft, stone, terracotta, wood } from './helpers.js';
+import { B, C, M, Sph, add, darkWood, fabric, group, pick, rand, smooth, soft, stone, terracotta, twinkle, wood } from './helpers.js';
 import { chair, pointLight, shades } from './house.js';
 export const xmasYardBulbs = [];   // twinkled in main.js
 import { plant } from './plants.js';
@@ -235,3 +235,55 @@ onSeason(s => {
   fl.instanceColor.needsUpdate = true;
   fallLeaves.forEach(l => spawnLeaf(l, true));
 });
+
+// ---------------------------------------------------------------- per-frame effects
+export function animateYard(dt, T, { camAz, lamp }) {
+  updatePile();
+  // trees between the camera and the house fade out so they never block the view
+  trees.forEach(t => {
+    const front = t.x * Math.sin(camAz) + t.z * Math.cos(camAz), d = Math.hypot(t.x, t.z);
+    t.op += ((front > 3 && d < 14 ? .18 : 1) - t.op) * Math.min(1, dt * 4);
+    t.mats.forEach(m => { m.opacity = t.op; });   // keep depth writes so a faded tree reads as one shape
+  });
+  // falling leaves / petals: drift down, rest on the lawn, then sink and respawn from a tree
+  if (fl.visible) {
+    fallLeaves.forEach((l, i) => {
+      if (!l.ground) {
+        l.y -= l.vy * dt; l.x += (Math.sin(T * 1.3 + l.ph) * .3 + .12) * dt; l.z += Math.cos(T * .9 + l.ph) * .15 * dt;
+        dummy.rotation.set(T * 1.7 + l.ph, T + l.ph, T * .6);
+        if (l.y <= -.39) { l.y = -.39; l.ground = rand(10, 22); }
+      } else {
+        l.ground -= dt; dummy.rotation.set(-Math.PI / 2, 0, l.rz);
+        if (l.ground < 2) l.y -= dt * .02;
+        if (l.ground <= 0) spawnLeaf(l, false);
+      }
+      dummy.position.set(l.x, l.y, l.z); dummy.updateMatrix(); fl.setMatrixAt(i, dummy.matrix);
+    });
+    fl.instanceMatrix.needsUpdate = true;
+  }
+  if (snowflakes.visible) {   // gentle winter snowfall
+    flakes.forEach((f, i) => {
+      f.y -= f.vy * dt; f.x += Math.sin(T * .7 + f.ph) * .2 * dt; f.z += Math.cos(T * .5 + f.ph) * .15 * dt;
+      if (f.y < -.4) { f.y = 9; f.x = rand(-15, 15); f.z = rand(-15, 15); }
+      dummy.position.set(f.x, f.y, f.z); dummy.rotation.set(0, 0, 0); dummy.updateMatrix(); snowflakes.setMatrixAt(i, dummy.matrix);
+    });
+    snowflakes.instanceMatrix.needsUpdate = true;
+  }
+  if (rain.visible) {   // rain streaks, slightly slanted
+    drops.forEach((d, i) => {
+      d.y -= d.v * dt; d.x += 1.2 * dt;
+      if (d.y < -.4) { d.y = 10; placeDrop(d); }
+      dummy.position.set(d.x, d.y, d.z); dummy.rotation.set(0, 0, -.12); dummy.updateMatrix(); rain.setMatrixAt(i, dummy.matrix);
+    });
+    rain.instanceMatrix.needsUpdate = true;
+  }
+  flies.visible = season === SUMMER && lamp > .6 && !raining;   // fireflies on clear summer nights
+  if (flies.visible) {
+    fireflies.forEach((f, i) => {
+      dummy.position.set(f.x + Math.sin(T * .4 + f.ph) * .6, f.y + Math.sin(T * .9 + f.ph * 2) * .25, f.z + Math.cos(T * .35 + f.ph) * .6);
+      dummy.rotation.set(0, 0, 0); dummy.scale.setScalar(.5 + .5 * Math.max(0, Math.sin(T * 2 + f.ph * 3))); dummy.updateMatrix(); flies.setMatrixAt(i, dummy.matrix);
+    });
+    dummy.scale.setScalar(1); flies.instanceMatrix.needsUpdate = true;
+  }
+  if (decor[WINTER].visible) twinkle(xmasYardBulbs, T + 7);
+}

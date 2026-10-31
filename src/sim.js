@@ -136,13 +136,13 @@ function updateBenchMood() {
   const [label, icon] = hour < 17 ? ['enjoying the garden', '🍵'] : hour < 19.3 ? ['watching the sunset', '🌅'] : ['stargazing in the garden', '✨'];
   Object.assign(SPOTS.bench1, { label, icon }); Object.assign(SPOTS.bench2, { label, icon });
 }
-export function updateTV() {   // most evenings after dinner they curl up on the sofa for a movie
+export function updateMovieNight() {   // most evenings after dinner they curl up on the sofa for a movie
   updateBenchMood();
   if (hour < 19 || hour >= 23) { house.tvDecided = false; if (house.tv) endTV(); return; }
   if (!house.tvDecided && hour >= 19.8) { house.tvDecided = true; if (Q.has('movie') || Math.random() < (weekend() ? .9 : .6)) startTV(); }
   if (house.tv && hour >= house.tv.until) endTV();
 }
-export function updateHouse() {
+export function updateMeals() {
   const m = MEALS.find(([h]) => hour >= h && hour < h + .5);
   if (!m) { house.lastMeal = null; return; }
   if (house.meal || house.lastMeal === m[1]) return;

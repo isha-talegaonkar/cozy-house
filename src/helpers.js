@@ -31,3 +31,7 @@ export const wood = M('#8a5634'), darkWood = M('#5e371f'), lightWood = M('#b98a5
 export const stone = M('#8f857c'), wallMat = M('#ecdcc0'), frameMat = M('#5a3624');
 export const terracotta = smooth('#c2683f'), creamPot = smooth('#efe2c8'), sagePot = smooth('#8fa07a');
 export const glassMat = new THREE.MeshStandardMaterial({ color: '#cfe3ef', transparent: true, opacity: .22, roughness: .1, depthWrite: false, side: THREE.DoubleSide });
+
+// fairy lights: cycle warm, white, blue, green and pink bulbs, each pulsing at its own pace
+export const twinkle = (bulbs, T) => bulbs.forEach((b, i) =>
+  b.material.color.setHSL([.12, 0, .55, .33, .95][i % 5], [.9, .9, .7, .7, .7][i % 5], .45 + .25 * Math.max(0, Math.sin(T * 2.2 + i * 1.7))));

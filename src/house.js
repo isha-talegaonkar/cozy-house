@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { scene } from './scene.js';
-import { B, C, M, Sph, add, canvasTex, darkWood, fabric, frameMat, glassMat, group, lightWood, pick, rand, smooth, soft, stone, wallMat, wood } from './helpers.js';
+import { B, C, M, Sph, add, canvasTex, darkWood, fabric, frameMat, glassMat, group, lightWood, pick, rand, smooth, soft, stone, twinkle, wallMat, wood } from './helpers.js';
 import { plant } from './plants.js';
 import { WINTER, onSeason } from './season.js';
 
@@ -426,3 +426,31 @@ for (let i = 0; i < 12; i++) { const b = Sph(.016, new THREE.MeshBasicMaterial({
   soft(.075, .06, .13, .02, fabric('#f3ead9'), -4.12, 1.26, z, xmas);
 });
 onSeason(s => xmas.visible = s === WINTER);
+
+// ---------------------------------------------------------------- per-frame effects
+// `now` describes this frame: { T (real seconds), simT, camAz, lit (fire), lamp (0..1), using(spot), brewing, baking, cooking }
+export function animateHouse({ T, simT, camAz, lit, lamp, using, brewing, baking, cooking }) {
+  // cutaway: walls facing the camera drop to stubs
+  walls.forEach(w => { const low = w.n[0] * Math.sin(camAz) + w.n[1] * Math.cos(camAz) > .1; w.tall.visible = !low; w.low.visible = low; });
+  // fire and candles
+  const flick = 1 + Math.sin(T * 11) * .1 + Math.sin(T * 5.3) * .08 + (Math.random() - .5) * .06;
+  fireLight.intensity = lit ? (4 + lamp * 6) * flick : 0;
+  flames.forEach(f => { f.visible = lit; const s = 1 + Math.sin(T * 10 + f.userData.k) * .18; f.scale.set(1, s, 1); f.position.y = .1 + f.userData.h * s / 2; });
+  candleFlames.forEach((c, i) => c.scale.setScalar(1 + Math.sin(T * 12 + i) * .15)); tableCandle.scale.setScalar(1 + Math.sin(T * 13) * .15);
+  // coffee machine
+  coffeeLight.material.emissiveIntensity = brewing ? 2 : 0; coffeeCup.visible = brewing;
+  coffeeSteam.forEach(s => { s.visible = brewing; const pr = (T * .5 + s.userData.o) % 1; s.position.set(2.8 + Math.sin(T * 2 + s.userData.o * 7) * .02, 1.07 + pr * .3, -3.1); s.material.opacity = .5 * (1 - pr); });
+  // screens: TV shows a game, a match or a film; laptop and computer light up when used
+  const tvOn = ['tv1', 'tv2', 'games', 'football'].some(using);
+  tvMat.color.set(tvOn ? '#ffffff' : '#111111'); tvLight.intensity = tvOn ? .9 + Math.sin(T * 2.3) * .25 : 0;
+  if (tvOn) (using('games') ? drawGame : using('football') ? drawFootball : drawTV)(T);
+  laptopMat.color.set(using('laptop') ? '#ffffff' : '#222222'); monitorMat.color.set(using('computer') ? '#ffffff' : '#222222');
+  // baking leaves cookies cooling on the counter for a while
+  if (baking) cookieTray.userData.ready = simT + 600;
+  cookieTray.visible = !baking && simT < (cookieTray.userData.ready || 0);
+  // stove
+  stoveGlow.intensity = cooking ? 1.2 : 0; ovenGlow.material.emissiveIntensity = cooking || baking ? .8 : 0;
+  steam.forEach(s => { s.visible = cooking; const pr = (T * .3 + s.userData.o) % 1; s.position.set(2.0 + Math.sin(T + s.userData.o * 9) * .08, 1.3 + pr, -3.15); s.scale.setScalar(1 + pr * 2); s.material.opacity = .45 * (1 - pr); });
+  // Christmas lights
+  if (xmas.visible) { twinkle(xmasBulbs, T); xmasStar.emissiveIntensity = 1 + .4 * Math.sin(T * 1.5); }
+}
