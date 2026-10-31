@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { scene } from './scene.js';
-import { B, C, M, Sph, add, darkWood, group, pick, rand, smooth, stone, terracotta, wood } from './helpers.js';
+import { B, C, M, Sph, add, darkWood, fabric, group, pick, rand, smooth, soft, stone, terracotta, wood } from './helpers.js';
 import { chair, pointLight, shades } from './house.js';
 export const xmasYardBulbs = [];   // twinkled in main.js
 import { plant } from './plants.js';
@@ -102,6 +102,7 @@ function tree(x, z, s, kind = 'fall') {
   const g = group(x, -.4, z, rand(0, 6)), mats = [];
   const mm = c => { const m = M(c, { transparent: true, flatShading: false }); mats.push(m); return m; };
   const snow = [], twigs = group(0, 0, 0, 0, g);
+  let leafy = {};   // canopy details the seasons need (leafy trees only)
   if (kind === 'pine') {   // soft layered fir
     add(new THREE.CylinderGeometry(.1 * s, .17 * s, 1.2 * s, 10), mm('#4a3020'), 0, .6 * s, 0, g);
     const greens = [mm('#2f4a30'), mm('#3a5a38'), mm('#46683f')];
@@ -128,8 +129,9 @@ function tree(x, z, s, kind = 'fall') {
       const shade = shades[py > .35 ? 2 : py > -.1 ? 1 : 0];
       const p = add(puffGeos[i % 3], shade, px * s, (cy + py) * s, pz * s, g); p.scale.setScalar(r * s); p.rotation.set(rand(0, 6), rand(0, 6), 0); canopy.push(p);
     }
+    leafy = { shades, canopy, fallPal: pal, blossom: Math.random() < .4 };
   }
-  trees.push({ g, mats, x, z, top: 2.6 * s - .4, r: 1.0 * s, decid: kind !== 'pine', op: 1, snow, twigs, ...(kind !== 'pine' && { shades, canopy, fallPal: pal, blossom: Math.random() < .4 }) });
+  trees.push({ g, mats, x, z, top: 2.6 * s - .4, r: 1.0 * s, decid: kind !== 'pine', op: 1, snow, twigs, ...leafy });
 }
 [[-7.5, -7.5, 1.3], [-2.5, -7.8, 1.1, 'pine'], [3.5, -8.2, 1.4], [8.5, -6.5, 1.2], [-9.5, -1.5, 1.2], [9.2, 1.0, 1.3],
  [-8.6, 5.8, 1.1], [8.6, 6.8, 1.0, 'pine'], [-5.8, 9.4, 1.2], [5.5, 9.8, 1.3], [-10.4, -10, 1.1, 'pine'], [10.6, -10.4, 1.2]].forEach(a => tree(...a));
