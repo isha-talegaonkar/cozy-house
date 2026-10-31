@@ -1,7 +1,16 @@
 import { pick, rand } from './helpers.js';
+import { fireLit, season } from './season.js';
+import { hour } from './sim.js';
 
 // ---------------------------------------------------------------- music (generated in the browser, no files)
 let audio = null, musicOn = false;
+// each season has its own chords, melody notes, tempo and timbre; changes take effect at the next chord
+const STYLE = {
+  spring: { chords: [[48, 55, 64, 67], [43, 50, 59, 62], [45, 52, 60, 64], [41, 48, 57, 60]], scale: [60, 62, 64, 67, 69, 72, 74, 76, 79], beat: .9, prob: .5, voice: 'soft', decay: 1.8, bright: 2400, pad: .02 },
+  summer: { chords: [[41, 48, 57, 64], [40, 47, 55, 62], [38, 45, 53, 60], [36, 43, 52, 59]], scale: [57, 60, 62, 64, 67, 69, 72, 74], beat: 1.15, prob: .38, voice: 'sine', decay: 3.2, bright: 1500, pad: .024 },
+  fall:   { chords: [[48, 55, 64, 71], [45, 52, 60, 67], [41, 48, 57, 64], [43, 50, 59, 62]], scale: [60, 62, 64, 67, 69, 72, 74, 76, 79], beat: 1, prob: .42, voice: 'sine', decay: 2.5, bright: 1800, pad: .022 },
+  winter: { chords: [[45, 52, 60, 64], [41, 48, 57, 60], [48, 55, 64, 67], [43, 50, 55, 62]], scale: [69, 71, 72, 74, 76, 79, 81, 84], beat: 1.2, prob: .5, voice: 'bell', decay: 2.4, bright: 3200, pad: .016 },
+};
 function makeAudio() {
   const ctx = new AudioContext(), master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
   const conv = ctx.createConvolver(), len = ctx.sampleRate * 3.5, ir = ctx.createBuffer(2, len, ctx.sampleRate);
@@ -10,25 +19,40 @@ function makeAudio() {
   const wet = ctx.createGain(); wet.gain.value = .55; conv.connect(wet).connect(master);
   const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1800; lp.connect(master); lp.connect(conv);
   const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
-  const pad = (m, t, d) => {
+  const pad = (m, t, d, vol) => {
     [0, 6].forEach(det => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'triangle'; o.frequency.value = mtof(m); o.detune.value = det;
-      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.022, t + 2); g.gain.linearRampToValueAtTime(0, t + d); o.connect(g).connect(lp); o.start(t); o.stop(t + d + .1); });
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 2); g.gain.linearRampToValueAtTime(0, t + d); o.connect(g).connect(lp); o.start(t); o.stop(t + d + .1); });
   };
-  const pluck = (m, t) => {
-    const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sine'; o.frequency.value = mtof(m);
-    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.07, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + 2.5);
-    o.connect(g).connect(lp); o.start(t); o.stop(t + 2.6);
+  const pluck = (m, t, st) => {   // 'sine' = soft piano-ish, 'soft' = rounder triangle, 'bell' = music box (adds a quiet two-octave overtone)
+    const partials = st.voice === 'bell' ? [[1, .06], [4, .018]] : [[1, .07]];
+    partials.forEach(([mult, vol]) => {
+      const o = ctx.createOscillator(), g = ctx.createGain(); o.type = st.voice === 'soft' ? 'triangle' : 'sine'; o.frequency.value = mtof(m) * mult;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + st.decay);
+      o.connect(g).connect(lp); o.start(t); o.stop(t + st.decay + .1);
+    });
   };
-  const chords = [[48, 55, 64, 71], [45, 52, 60, 67], [41, 48, 57, 64], [43, 50, 59, 62]];
-  const scale = [60, 62, 64, 67, 69, 72, 74, 76, 79];
+  const chirp = t => {   // a little bird: two or three quick upward whistles
+    for (let i = 0, n = 2 + Math.floor(Math.random() * 2); i < n; i++) {
+      const o = ctx.createOscillator(), g = ctx.createGain(), t0 = t + i * .13, f = rand(2600, 3400);
+      o.frequency.setValueAtTime(f, t0); o.frequency.exponentialRampToValueAtTime(f * 1.35, t0 + .07);
+      g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(.012, t0 + .01); g.gain.exponentialRampToValueAtTime(.0001, t0 + .09);
+      o.connect(g).connect(master); o.connect(g).connect(conv); o.start(t0); o.stop(t0 + .1);
+    }
+  };
   let next = ctx.currentTime + .2, ci = 0;
   setInterval(() => {
+    const st = STYLE[season];
+    lp.frequency.setTargetAtTime(st.bright, ctx.currentTime, 2);
     while (next < ctx.currentTime + 1.5) {
-      const ch = chords[ci++ % chords.length];
-      ch.forEach(m => pad(m, next, 8.5));
-      for (let b = 0; b < 8; b++) if (Math.random() < .42) pluck(Math.random() < .5 ? pick(ch) + 12 : pick(scale), next + b + rand(0, .08));
-      next += 8;
+      const ch = st.chords[ci++ % st.chords.length], bar = st.beat * 8;
+      ch.forEach(m => pad(m, next, bar + .5, st.pad));
+      for (let b = 0; b < 8; b++) if (Math.random() < st.prob) pluck(Math.random() < .5 ? pick(ch) + 12 : pick(st.scale), next + b * st.beat + rand(0, .08), st);
+      next += bar;
     }
+    const day = hour > 6 && hour < 19.5, night = hour >= 20.5 || hour < 5.5;
+    if (season === 'spring' && day && Math.random() < .035) chirp(ctx.currentTime + rand(.1, 1));
+    crackleGain.gain.setTargetAtTime(fireLit(hour) ? .25 : 0, ctx.currentTime, 1.5);
+    cricketGain.gain.setTargetAtTime(season === 'summer' && night ? .035 : 0, ctx.currentTime, 2);
   }, 300);
   // fire crackle loop
   const cl = ctx.sampleRate * 6, cb = ctx.createBuffer(1, cl, ctx.sampleRate), cd = cb.getChannelData(0);
@@ -36,8 +60,13 @@ function makeAudio() {
   for (let i = 0; i < cl; i++) { brown = (brown + (Math.random() * 2 - 1) * .02) * .995; cd[i] = brown * .6; }
   for (let k = 0; k < 140; k++) { const s = Math.floor(Math.random() * (cl - 400)), amp = rand(.1, .6); for (let i = 0; i < 300; i++) cd[s + i] += (Math.random() * 2 - 1) * amp * Math.exp(-i / 40); }
   const src = ctx.createBufferSource(); src.buffer = cb; src.loop = true;
-  const cg = ctx.createGain(); cg.gain.value = .25; const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 300;
-  src.connect(hp).connect(cg).connect(master); src.start();
+  const crackleGain = ctx.createGain(); crackleGain.gain.value = 0; const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 300;
+  src.connect(hp).connect(crackleGain).connect(master); src.start();
+  // summer-night crickets: a high tone pulsed in little bursts, looped
+  const kl = ctx.sampleRate * 2, kb = ctx.createBuffer(1, kl, ctx.sampleRate), kd = kb.getChannelData(0);
+  for (let i = 0; i < kl; i++) { const t = i / ctx.sampleRate, burst = Math.floor(t * 3.5) % 2 === 0 ? 1 : 0, pulse = Math.sin(2 * Math.PI * 28 * t) > 0 ? 1 : 0; kd[i] = Math.sin(2 * Math.PI * 4400 * t) * burst * pulse * .3; }
+  const crickets = ctx.createBufferSource(); crickets.buffer = kb; crickets.loop = true;
+  const cricketGain = ctx.createGain(); cricketGain.gain.value = 0; crickets.connect(cricketGain).connect(master); crickets.start();
   return { ctx, master };
 }
 // iPhones mute Web Audio unless the page is in the "playback" audio category:
