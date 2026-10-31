@@ -180,13 +180,10 @@ soft(.26, .96, 1.82, .1, sofaBase, -1.84, .48, 1.85);                           
 [1.35, 1.95, 2.5].forEach(z => soft(.2, .44, .58, .09, sofaMat, -1.99, .62, z).rotation.z = -.12);
 soft(.88, .56, .22, .1, sofaBase, -2.15, .28, .96);                                     // arm by the window
 soft(.8, .26, .82, .07, sofaBase, -2.95, .13, 2.35);                                    // return base
-soft(.74, .17, .62, .08, sofaMat, -2.95, .335, 2.28);                                   // return cushion
-soft(.84, .96, .26, .1, sofaBase, -2.97, .48, 2.64);                                    // return back
-soft(.67, .44, .2, .09, sofaMat, -2.95, .62, 2.48).rotation.x = .12;
+soft(.74, .17, .76, .08, sofaMat, -2.95, .335, 2.35);                                   // return cushion (a backless chaise)
 soft(.22, .56, .82, .1, sofaBase, -3.37, .28, 2.35);                                    // return arm
 soft(.16, .3, .36, .08, fabric('#c9763f'), -2.02, .66, 1.12).rotation.set(.2, 0, -.15);
 soft(.32, .3, .16, .08, fabric('#e6c48a'), -2.15, .66, 2.48).rotation.set(-.15, .7, 0);
-soft(.32, .3, .16, .08, fabric('#b5543f'), -3.15, .66, 2.47).rotation.set(-.15, 0, 0);
 soft(.6, .04, .5, .02, fabric('#e6c48a'), -2.85, .44, 2.25);                            // throw blanket on the return
 
 const arm = group(-3.85, 0, .55, -.6);
