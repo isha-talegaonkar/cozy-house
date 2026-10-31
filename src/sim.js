@@ -450,7 +450,8 @@ export function updatePerson(p, dt) {
   r.head.rotation.x = hx;
   r.head.rotation.y = sp && sp.anim === 'chop' && Math.sin(T * .5) > .7 ? -.6 : 0;
   p.gy = (p.gy || 0) + ((roomOf(p.x, p.z) === 'Y' ? -.4 : 0) - (p.gy || 0)) * Math.min(1, dt * 6);
-  r.beanie.visible = r.scarf.visible = season === 'winter' && roomOf(p.x, p.z) === 'Y';   // bundled up outdoors in winter
+  r.beanie.visible = r.scarf.visible = season === 'winter' && roomOf(p.x, p.z) === 'Y';
+  r.setEyes(!lie && (T % 4.7) > .13);   // eyes closed while sleeping, and a little blink every few seconds   // bundled up outdoors in winter
   r.root.position.set(p.x, (lie ? .72 : 0) + p.gy, p.z); r.root.rotation.set(lie ? -Math.PI / 2 : 0, p.heading, 0);
   if (sp && sp.anim === 'wand') {   // feather toy dances in front of them; stick runs from hand to toy
     wand.active = true; wandStick.visible = feather.visible = true;

@@ -53,12 +53,15 @@ export function makePerson(c) {
   // put a feature flush on the face: z of the head surface at (x, y), plus a small offset
   const onFace = (x, y, off = 0) => Math.sqrt(Math.max(0, R * R - x * x - y * y)) + off;
   [-1, 1].forEach(sd => Sph(.045, mS, sd * .255, -.03, -.01, head, 12).scale.set(.5, .9, .9));                 // ears
-  const ex = .1, ey = -.035;
+  const ex = .1, ey = -.035, openEyes = [], closedEyes = [];
   [-1, 1].forEach(sd => {
     const x = sd * ex;
     const eye = Sph(.052, mDark, x, ey, onFace(x, ey, -.012), head, 18); eye.scale.set(.85, 1.15, .4);          // big glossy oval eyes
     const h1 = Sph(.017, white, x - sd * .014 - .006, ey + .024, onFace(x, ey + .024, .006), head, 10); h1.castShadow = false;
     const h2 = Sph(.008, white, x + .014, ey - .022, onFace(x, ey - .022, .006), head, 8); h2.castShadow = false;
+    openEyes.push(eye, h1, h2);
+    const shut = add(new THREE.TorusGeometry(.036, .007, 6, 16, Math.PI), mDark, x, ey + .008, onFace(x, ey, .004), head);   // closed eye: a soft curve
+    shut.rotation.z = Math.PI; shut.castShadow = false; shut.visible = false; closedEyes.push(shut);
     const brow = add(new THREE.TorusGeometry(.03, .006, 6, 14, Math.PI * .7), mH, x, ey + .085, onFace(x, ey + .085, .002), head);
     brow.rotation.z = Math.PI * .15; brow.castShadow = false;                                                      // soft arched brow
     const ch = Sph(.045, M('#ff9a8a', { transparent: true, opacity: .5, flatShading: false }), sd * .165, -.1, onFace(sd * .165, -.1, -.01), head, 12);
@@ -134,7 +137,8 @@ export function makePerson(c) {
     shins.forEach(m => m.material = o.shorts ? mS : mP);
   }
   setOutfit(c.outfit);
-  return { root, body, arms, head, thighs, knees, book, mug, can, rake, broom, vac, duster, pad, bowl, yarn, beanie, scarf, setOutfit };
+  const setEyes = open => { openEyes.forEach(m => m.visible = open); closedEyes.forEach(m => m.visible = !open); };
+  return { setEyes, root, body, arms, head, thighs, knees, book, mug, can, rake, broom, vac, duster, pad, bowl, yarn, beanie, scarf, setOutfit };
 }
 export function makeCat(col, accent) {
   const root = new THREE.Group(); scene.add(root);
