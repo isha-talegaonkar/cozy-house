@@ -213,8 +213,8 @@ const floors = {
 };
 for (const t of Object.values(floors)) t.magFilter = THREE.NearestFilter;
 floors.K.magFilter = THREE.NearestFilter;
-B(10.4, .4, 7.4, stone, 0, -.25, 0);
-[['B', -2.5, -1.75, 3.5], ['L', -2.5, 1.75, 3.5], ['K', 2.5, -2.05, 2.9], ['S', 2.5, 1.45, 4.1]].forEach(([k, x, z, d]) =>
+B(10.4, .4, 8.2, stone, 0, -.25, .4);   // house runs z -3.5 .. 4.3
+[['B', -2.5, -1.75, 3.5], ['L', -2.5, 2.15, 4.3], ['K', 2.5, -2.05, 2.9], ['S', 2.5, 1.85, 4.9]].forEach(([k, x, z, d]) =>
   B(5, .1, d, M('#ffffff', { map: floors[k], flatShading: false }), x, -.04, z));
 
 // monstera leaf: heart shape with midrib, veins, edge splits and holes cut out (alpha), gently cupped
@@ -314,9 +314,9 @@ const door = (s, w = .8) => ({ s, w, y0: 0, y1: 2.15 });
 // in each wall's local frame: x runs along the wall, +z is inside (sign given)
 const EXT = [
   { n: [0, -1], a: [-5.075, -3.5], b: [5.075, -3.5], inside: 1, open: [win(1.775), win(7.775, 1.6, 1.0)] },  // north: bedroom + kitchen windows
-  { n: [0, 1], a: [-5.075, 3.5], b: [5.075, 3.5], inside: -1, open: [win(.975), door(3.675), win(6.825)] }, // south: living window, front door, studio window
-  { n: [-1, 0], a: [-5, -3.575], b: [-5, 3.575], inside: -1, open: [win(1.125, 1.3)] },              // west: bedroom window
-  { n: [1, 0], a: [5, -3.575], b: [5, 3.575], inside: 1, open: [win(1.375, 1.4, 1.0), win(5.025, 1.1)] },  // east: kitchen + studio windows
+  { n: [0, 1], a: [-5.075, 4.3], b: [5.075, 4.3], inside: -1, open: [win(.975), door(3.675), win(6.825)] }, // south: living window, front door, studio window
+  { n: [-1, 0], a: [-5, -3.575], b: [-5, 4.375], inside: -1, open: [win(1.125, 1.3)] },              // west: bedroom window
+  { n: [1, 0], a: [5, -3.575], b: [5, 4.375], inside: 1, open: [win(1.375, 1.4, 1.0), win(5.025, 1.1)] },  // east: kitchen + studio windows
 ];
 const sillPlant = (g, s, inside, kind, y = .84) => { const p = plant(kind, 0, 0, .8, g); p.position.set(s, y, inside * .12); };
 const tvTex = canvasTex(160, 90, () => {}), tvCtx = tvTex.userData.canvas.getContext('2d');
@@ -390,7 +390,7 @@ const walls = EXT.map((w, i) => ({
   low: buildWall(...w.a, ...w.b, LOW_H, w.open),
 }));
 // interior walls are always cut away (Sims-style)
-buildWall(0, -3.5, 0, 3.5, LOW_H, [door(5.9)]);
+buildWall(0, -3.5, 0, 4.3, LOW_H, [door(5.9)]);
 buildWall(-5, 0, 0, 0, LOW_H, [door(3.8)]);
 buildWall(0, -.6, 5, -.6, LOW_H, [door(2.6)]);   // kitchen / hobby room wall, set back to give the hobby room more space
 
@@ -517,7 +517,7 @@ function bookcase(x, z, ry, w, gap = -1, h = 1.8) {
   });
   return g;
 }
-const shelf = bookcase(-4.78, 2.95, Math.PI / 2, .9, 2);
+const shelf = bookcase(-4.78, 3.75, Math.PI / 2, .9, 2);
 plant('pothos', 0, 0, .9, shelf, 1.82).position.x = -.2;
 plant('small', 0, 0, .8, shelf, .96).position.x = .25;
 
@@ -525,11 +525,11 @@ C(.14, .16, .03, 12, '#3a2418', -4.6, .02, .05); C(.012, .012, 1.5, 6, '#3a2418'
 shades.push(lampShade(-4.6, 1.55, .05));
 pointLight('#ffc27a', -4.5, 1.4, .2, 2.5);
 
-C(.3, .3, .06, 24, smooth('#8e6a8e'), -3.4, .03, 2.95); add(new THREE.TorusGeometry(.26, .07, 12, 28), smooth('#8e6a8e'), -3.4, .09, 2.95).rotation.x = Math.PI / 2;
-C(.24, .24, .05, 24, fabric('#e6c48a'), -3.4, .09, 2.95);
+C(.3, .3, .06, 24, smooth('#8e6a8e'), -3.4, .03, 3.75); add(new THREE.TorusGeometry(.26, .07, 12, 28), smooth('#8e6a8e'), -3.4, .09, 3.75).rotation.x = Math.PI / 2;
+C(.24, .24, .05, 24, fabric('#e6c48a'), -3.4, .09, 3.75);
 plant('monstera', -0.3, 1.5, 1.1);
-plant('fiddle', -2.0, 3.15, 1);
-plant('fern', -4.55, 3.3, .8, scene, 0).position.x = -3.9;
+plant('fiddle', -2.0, 3.95, 1);
+plant('fern', -3.9, 4.1, .8);
 
 // --- bedroom
 const screenTex = canvasTex(64, 40, (g) => { g.fillStyle = '#2b2f3a'; g.fillRect(0, 0, 64, 40); ['#e6c48a', '#8fbf9a', '#c9a6e8', '#9fc3e8'].forEach((c, i) => { for (let r = 0; r < 3; r++) { g.fillStyle = c; g.fillRect(4 + (r % 2) * 6, 4 + (i * 3 + r) * 3, 18 + ((i + r) * 7) % 30, 1.5); } }); });
@@ -631,7 +631,7 @@ B(.58, .74, .03, M('#e9e1d2'), 0, 1.2, 0, easel);
 add(new THREE.PlaneGeometry(.55, .7), new THREE.MeshStandardMaterial({ map: paintTex }), 0, 1.2, .02, easel);
 B(.4, .55, .4, darkWood, 1.0, .275, 2.55); B(.25, .02, .18, M('#efe2c8'), 1.0, .56, 2.55);
 ['#c9512c', '#3f6a6a', '#f0a640', '#7d8a58'].forEach((c, i) => C(.02, .02, .01, 8, c, .93 + (i % 2) * .1, .58, 2.5 + Math.floor(i / 2) * .08));
-for (let i = 0; i < 3; i++) B(.04, .6 - i * .08, .5, M(['#e9e1d2', '#c9763f', '#7d8a58'][i]), 1.0 + i * .06, .3 - i * .04, 3.2).rotation.z = .2;
+for (let i = 0; i < 3; i++) B(.04, .6 - i * .08, .5, M(['#e9e1d2', '#c9763f', '#7d8a58'][i]), 1.0 + i * .06, .3 - i * .04, 4.0).rotation.z = .2;
 
 // crochet corner: a soft armchair facing into the room, yarn basket and a granny-square throw
 const cro = group(.5, 0, -.12, Math.PI / 4);
@@ -661,10 +661,10 @@ const hobbyRug = canvasTex(256, 256, (g) => {   // round woven rug: sage field, 
   for (let i = 0; i < 18; i++) { const a = i / 18 * Math.PI * 2; g.fillStyle = i % 2 ? '#c97a5a' : '#efe2c8'; g.beginPath(); g.arc(128 + Math.cos(a) * 74, 128 + Math.sin(a) * 74, 6, 0, 7); g.fill(); }
   for (let i = 0; i < 2500; i++) { g.fillStyle = `rgba(${Math.random() < .5 ? '255,255,255' : '60,40,30'},.06)`; g.fillRect(Math.random() * 256, Math.random() * 256, 2, 2); }
 });
-add(new THREE.CylinderGeometry(1.3, 1.3, .02, 56), new THREE.MeshStandardMaterial({ map: hobbyRug, roughness: 1 }), 2.5, .01, 1.45).scale.z = .85;   // centred in the hobby room
-C(.22, .18, .2, 12, '#b98a5e', 1.45, .1, 3.2);
-const yarn = Sph(.08, M('#c96a68', { flatShading: false }), 2.5, .08, 1.45, scene, 12);
-Sph(.06, M('#7d8a58', { flatShading: false }), 1.4, .22, 3.17); Sph(.06, M('#e6c48a', { flatShading: false }), 1.51, .22, 3.23);
+add(new THREE.CylinderGeometry(1.3, 1.3, .02, 56), new THREE.MeshStandardMaterial({ map: hobbyRug, roughness: 1 }), 2.5, .01, 1.85).scale.z = .85;   // centred in the hobby room
+C(.22, .18, .2, 12, '#b98a5e', 1.45, .1, 4.0);
+const yarn = Sph(.08, M('#c96a68', { flatShading: false }), 2.5, .08, 1.85, scene, 12);
+Sph(.06, M('#7d8a58', { flatShading: false }), 1.4, .22, 3.97); Sph(.06, M('#e6c48a', { flatShading: false }), 1.51, .22, 4.03);
 plant('monstera', .4, .85, .85);   // between the easel and the crochet chair
 const wand = { active: false, pos: new THREE.Vector3() }, UP = new THREE.Vector3(0, 1, 0), tmpV = new THREE.Vector3();
 const wandStick = add(new THREE.CylinderGeometry(.007, .007, 1, 4), '#8a5634', 0, 0, 0); wandStick.castShadow = false;
@@ -690,27 +690,27 @@ plant('small', 0, 0, .8, sShelf, 1.82).position.x = .3;
 plant('succulent', 0, 0, 1.1, sShelf, .52).position.x = .3;
 
 // reading nook: a window seat under the studio's south window
-B(1.4, .42, .42, lightWood, 2.55, .21, 3.21);
-soft(1.36, .1, .4, .04, fabric('#7d8a58'), 2.55, .46, 3.21);
-[[2.03, '#c9763f'], [2.33, '#e6c48a'], [3.09, '#b5543f']].forEach(([x, c]) => Sph(.14, M(c, { flatShading: false }), x, .62, 3.33, scene, 12).scale.set(1, .9, .45));
-B(.5, .03, .42, M('#c96a68'), 2.9, .515, 3.21);
-[0, 1, 2].forEach(i => B(.22, .05, .16, M(bookCols[i + 2]), 1.97, .525 + i * .05, 3.12).rotation.y = i * .3);
-C(.14, .16, .03, 12, '#3a2418', 3.5, .02, 3.3); C(.012, .012, 1.4, 6, '#3a2418', 3.5, .7, 3.3);
-shades.push(lampShade(3.5, 1.45, 3.3));
-pointLight('#ffc27a', 3.25, 1.3, 3.0, 1.8);
+B(1.4, .42, .42, lightWood, 2.55, .21, 4.01);
+soft(1.36, .1, .4, .04, fabric('#7d8a58'), 2.55, .46, 4.01);
+[[2.03, '#c9763f'], [2.33, '#e6c48a'], [3.09, '#b5543f']].forEach(([x, c]) => Sph(.14, M(c, { flatShading: false }), x, .62, 4.13, scene, 12).scale.set(1, .9, .45));
+B(.5, .03, .42, M('#c96a68'), 2.9, .515, 4.01);
+[0, 1, 2].forEach(i => B(.22, .05, .16, M(bookCols[i + 2]), 1.97, .525 + i * .05, 3.92).rotation.y = i * .3);
+C(.14, .16, .03, 12, '#3a2418', 3.5, .02, 4.1); C(.012, .012, 1.4, 6, '#3a2418', 3.5, .7, 4.1);
+shades.push(lampShade(3.5, 1.45, 4.1));
+pointLight('#ffc27a', 3.25, 1.3, 3.8, 1.8);
 
 // ---------------------------------------------------------------- yard
 const ground = add(new THREE.CircleGeometry(60, 48), '#6e6a3a', 0, -.42, 0); ground.rotation.x = -Math.PI / 2;
 const lawn = add(new THREE.PlaneGeometry(24, 24), '#7d7742', 0, -.41, 0); lawn.rotation.x = -Math.PI / 2;
-B(1.4, .3, .6, stone, -1.0, -.27, 3.85); B(.8, .02, .4, M('#a8432a'), -1.0, -.1, 3.9);
+B(1.4, .3, .6, stone, -1.0, -.27, 4.65); B(.8, .02, .4, M('#a8432a'), -1.0, -.1, 4.7);
 const stones = new THREE.InstancedMesh(new THREE.CylinderGeometry(.24, .26, .05, 7), M('#a39a8e'), 16);
 const dummy = new THREE.Object3D();
-for (let i = 0; i < 16; i++) { dummy.position.set(-1.0 + rand(-.12, .12), -.39, 4.5 + i * .5); dummy.rotation.set(0, rand(0, 3), 0); dummy.updateMatrix(); stones.setMatrixAt(i, dummy.matrix); }
+for (let i = 0; i < 14; i++) { dummy.position.set(-1.0 + rand(-.12, .12), -.39, 5.3 + i * .5); dummy.rotation.set(0, rand(0, 3), 0); dummy.updateMatrix(); stones.setMatrixAt(i, dummy.matrix); }
 stones.receiveShadow = true; scene.add(stones);
 // pumpkins + mums by the door
-[[-1.9, 4.0, .2], [-1.6, 4.25, .14], [-.15, 4.05, .17]].forEach(([x, z, r]) => { Sph(r, M('#e07b39'), x, -.4 + r * .7, z).scale.y = .75; C(.015, .02, .08, 5, '#4a3a20', x, -.4 + r * 1.3, z); });
+[[-1.9, 4.8, .2], [-1.6, 5.05, .14], [-.15, 4.85, .17]].forEach(([x, z, r]) => { Sph(r, M('#e07b39'), x, -.4 + r * .7, z).scale.y = .75; C(.015, .02, .08, 5, '#4a3a20', x, -.4 + r * 1.3, z); });
 function mum(x, z, c) { Sph(.22, smooth(c), x, -.25, z, scene, 18).scale.y = .7; C(.14, .11, .2, 18, terracotta, x, -.32, z); }
-[[-4.3, 3.9, '#e8a23a'], [-3.2, 3.9, '#b5543f'], [1.0, 3.9, '#e8c25a'], [3.2, 3.9, '#c9512c'], [4.4, 3.9, '#e8a23a']].forEach(a => mum(...a));
+[[-4.3, 4.7, '#e8a23a'], [-3.2, 4.7, '#b5543f'], [1.0, 4.7, '#e8c25a'], [3.2, 4.7, '#c9512c'], [4.4, 4.7, '#e8a23a']].forEach(a => mum(...a));
 // lumpy "puff" shapes shared by all canopies (no textures, so no seams)
 const puffGeos = [0, 1, 2].map(seed => {
   const geo = new THREE.IcosahedronGeometry(1, 2), pos = geo.attributes.position, v = new THREE.Vector3();
@@ -743,9 +743,9 @@ const fenceSide = (ax, az, bx, bz, gap) => {
 fenceSide(-F, -F, F, -F); fenceSide(-F, F, F, F, [-1.8, -.2]); fenceSide(-F, -F, -F, F); fenceSide(F, -F, F, F);
 pickets.count = pc; pickets.castShadow = true; scene.add(pickets);
 // lamp post
-C(.05, .07, 2.2, 8, '#2a2624', .5, .7, 7.0); B(.22, .3, .22, M('#ffe2a0', { emissive: '#ffcf6b', emissiveIntensity: 0 }), .5, 1.9, 7.0);
+C(.05, .07, 2.2, 8, '#2a2624', .5, .7, 7.7); B(.22, .3, .22, M('#ffe2a0', { emissive: '#ffcf6b', emissiveIntensity: 0 }), .5, 1.9, 7.7);
 const postMat = scene.children[scene.children.length - 1].material;
-const postLight = pointLight('#ffcf8a', .5, 1.7, 7.0, 5);
+const postLight = pointLight('#ffcf8a', .5, 1.7, 7.7, 5);
 
 const fallCols = ['#e07b39', '#c9512c', '#f0a640', '#a8432a', '#d9893a', '#b8862a'];
 // garden bench + raked leaf pile
@@ -754,18 +754,18 @@ B(1.3, .06, .45, wood, 0, .45, 0, bench); B(1.3, .4, .06, wood, 0, .72, .22, ben
 [[-.55, -.18], [.55, -.18], [-.55, .18], [.55, .18]].forEach(([x, z]) => B(.06, .45, .06, darkWood, x, .22, z, bench));
 B(.4, .04, .4, wood, 1.0, .5, 0, bench); B(.05, .5, .05, darkWood, 1.0, .25, 0, bench);
 C(.06, .05, .1, 8, '#efe2c4', 1.0, .57, .05, bench); C(.03, .03, .06, 8, '#b5543f', .9, .55, -.08, bench);
-const leafPile = group(2.65, -.4, 6.75);
+const leafPile = group(2.65, -.4, 7.45);
 for (let i = 0; i < 40; i++) { const a = rand(0, 6.28), r = Math.sqrt(Math.random()) * .45; const l = Sph(.07, pick(fallCols.map(c => M(c))), Math.cos(a) * r, .05 + (.45 - r) * .35, Math.sin(a) * r, leafPile, 5); l.scale.set(1, .35, .8); }
 let pileLevel = .15;
-const patio = group(-4.2, -.4, 7.4);
+const patio = group(-4.2, -.4, 8.0);
 C(1.25, 1.25, .04, 32, smooth('#b9ad9c'), 0, .02, 0, patio);
 for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2; C(.16, .17, .045, 7, smooth('#a39a8e'), Math.cos(a) * 1.05, .025, Math.sin(a) * 1.05, patio); }
 C(.36, .36, .03, 24, smooth('#3a3a3a'), 0, .73, 0, patio); C(.025, .025, .7, 8, '#3a3a3a', 0, .37, 0, patio); C(.2, .22, .03, 16, '#3a3a3a', 0, .02, 0, patio);
 B(.1, .14, .1, M('#2a2624'), .1, .82, -.08, patio); const lantern = Sph(.035, M('#ffcf6b', { emissive: '#ffb347', emissiveIntensity: 0 }), .1, .82, -.08, patio, 8);
 C(.05, .04, .07, 10, smooth('#efe2c4'), -.12, .78, .1, patio); C(.05, .04, .07, 10, smooth('#efe2c4'), .14, .78, .12, patio);
 plant('small', -.9, -.75, 1.2, patio); plant('fern', .95, -.8, .9, patio);
-[[-.55, Math.PI / 2], [.55, -Math.PI / 2]].forEach(([x, h]) => { const ch = chair(-4.2 + x, 7.4, h, '#3a3a3a'); ch.position.y = -.4; });
-const patioLight = pointLight('#ffcf8a', -4.1, .6, 7.3, 1.5);
+[[-.55, Math.PI / 2], [.55, -Math.PI / 2]].forEach(([x, h]) => { const ch = chair(-4.2 + x, 8.0, h, '#3a3a3a'); ch.position.y = -.4; });
+const patioLight = pointLight('#ffcf8a', -4.1, .6, 7.9, 1.5);
 
 // trees (leaves fall from these)
 const trees = [];
@@ -809,7 +809,7 @@ for (let i = 0; i < 1400; i++) {
   let x, z;
   if (i < 900) { const t = pick(leafTrees), a = rand(0, 6.28), r = Math.abs(rand(0, 1) + rand(0, 1) - 1) * 2.6; x = t.x + Math.cos(a) * r; z = t.z + Math.sin(a) * r; }
   else { x = rand(-12, 12); z = rand(-12, 12); }
-  if (Math.abs(x) < 5.4 && Math.abs(z) < 3.9) { x += x < 0 ? -6 : 6; }
+  if (Math.abs(x) < 5.4 && z > -3.9 && z < 4.7) { x += x < 0 ? -6 : 6; }
   dummy.position.set(x, -.395 + Math.random() * .01, z); dummy.rotation.set(-Math.PI / 2, 0, rand(0, 6)); dummy.updateMatrix();
   gl.setMatrixAt(i, dummy.matrix); gl.setColorAt(i, tmpC.set(pick(fallCols)));
 }
@@ -946,8 +946,8 @@ function makeCat(col, accent) {
 
 // ---------------------------------------------------------------- navigation
 const ORDER = ['B', 'L', 'S', 'K'];
-const DOORS = { 'B-L': { B: [-.8, -.5], L: [-.8, .5] }, 'L-S': { L: [-.5, 2.8], S: [.5, 2.8] }, 'S-K': { S: [3.0, -.1], K: [3.0, -1.1] }, 'L-Y': { L: [-1.0, 3.0], Y: [-1.0, 4.4] } };
-const roomOf = (x, z) => Math.abs(x) > 5 || Math.abs(z) > 3.5 ? 'Y' : x < 0 ? (z < 0 ? 'B' : 'L') : (z < -.6 ? 'K' : 'S');
+const DOORS = { 'B-L': { B: [-.8, -.5], L: [-.8, .5] }, 'L-S': { L: [-.5, 2.8], S: [.5, 2.8] }, 'S-K': { S: [3.0, -.1], K: [3.0, -1.1] }, 'L-Y': { L: [-1.0, 3.8], Y: [-1.0, 5.2] } };
+const roomOf = (x, z) => Math.abs(x) > 5 || z > 4.3 || z < -3.5 ? 'Y' : x < 0 ? (z < 0 ? 'B' : 'L') : (z < -.6 ? 'K' : 'S');
 const ADJ = { B: ['L'], L: ['B', 'S', 'Y'], S: ['L', 'K'], K: ['S'], Y: ['L'] };
 function roomRoute(a, b) {   // breadth-first search over rooms
   const prev = { [a]: null }, q = [a];
@@ -997,37 +997,37 @@ const SPOTS = {
   knit:   { x: -2.2, z: 1.35, h: -Math.PI / 2, pose: 'sit', anim: 'knit', icon: '🧶', label: 'knitting', via: LIV, share: ['tv1', 'games'] },
   tea:    { x: -2.2, z: 1.95, h: -Math.PI / 2, pose: 'sit', anim: 'tea', icon: '☕', label: 'sipping tea', via: LIV, share: ['tv2', 'football', 'sofa'] },
   warm:   { x: -3.75, z: 1.75, h: -Math.PI / 2, pose: 'stand', anim: 'warm', icon: '🔥', label: 'warming up by the fire', via: LIV },
-  patio1: { x: -4.75, z: 7.4, h: Math.PI / 2, pose: 'sit', anim: 'tea', icon: '☕', label: 'tea on the patio' },
-  patio2: { x: -3.65, z: 7.4, h: -Math.PI / 2, pose: 'sit', anim: 'tea', icon: '☕', label: 'tea on the patio' },
-  rake:   { x: 2.2, z: 6.4, h: .9, pose: 'stand', anim: 'rake', icon: '🍂', label: 'raking leaves in the garden' },
+  patio1: { x: -4.75, z: 8.0, h: Math.PI / 2, pose: 'sit', anim: 'tea', icon: '☕', label: 'tea on the patio' },
+  patio2: { x: -3.65, z: 8.0, h: -Math.PI / 2, pose: 'sit', anim: 'tea', icon: '☕', label: 'tea on the patio' },
+  rake:   { x: 2.2, z: 7.1, h: .9, pose: 'stand', anim: 'rake', icon: '🍂', label: 'raking leaves in the garden' },
   bench1: { x: 4.3, z: 7.2, h: 0, pose: 'sit', anim: 'tea', icon: '🍵', label: 'enjoying the garden' },
   bench2: { x: 3.7, z: 7.2, h: 0, pose: 'sit', anim: 'tea', icon: '🍵', label: 'enjoying the garden' },
-  mums:   { x: -3.7, z: 4.55, h: Math.PI, pose: 'stand', anim: 'water', icon: '🌼', label: 'watering the mums', via: [[-2.0, 4.9]] },
-  stroll1: { x: 0, z: 6.0, h: Math.PI / 2, pose: 'stand', anim: 'stroll', icon: '🚶', label: 'going for a walk', loop: { cx: 0, cz: 0, rx: 7.5, rz: 6.0, speed: .8, laps: 1 } },
-  stroll2: { x: 0, z: 6.4, h: Math.PI / 2, pose: 'stand', anim: 'stroll', icon: '🚶', label: 'going for a walk', loop: { cx: 0, cz: 0, rx: 7.9, rz: 6.4, speed: .8, laps: 1 } },
-  jog:    { x: 0, z: 5.6, h: Math.PI / 2, pose: 'stand', anim: 'jog', icon: '🏃', label: 'going for a run', loop: { cx: 0, cz: 0, rx: 7.1, rz: 5.6, speed: 2.2, laps: 2 } },
+  mums:   { x: -3.7, z: 5.35, h: Math.PI, pose: 'stand', anim: 'water', icon: '🌼', label: 'watering the mums', via: [[-2.0, 5.7]] },
+  stroll1: { x: 0, z: 6.8, h: Math.PI / 2, pose: 'stand', anim: 'stroll', icon: '🚶', label: 'going for a walk', loop: { cx: 0, cz: .4, rx: 7.5, rz: 6.4, speed: .8, laps: 1 } },
+  stroll2: { x: 0, z: 7.2, h: Math.PI / 2, pose: 'stand', anim: 'stroll', icon: '🚶', label: 'going for a walk', loop: { cx: 0, cz: .4, rx: 7.9, rz: 6.8, speed: .8, laps: 1 } },
+  jog:    { x: 0, z: 6.5, h: Math.PI / 2, pose: 'stand', anim: 'jog', icon: '🏃', label: 'going for a run', loop: { cx: 0, cz: .4, rx: 7.3, rz: 6.1, speed: 2.2, laps: 2 } },
   sweep:  { x: 1.6, z: -1.05, h: Math.PI / 2, pose: 'stand', anim: 'sweep', icon: '🧹', label: 'sweeping the kitchen', loop: { cx: 1.6, cz: -1.65, rx: 1.1, rz: .6, speed: .35, laps: 2 } },
   vacuum: { x: -3.35, z: 1.9, h: Math.PI / 2, pose: 'stand', anim: 'vacuum', icon: '✨', label: 'vacuuming the living room', via: LIV, loop: { cx: -3.35, cz: 1.45, rx: .45, rz: .45, speed: .25, laps: 3 } },
   dust:   { x: -4.25, z: 2.95, h: -Math.PI / 2, pose: 'stand', anim: 'dust', icon: '🪶', label: 'dusting the bookshelf', via: LIV },
   makebed: { x: -2.5, z: -.95, h: Math.PI, pose: 'stand', anim: 'makebed', icon: '🛏️', label: 'making the bed' },
   plants: { x: -.75, z: 1.5, h: Math.PI / 2, pose: 'stand', anim: 'water', icon: '🪴', label: 'watering the plants' },
-  nook:   { x: 2.3, z: 3.2, h: Math.PI, pose: 'sit', anim: 'read', icon: '📖', label: 'curled up in the reading nook' },
+  nook:   { x: 2.3, z: 4.0, h: Math.PI, pose: 'sit', anim: 'read', icon: '📖', label: 'curled up in the reading nook' },
   browse: { x: 2.1, z: .3, h: Math.PI, pose: 'stand', anim: 'browse', icon: '📚', label: 'browsing the bookshelf' },
   sleep1: { x: -2.95, z: -1.3, h: 0, pose: 'lie', anim: 'sleep', icon: '💤', label: 'sleeping' },
   sleep2: { x: -2.05, z: -1.3, h: 0, pose: 'lie', anim: 'sleep', icon: '💤', label: 'sleeping' },
 };
 const CAT_SPOTS = {
-  catbed:  { x: -3.4, z: 2.95, y: .1, h: .8, act: 'nap', via: LIV },
+  catbed:  { x: -3.4, z: 3.75, y: .1, h: .8, act: 'nap', via: LIV },
   bedfoot: { x: -2.5, z: -1.5, y: .95, h: Math.PI / 2, act: 'nap' },
   sofa:    { x: -2.95, z: 2.3, y: .44, h: -Math.PI / 2, act: 'nap', via: LIV },   // curled up on the sofa's return
-  nookcat: { x: 2.9, z: 3.2, y: .5, h: -Math.PI / 2, act: 'nap' },
+  nookcat: { x: 2.9, z: 4.0, y: .5, h: -Math.PI / 2, act: 'nap' },
   bowl1:   { x: 4.25, z: -1.2, y: 0, h: Math.PI / 2, act: 'eat' },
   bowl2:   { x: 4.25, z: -1.65, y: 0, h: Math.PI / 2, act: 'eat' },
   beg:     { x: 2.55, z: -2.3, y: 0, h: -Math.PI / 2, act: 'beg' },
 };
-const OPEN = { B: [[-1.0, -1.0], [-3.5, -.6], [-3.6, -1.0]], L: [[-1.2, 1.2], [-3.0, 1.2], [-1.2, 3.0], [-3.2, 2.4]],
+const OPEN = { B: [[-1.0, -1.0], [-3.5, -.6], [-3.6, -1.0]], L: [[-1.2, 1.2], [-3.0, 1.2], [-1.2, 3.0], [-2.5, 3.3], [-1.6, 3.8]],
                S: [[2.5, 1.0], [3.0, 2.2], [2.0, 2.6], [3.2, .8], [2.0, .6]], K: [[3.4, -1.4], [.9, -2.5], [2.8, -2.2], [.5, -1.1]] };
-const PLAY = { x: 2.5, z: 1.45 }, PLAY_SPOTS = [PLAY, { x: -1.15, z: 2.0 }];
+const PLAY = { x: 2.5, z: 1.85 }, PLAY_SPOTS = [PLAY, { x: -1.15, z: 2.0 }];
 const LAP = { crochet: .56, knit: .56, tea: .56, tv1: .56, tv2: .56, games: .56, football: .56, read: .56, nook: .64 };   // lap height per seat
 const WAND_AT = { x: -2.95, z: -.65 };
 const ROOM_NAME = { B: 'bedroom', L: 'living room', S: 'studio', K: 'kitchen', Y: 'garden' };
