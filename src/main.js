@@ -2,10 +2,10 @@ import * as THREE from 'three';
 import { camAz, camera, renderer, scene, updateCamera } from './scene.js';
 import { rand } from './helpers.js';
 import { candleFlames, coffeeCup, coffeeLight, coffeeSteam, cookieTray, drawFootball, drawGame, drawTV, feather, fireLight, flames, laptopMat, monitorMat, ovenGlow, steam, stoveGlow, tableCandle, tvLight, tvMat, walls, wand, wandStick } from './house.js';
-import { dummy, fallLeaves, fl, spawnLeaf, trees, updatePile } from './yard.js';
+import { dummy, fallLeaves, fireflies, fl, flies, spawnLeaf, trees, updatePile } from './yard.js';
 import { CAT_ICON, CAT_LABEL, ROOM_NAME, SPOTS, advanceClock, cats, hour, people, roomOf, simT, updateBubble, updateCat, updateHouse, updatePerson, updatePlay, updateTV } from './sim.js';
 import { lampLevel, updateDay } from './daycycle.js';
-import { fireLit } from './season.js';
+import { fireLit, season } from './season.js';
 import './plants.js';
 import './characters.js';
 import './ui.js';
@@ -47,7 +47,7 @@ function frame() {
   stoveGlow.intensity = cooking ? 1.2 : 0; ovenGlow.material.emissiveIntensity = cooking || using('bake') ? .8 : 0;
   steam.forEach(s => { s.visible = cooking; const pr = (T * .3 + s.userData.o) % 1; s.position.set(2.0 + Math.sin(T + s.userData.o * 9) * .08, 1.3 + pr, -3.15); s.scale.setScalar(1 + pr * 2); s.material.opacity = .45 * (1 - pr); });
 
-  fallLeaves.forEach((l, i) => {
+  if (fl.visible) fallLeaves.forEach((l, i) => {
     if (!l.ground) {
       l.y -= l.vy * dt; l.x += (Math.sin(T * 1.3 + l.ph) * .3 + .12) * dt; l.z += Math.cos(T * .9 + l.ph) * .15 * dt;
       dummy.rotation.set(T * 1.7 + l.ph, T + l.ph, T * .6);
@@ -60,6 +60,14 @@ function frame() {
     dummy.position.set(l.x, l.y, l.z); dummy.updateMatrix(); fl.setMatrixAt(i, dummy.matrix);
   });
   fl.instanceMatrix.needsUpdate = true;
+  flies.visible = season === 'summer' && lampLevel > .6;   // fireflies on summer nights
+  if (flies.visible) {
+    fireflies.forEach((f, i) => {
+      dummy.position.set(f.x + Math.sin(T * .4 + f.ph) * .6, f.y + Math.sin(T * .9 + f.ph * 2) * .25, f.z + Math.cos(T * .35 + f.ph) * .6);
+      dummy.rotation.set(0, 0, 0); dummy.scale.setScalar(.5 + .5 * Math.max(0, Math.sin(T * 2 + f.ph * 3))); dummy.updateMatrix(); flies.setMatrixAt(i, dummy.matrix);
+    });
+    dummy.scale.setScalar(1); flies.instanceMatrix.needsUpdate = true;
+  }
 
   updateHouse(); updateTV();
   wand.active = false; wandStick.visible = feather.visible = false;
