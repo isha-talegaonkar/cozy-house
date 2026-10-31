@@ -280,11 +280,6 @@ const snakeTex = leafTex(32, 128, g => {   // snake plant: dark bands, yellow ed
   g.strokeStyle = '#6f9a5a'; g.lineWidth = 3; for (let y = 6; y < 128; y += 11) { g.beginPath(); g.moveTo(4, y); for (let x = 4; x <= 28; x += 4) g.lineTo(x, y + Math.sin(x * .5 + y) * 2.5); g.stroke(); }
   g.fillStyle = '#d9c25a'; g.fillRect(0, 0, 3, 128); g.fillRect(29, 0, 3, 128);
 });
-const canopyTex = leafTex(128, 128, g => {   // mottled leafy pattern multiplied with each tree's colour
-  g.fillStyle = '#ffffff'; g.fillRect(0, 0, 128, 128);
-  for (let i = 0; i < 900; i++) { const v = 170 + Math.random() * 85 | 0; g.fillStyle = `rgba(${v},${v},${v},.6)`; g.beginPath(); g.ellipse(Math.random() * 128, Math.random() * 128, 2.5 + Math.random() * 3, 1.5 + Math.random() * 2, Math.random() * 3, 0, 7); g.fill(); }
-});
-canopyTex.wrapS = canopyTex.wrapT = THREE.RepeatWrapping; canopyTex.repeat.set(3, 3);
 const MAT = { oval: leafMat(ovalTex), fiddle: leafMat(fiddleTex, ['#ffffff', '#dfe9d2']), heart: leafMat(heartTex, ['#ffffff', '#e8f2d8', '#cfe3bf']), fern: leafMat(fernTex), snake: [new THREE.MeshStandardMaterial({ map: snakeTex, roughness: .7 })] };
 const GEO = { oval: leafGeo(.07, .14), fiddle: leafGeo(.2, .26, .8), heart: leafGeo(.075, .075, .9), fern: leafGeo(.15, .55, 1.6) };
 // a leaf on a little pivot: `yaw` around the stem, `tilt` from upright (0) to horizontal (PI/2)
@@ -690,9 +685,22 @@ stones.receiveShadow = true; scene.add(stones);
 [[-1.9, 4.0, .2], [-1.6, 4.25, .14], [-.15, 4.05, .17]].forEach(([x, z, r]) => { Sph(r, M('#e07b39'), x, -.4 + r * .7, z).scale.y = .75; C(.015, .02, .08, 5, '#4a3a20', x, -.4 + r * 1.3, z); });
 function mum(x, z, c) { Sph(.22, smooth(c), x, -.25, z, scene, 18).scale.y = .7; C(.14, .11, .2, 18, terracotta, x, -.32, z); }
 [[-4.3, 3.9, '#e8a23a'], [-3.2, 3.9, '#b5543f'], [1.0, 3.9, '#e8c25a'], [3.2, 3.9, '#c9512c'], [4.4, 3.9, '#e8a23a']].forEach(a => mum(...a));
+// lumpy "puff" shapes shared by all canopies (no textures, so no seams)
+const puffGeos = [0, 1, 2].map(seed => {
+  const geo = new THREE.IcosahedronGeometry(1, 2), pos = geo.attributes.position, v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    const n = 1 + .07 * Math.sin(v.x * 3.1 + seed) * Math.cos(v.y * 2.7 + seed * 2) + .05 * Math.sin(v.z * 4.3 + v.x * 2 + seed * 3);
+    v.multiplyScalar(n); pos.setXYZ(i, v.x, v.y, v.z);
+  }
+  geo.computeVertexNormals();
+  const nrm = geo.attributes.normal;   // blend toward round normals so the lumps shade softly instead of faceted
+  for (let i = 0; i < nrm.count; i++) { v.fromBufferAttribute(pos, i).normalize(); const nx = nrm.getX(i) * .35 + v.x * .65, ny = nrm.getY(i) * .35 + v.y * .65, nz = nrm.getZ(i) * .35 + v.z * .65, l = Math.hypot(nx, ny, nz); nrm.setXYZ(i, nx / l, ny / l, nz / l); }
+  return geo;
+});
 // hedges
 [[-5.6, -2.5], [-5.6, -.5], [-5.6, 1.0], [5.6, -2.8], [5.6, -.2], [5.6, 2.6], [-3.5, -4.1], [-1.5, -4.1], [1.0, -4.1], [3.0, -4.1]].forEach(([x, z]) =>
-  add(new THREE.IcosahedronGeometry(.42, 3), pick(['#4f6a3a', '#5a7040', '#7a6a30'].map(c => M(c, { flatShading: false, map: canopyTex }))), x, -.15, z).scale.y = .8);
+  { const h = add(pick(puffGeos), smooth(pick(['#4f6a3a', '#5a7040', '#6a7036'])), x, -.15, z); h.scale.set(.44, .36, .44); h.rotation.y = rand(0, 6); });
 // fence
 const pickets = new THREE.InstancedMesh(new THREE.BoxGeometry(.09, .7, .05), M('#e9dcc4'), 300);
 let pc = 0; const F = 12;
@@ -735,21 +743,33 @@ const patioLight = pointLight('#ffcf8a', -4.1, .6, 7.3, 1.5);
 
 // trees (leaves fall from these)
 const trees = [];
+const TREE_PALETTES = [['#a8432a', '#c4552f', '#d9693c'], ['#c9612c', '#dc7a3a', '#eb9550'], ['#d0852f', '#e29d3e', '#efb85a'], ['#c09a2e', '#d6b23e', '#e8c95a']];
 function tree(x, z, s, kind = 'fall') {
-  const g = group(x, -.4, z), mats = [];
-  const mm = (c, leafy) => { const m = M(c, { transparent: true, flatShading: false, ...(leafy ? { map: canopyTex } : {}) }); mats.push(m); return m; };
-  if (kind === 'pine') {
-    add(new THREE.CylinderGeometry(.12 * s, .18 * s, 1 * s, 6), mm('#3b2418'), 0, .5 * s, 0, g);
-    [[1.3, 1.6, 1.4], [1.0, 1.4, 2.3], [.7, 1.2, 3.1]].forEach(([r, h, y]) => add(new THREE.ConeGeometry(r * s, h * s, 18), mm(pick(['#3f5a3a', '#355034']), true), 0, y * s, 0, g));
-  } else {
-    const trunk = mm('#4a3020');
-    add(new THREE.CylinderGeometry(.13 * s, .22 * s, 2 * s, 12), trunk, 0, 1 * s, 0, g);
-    const br = add(new THREE.CylinderGeometry(.05 * s, .08 * s, .9 * s, 5), trunk, .25 * s, 1.8 * s, 0, g); br.rotation.z = -.6;
-    const cols = [pick(fallCols), pick(fallCols), pick(fallCols)];
-    [[0, 2.6, 0, 1.0], [.6, 2.3, .3, .75], [-.6, 2.4, -.2, .8], [.1, 3.2, .1, .7], [-.2, 2.2, .6, .6]].forEach(([dx, dy, dz, r], i) =>
-      add(new THREE.IcosahedronGeometry(r * s, 3), mm(cols[i % 3], true), dx * s, dy * s, dz * s, g));
+  const g = group(x, -.4, z, rand(0, 6)), mats = [];
+  const mm = c => { const m = M(c, { transparent: true, flatShading: false }); mats.push(m); return m; };
+  if (kind === 'pine') {   // soft layered fir
+    add(new THREE.CylinderGeometry(.1 * s, .17 * s, 1.2 * s, 10), mm('#4a3020'), 0, .6 * s, 0, g);
+    const greens = [mm('#2f4a30'), mm('#3a5a38'), mm('#46683f')];
+    [[1.35, 1.2, 1.2], [1.1, 1.1, 1.9], [.85, 1.0, 2.55], [.55, .9, 3.15]].forEach(([r, h, y], i) => {
+      const c = add(new THREE.ConeGeometry(r * s, h * s, 20, 1), greens[Math.min(2, i)], 0, y * s, 0, g); c.rotation.y = i * .5;
+    });
+  } else {   // fluffy autumn tree: trunk, branches and a cloud of puffs (darker underneath, lighter on top)
+    const bark = mm('#4a3020'), pal = pick(TREE_PALETTES), shades = pal.map(mm);
+    add(new THREE.CylinderGeometry(.12 * s, .22 * s, 2.1 * s, 12), bark, 0, 1.05 * s, 0, g);
+    [[-.7, .3], [.6, 2.4], [.5, 4.4]].forEach(([tilt, yaw]) => {
+      const b = group(0, 1.6 * s, 0, yaw, g); const br = add(new THREE.CylinderGeometry(.04 * s, .08 * s, .9 * s, 6), bark, 0, .4 * s, 0, b); br.rotation.z = tilt; br.position.x = -Math.sin(tilt) * .4 * s;
+    });
+    const cy = 2.65, far = Math.hypot(x, z) > 14;
+    add(puffGeos[0], shades[0], 0, cy * s, 0, g).scale.setScalar(.95 * s);   // dense core
+    const n = far ? 9 : 15;
+    for (let i = 0; i < n; i++) {
+      const a = i * 2.399 + rand(-.3, .3), el = rand(-.5, 1.0), r = rand(.38, .56);
+      const px = Math.cos(a) * Math.cos(el) * 1.0, py = Math.sin(el) * .8, pz = Math.sin(a) * Math.cos(el) * 1.0;
+      const shade = shades[py > .35 ? 2 : py > -.1 ? 1 : 0];
+      const p = add(puffGeos[i % 3], shade, px * s, (cy + py) * s, pz * s, g); p.scale.setScalar(r * s); p.rotation.set(rand(0, 6), rand(0, 6), 0);
+    }
   }
-  trees.push({ g, mats, x, z, top: (kind === 'pine' ? 2.6 : 2.6) * s - .4, r: 1.0 * s, decid: kind !== 'pine', op: 1 });
+  trees.push({ g, mats, x, z, top: 2.6 * s - .4, r: 1.0 * s, decid: kind !== 'pine', op: 1 });
 }
 [[-7.5, -7.5, 1.3], [-2.5, -7.8, 1.1, 'pine'], [3.5, -8.2, 1.4], [8.5, -6.5, 1.2], [-9.5, -1.5, 1.2], [9.2, 1.0, 1.3],
  [-8.6, 5.8, 1.1], [8.6, 6.8, 1.0, 'pine'], [-5.8, 9.4, 1.2], [5.5, 9.8, 1.3], [-10.4, -10, 1.1, 'pine'], [10.6, -10.4, 1.2]].forEach(a => tree(...a));
@@ -1482,9 +1502,21 @@ function makeAudio() {
   src.connect(hp).connect(cg).connect(master); src.start();
   return { ctx, master };
 }
+// iPhones mute Web Audio unless the page is in the "playback" audio category:
+// ask for it directly (newer Safari) and also play a silent looping clip, which does the same on older versions.
+let unlockClip = null;
+function silentWavURL() {
+  const sr = 8000, n = sr, b = new ArrayBuffer(44 + n * 2), v = new DataView(b), w = (o, str) => [...str].forEach((ch, i) => v.setUint8(o + i, ch.charCodeAt(0)));
+  w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * 2, true);
+  return URL.createObjectURL(new Blob([b], { type: 'audio/wav' }));
+}
 document.getElementById('music').onclick = e => {
+  if (navigator.audioSession) try { navigator.audioSession.type = 'playback'; } catch {}
+  if (!unlockClip) { unlockClip = new Audio(silentWavURL()); unlockClip.loop = true; unlockClip.setAttribute('playsinline', ''); }
   if (!audio) audio = makeAudio();
   musicOn = !musicOn;
+  if (musicOn) unlockClip.play().catch(() => {}); else unlockClip.pause();
   const { ctx, master } = audio; ctx.resume();
   master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setValueAtTime(master.gain.value, ctx.currentTime);
   master.gain.linearRampToValueAtTime(musicOn ? .7 : 0, ctx.currentTime + 2);
@@ -1515,7 +1547,7 @@ function frame() {
   trees.forEach(t => {
     const front = t.x * Math.sin(camAz) + t.z * Math.cos(camAz), d = Math.hypot(t.x, t.z);
     t.op += ((front > 3 && d < 14 ? .18 : 1) - t.op) * Math.min(1, dt * 4);
-    t.mats.forEach(m => { m.opacity = t.op; m.depthWrite = t.op > .9; });
+    t.mats.forEach(m => { m.opacity = t.op; });   // keep depth writes so a faded tree reads as one shape
   });
 
   updateDay();
