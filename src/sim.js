@@ -126,6 +126,8 @@ const MEALS = [[7.75, 'breakfast', '🥞'], [12.5, 'lunch', '🥪'], [18.5, 'din
 const house = { meal: null, lastMeal: null };
 function startTV() { house.tv = { until: rand(21.2, 21.6) }; SPOTS.tv1.label = SPOTS.tv2.label = 'movie night together'; SPOTS.tv1.icon = SPOTS.tv2.icon = '🍿'; popcorn.visible = true; }
 function endTV() { house.tv = null; SPOTS.tv1.label = SPOTS.tv2.label = 'watching TV'; SPOTS.tv1.icon = SPOTS.tv2.icon = '📺'; popcorn.visible = false; }
+const TEA = { winter: ['sipping hot cocoa', '🍫'] };
+onSeason(s => { const [label, icon] = TEA[s] || ['sipping tea', '☕']; Object.assign(SPOTS.tea, { label, icon }); });
 const FLOWER_JOB = { spring: 'watering the tulips', summer: 'watering the sunflowers', fall: 'watering the mums', winter: 'checking on the garden' };
 onSeason(s => { SPOTS.mums.label = FLOWER_JOB[s]; });
 function updateBenchMood() {

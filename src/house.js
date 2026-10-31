@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { scene } from './scene.js';
 import { B, C, M, Sph, add, canvasTex, darkWood, fabric, frameMat, glassMat, group, lightWood, pick, rand, smooth, soft, stone, wallMat, wood } from './helpers.js';
 import { plant } from './plants.js';
+import { onSeason } from './season.js';
 
 // ---------------------------------------------------------------- floors
 function planks(c1, c2, c3, line) {
@@ -392,3 +393,39 @@ B(.5, .03, .42, M('#c96a68'), 2.9, .515, 4.01);
 C(.14, .16, .03, 12, '#3a2418', 3.5, .02, 4.1); C(.012, .012, 1.4, 6, '#3a2418', 3.5, .7, 4.1);
 shades.push(lampShade(3.5, 1.45, 4.1));
 pointLight('#ffc27a', 3.25, 1.3, 3.8, 1.8);
+
+// ---------------------------------------------------------------- Christmas (winter only)
+export const xmas = group(0, 0, 0);
+export const xmasBulbs = [];   // twinkled in main.js
+export const xmasStar = new THREE.MeshStandardMaterial({ color: '#ffd76a', emissive: '#ffc53a', emissiveIntensity: 1.2, flatShading: true });
+{
+  const g = group(-4.15, 0, 2.95, 0, xmas);   // tree in the living room corner by the fireplace
+  C(.38, .38, .02, 28, smooth('#b5343a'), 0, .01, 0, g);                                      // tree skirt
+  C(.05, .06, .3, 8, '#5a3d28', 0, .15, 0, g);
+  const greens = [smooth('#2f5a34'), smooth('#3a6a3c'), smooth('#447644')];
+  const tiers = [[.5, .55, .5], [.4, .5, .85], [.3, .45, 1.17], [.19, .38, 1.45]];
+  tiers.forEach(([r, h, y], i) => add(new THREE.ConeGeometry(r, h, 22), greens[Math.min(2, i)], 0, y, 0, g).rotation.y = i * .7);
+  const star = add(new THREE.OctahedronGeometry(.07, 0), xmasStar, 0, 1.7, 0, g); star.scale.set(1, 1.3, .5);
+  const ornCols = ['#c0392b', '#e8b84a', '#d9dde2', '#3f6aa8', '#c96a8a'];
+  for (let i = 0; i < 34; i++) {   // ornaments on the cone surfaces
+    const [r, h, y] = tiers[i % 4], t = Math.random() * .8, a = Math.random() * Math.PI * 2, rr = r * (1 - t) * .95, yy = y - h / 2 + h * t;
+    Sph(.032, smooth(pick(ornCols)), Math.cos(a) * rr, yy, Math.sin(a) * rr, g, 10);
+  }
+  for (let i = 0; i < 60; i++) {   // a spiral of fairy lights
+    const f = i / 60, y = .3 + f * 1.25, rr = .52 * (1 - f) + .05, a = f * Math.PI * 9;
+    const b = Sph(.018, new THREE.MeshBasicMaterial({ color: '#ffd27a' }), Math.cos(a) * rr, y, Math.sin(a) * rr, g, 6); b.castShadow = false; xmasBulbs.push(b);
+  }
+  [[.42, .25, '#b5343a', '#efe2c8'], [-.38, .32, '#2f6a6a', '#e8b84a'], [.1, .5, '#e8c25a', '#b5343a'], [-.1, -.42, '#efe2c8', '#2f6a6a']].forEach(([x, z, c, rib], i) => {
+    const sz = .14 + (i % 2) * .05, p = group(x, 0, z, i * .6, g);   // presents
+    B(sz, sz * .8, sz, M(c), 0, sz * .4, 0, p); B(sz + .005, sz * .8 + .005, .025, M(rib), 0, sz * .4, 0, p); B(.025, sz * .8 + .005, sz + .005, M(rib), 0, sz * .4, 0, p);
+  });
+  const glow = new THREE.PointLight('#ffcf8a', 1.4, 4, 2); glow.position.set(.15, 1.0, -.05); g.add(glow);   // hidden with the rest of the decorations
+}
+// garland with little lights along the mantel, and three stockings
+add(new THREE.CapsuleGeometry(.05, 1.8, 6, 12), smooth('#2f5a34'), -4.16, 1.33, 1.75, xmas).rotation.x = Math.PI / 2;
+for (let i = 0; i < 12; i++) { const b = Sph(.016, new THREE.MeshBasicMaterial({ color: '#ffd27a' }), -4.1, 1.33, .85 + i * .165, xmas, 6); b.castShadow = false; xmasBulbs.push(b); }
+[[1.35, '#b5343a'], [1.75, '#2f6a6a'], [2.15, '#b5343a']].forEach(([z, c]) => {
+  soft(.07, .26, .12, .03, fabric(c), -4.12, 1.12, z, xmas); soft(.07, .08, .18, .03, fabric(c), -4.12, .98, z + .04, xmas);
+  soft(.075, .06, .13, .02, fabric('#f3ead9'), -4.12, 1.26, z, xmas);
+});
+onSeason(s => xmas.visible = s === 'winter');

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { scene } from './scene.js';
 import { B, C, M, Sph, add, darkWood, group, pick, rand, smooth, stone, terracotta, wood } from './helpers.js';
 import { chair, pointLight, shades } from './house.js';
+export const xmasYardBulbs = [];   // twinkled in main.js
 import { plant } from './plants.js';
 import { onSeason } from './season.js';
 
@@ -96,14 +97,17 @@ const patioLight = pointLight('#ffcf8a', -4.1, .6, 7.9, 1.5);
 // trees (leaves fall from these)
 export const trees = [];
 const TREE_PALETTES = [['#a8432a', '#c4552f', '#d9693c'], ['#c9612c', '#dc7a3a', '#eb9550'], ['#d0852f', '#e29d3e', '#efb85a'], ['#c09a2e', '#d6b23e', '#e8c95a']];
+const snowMat = M('#f4f7fb', { transparent: true, flatShading: false });
 function tree(x, z, s, kind = 'fall') {
   const g = group(x, -.4, z, rand(0, 6)), mats = [];
   const mm = c => { const m = M(c, { transparent: true, flatShading: false }); mats.push(m); return m; };
+  const snow = [], twigs = group(0, 0, 0, 0, g);
   if (kind === 'pine') {   // soft layered fir
     add(new THREE.CylinderGeometry(.1 * s, .17 * s, 1.2 * s, 10), mm('#4a3020'), 0, .6 * s, 0, g);
     const greens = [mm('#2f4a30'), mm('#3a5a38'), mm('#46683f')];
     [[1.35, 1.2, 1.2], [1.1, 1.1, 1.9], [.85, 1.0, 2.55], [.55, .9, 3.15]].forEach(([r, h, y], i) => {
       const c = add(new THREE.ConeGeometry(r * s, h * s, 20, 1), greens[Math.min(2, i)], 0, y * s, 0, g); c.rotation.y = i * .5;
+      snow.push(add(new THREE.ConeGeometry(r * s * .8, h * s * .45, 20, 1), snowMat, 0, (y + h * .3) * s, 0, g));   // winter snow cap
     });
   } else {   // fluffy autumn tree: trunk, branches and a cloud of puffs (darker underneath, lighter on top)
     const bark = mm('#4a3020'), pal = pick(TREE_PALETTES), shades = pal.map(mm), canopy = [];
@@ -111,6 +115,10 @@ function tree(x, z, s, kind = 'fall') {
     [[-.7, .3], [.6, 2.4], [.5, 4.4]].forEach(([tilt, yaw]) => {
       const b = group(0, 1.6 * s, 0, yaw, g); const br = add(new THREE.CylinderGeometry(.04 * s, .08 * s, .9 * s, 6), bark, 0, .4 * s, 0, b); br.rotation.z = tilt; br.position.x = -Math.sin(tilt) * .4 * s;
     });
+    for (let i = 0; i < 7; i++) {   // fine twigs that show once the leaves are gone
+      const b = group(0, (2.0 + (i % 3) * .35) * s, 0, i * 2.3, twigs), tw = add(new THREE.CylinderGeometry(.015 * s, .035 * s, .8 * s, 5), bark, 0, .35 * s, 0, b);
+      tw.rotation.z = -(.5 + (i % 3) * .25); tw.position.x = Math.sin(.5 + (i % 3) * .25) * .35 * s;
+    }
     const cy = 2.65, far = Math.hypot(x, z) > 14;
     const core = add(puffGeos[0], shades[0], 0, cy * s, 0, g); core.scale.setScalar(.95 * s); canopy.push(core);   // dense core
     const n = far ? 9 : 15;
@@ -121,7 +129,7 @@ function tree(x, z, s, kind = 'fall') {
       const p = add(puffGeos[i % 3], shade, px * s, (cy + py) * s, pz * s, g); p.scale.setScalar(r * s); p.rotation.set(rand(0, 6), rand(0, 6), 0); canopy.push(p);
     }
   }
-  trees.push({ g, mats, x, z, top: 2.6 * s - .4, r: 1.0 * s, decid: kind !== 'pine', op: 1, ...(kind !== 'pine' && { shades, canopy, fallPal: pal, blossom: Math.random() < .4 }) });
+  trees.push({ g, mats, x, z, top: 2.6 * s - .4, r: 1.0 * s, decid: kind !== 'pine', op: 1, snow, twigs, ...(kind !== 'pine' && { shades, canopy, fallPal: pal, blossom: Math.random() < .4 }) });
 }
 [[-7.5, -7.5, 1.3], [-2.5, -7.8, 1.1, 'pine'], [3.5, -8.2, 1.4], [8.5, -6.5, 1.2], [-9.5, -1.5, 1.2], [9.2, 1.0, 1.3],
  [-8.6, 5.8, 1.1], [8.6, 6.8, 1.0, 'pine'], [-5.8, 9.4, 1.2], [5.5, 9.8, 1.3], [-10.4, -10, 1.1, 'pine'], [10.6, -10.4, 1.2]].forEach(a => tree(...a));
@@ -160,6 +168,31 @@ export const fireflies = Array.from({ length: 40 }, () => ({ x: rand(-11, 11), z
 export const flies = new THREE.InstancedMesh(new THREE.SphereGeometry(.03, 6, 6), new THREE.MeshBasicMaterial({ color: '#e8ff8a' }), fireflies.length);
 flies.visible = false; scene.add(flies);
 
+// winter: snowfall over the whole garden (moved in main.js)
+export const flakes = Array.from({ length: 450 }, () => ({ x: rand(-15, 15), y: rand(-.4, 9), z: rand(-15, 15), vy: rand(.35, .7), ph: rand(0, 6) }));
+export const snowflakes = new THREE.InstancedMesh(new THREE.SphereGeometry(.03, 5, 4), new THREE.MeshBasicMaterial({ color: '#ffffff' }), flakes.length);
+snowflakes.visible = false; scene.add(snowflakes);
+// winter decor: a snowman, two little lit firs on the porch, a garland on the lamp post
+{
+  const w = decor.winter, white = smooth('#f6f8fb');
+  const sm = group(2.6, -.4, 6.7, -.4, w);
+  Sph(.34, white, 0, .3, 0, sm, 20); Sph(.25, white, 0, .78, 0, sm, 18); Sph(.18, white, 0, 1.12, 0, sm, 16);
+  add(new THREE.ConeGeometry(.035, .16, 8), smooth('#e8772a'), 0, 1.12, .24, sm).rotation.x = Math.PI / 2;
+  [-.06, .06].forEach(x => Sph(.022, smooth('#1e1e22'), x, 1.17, .16, sm, 6)); [.85, .72, .59].forEach(y => Sph(.02, smooth('#1e1e22'), 0, y, .245, sm, 6));
+  add(new THREE.TorusGeometry(.17, .045, 8, 18), fabric('#b5343a'), 0, .97, 0, sm).rotation.x = Math.PI / 2;
+  soft(.08, .22, .03, .015, fabric('#b5343a'), .1, .82, .17, sm).rotation.z = .2;
+  C(.14, .14, .18, 16, smooth('#26262a'), 0, 1.36, 0, sm); C(.2, .2, .02, 16, smooth('#26262a'), 0, 1.27, 0, sm);
+  [-1, 1].forEach(sd => { const a = C(.012, .018, .5, 5, '#5a3d28', sd * .38, .85, 0, sm); a.rotation.z = sd * -1.0; });
+  [-1.95, -.05].forEach(x => {   // porch firs with fairy lights
+    const p = group(x, -.4, 4.85, 0, w);
+    C(.16, .13, .24, 16, terracotta, 0, .12, 0, p);
+    [[.26, .34, .4], [.19, .3, .6], [.11, .24, .78]].forEach(([r, h, y]) => add(new THREE.ConeGeometry(r, h, 18), smooth('#2f5a34'), 0, y, 0, p));
+    for (let i = 0; i < 14; i++) { const f = i / 14, rr = .25 * (1 - f) + .03, a = f * Math.PI * 6; const b = Sph(.014, new THREE.MeshBasicMaterial({ color: '#ffd27a' }), Math.cos(a) * rr, .28 + f * .6, Math.sin(a) * rr, p, 6); b.castShadow = false; xmasYardBulbs.push(b); }
+  });
+  for (let i = 0; i < 18; i++) { const f = i / 18, a = f * Math.PI * 6; Sph(.03, smooth('#2f5a34'), .5 + Math.cos(a) * .065, -.25 + f * 1.9, 7.7 + Math.sin(a) * .065, w, 8); }
+  const bow = group(.5, 1.62, 7.77, 0, w); [-1, 1].forEach(sd => Sph(.05, fabric('#b5343a'), sd * .05, 0, 0, bow, 10).scale.set(1.2, .7, .5));
+}
+
 // ---- seasons outdoors
 const PAL = { spring: { blossom: ['#e9a3b8', '#f2bfcd', '#fbe0e8'], green: ['#6aa84f', '#86c060', '#a6d67a'] }, summer: ['#3f7a34', '#4f8f3f', '#62a24c'] };
 const PETALS = ['#f2bfcd', '#fbe0e8', '#ffffff', '#e9a3b8'];
@@ -169,6 +202,8 @@ onSeason(s => {
     t.shades.forEach((m, i) => m.color.set(pal[i]));
     t.canopy.forEach(m => m.visible = s !== 'winter');
   }
+  for (const t of trees) { t.snow.forEach(m => m.visible = s === 'winter'); t.twigs.visible = !t.decid || s === 'winter'; }
+  snowflakes.visible = s === 'winter';
   Object.entries(decor).forEach(([k, g]) => g.visible = k === s);
   leafPile.visible = s === 'fall';
   // fallen leaves: petals under trees in spring, leaves in fall, nothing in summer/winter

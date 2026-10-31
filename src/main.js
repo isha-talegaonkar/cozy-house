@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { camAz, camera, renderer, scene, updateCamera } from './scene.js';
 import { rand } from './helpers.js';
-import { candleFlames, coffeeCup, coffeeLight, coffeeSteam, cookieTray, drawFootball, drawGame, drawTV, feather, fireLight, flames, laptopMat, monitorMat, ovenGlow, steam, stoveGlow, tableCandle, tvLight, tvMat, walls, wand, wandStick } from './house.js';
-import { dummy, fallLeaves, fireflies, fl, flies, spawnLeaf, trees, updatePile } from './yard.js';
+import { xmas, xmasBulbs, xmasStar, candleFlames, coffeeCup, coffeeLight, coffeeSteam, cookieTray, drawFootball, drawGame, drawTV, feather, fireLight, flames, laptopMat, monitorMat, ovenGlow, steam, stoveGlow, tableCandle, tvLight, tvMat, walls, wand, wandStick } from './house.js';
+import { dummy, fallLeaves, fireflies, fl, flakes, flies, snowflakes, spawnLeaf, trees, updatePile, xmasYardBulbs } from './yard.js';
 import { CAT_ICON, CAT_LABEL, ROOM_NAME, SPOTS, advanceClock, cats, hour, people, roomOf, simT, updateBubble, updateCat, updateHouse, updatePerson, updatePlay, updateTV } from './sim.js';
 import { lampLevel, updateDay } from './daycycle.js';
 import { fireLit, season } from './season.js';
@@ -60,6 +60,18 @@ function frame() {
     dummy.position.set(l.x, l.y, l.z); dummy.updateMatrix(); fl.setMatrixAt(i, dummy.matrix);
   });
   fl.instanceMatrix.needsUpdate = true;
+  if (snowflakes.visible) {   // gentle winter snowfall
+    flakes.forEach((f, i) => {
+      f.y -= f.vy * dt; f.x += Math.sin(T * .7 + f.ph) * .2 * dt; f.z += Math.cos(T * .5 + f.ph) * .15 * dt;
+      if (f.y < -.4) { f.y = 9; f.x = rand(-15, 15); f.z = rand(-15, 15); }
+      dummy.position.set(f.x, f.y, f.z); dummy.rotation.set(0, 0, 0); dummy.updateMatrix(); snowflakes.setMatrixAt(i, dummy.matrix);
+    });
+    snowflakes.instanceMatrix.needsUpdate = true;
+  }
+  if (xmas.visible) {   // twinkling Christmas lights
+    [...xmasBulbs, ...xmasYardBulbs].forEach((b, i) => b.material.color.setHSL([.12, .0, .55, .33, .95][i % 5], [.9, .9, .7, .7, .7][i % 5], .45 + .25 * Math.max(0, Math.sin(T * 2.2 + i * 1.7))));
+    xmasStar.emissiveIntensity = 1 + .4 * Math.sin(T * 1.5);
+  }
   flies.visible = season === 'summer' && lampLevel > .6;   // fireflies on summer nights
   if (flies.visible) {
     fireflies.forEach((f, i) => {
