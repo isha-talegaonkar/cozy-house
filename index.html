@@ -661,11 +661,11 @@ const hobbyRug = canvasTex(256, 256, (g) => {   // round woven rug: sage field, 
   for (let i = 0; i < 18; i++) { const a = i / 18 * Math.PI * 2; g.fillStyle = i % 2 ? '#c97a5a' : '#efe2c8'; g.beginPath(); g.arc(128 + Math.cos(a) * 74, 128 + Math.sin(a) * 74, 6, 0, 7); g.fill(); }
   for (let i = 0; i < 2500; i++) { g.fillStyle = `rgba(${Math.random() < .5 ? '255,255,255' : '60,40,30'},.06)`; g.fillRect(Math.random() * 256, Math.random() * 256, 2, 2); }
 });
-add(new THREE.CylinderGeometry(.95, .95, .02, 48), new THREE.MeshStandardMaterial({ map: hobbyRug, roughness: 1 }), 2.85, .01, 2.0).scale.z = .78;
+add(new THREE.CylinderGeometry(1.3, 1.3, .02, 56), new THREE.MeshStandardMaterial({ map: hobbyRug, roughness: 1 }), 2.5, .01, 1.45).scale.z = .85;   // centred in the hobby room
 C(.22, .18, .2, 12, '#b98a5e', 1.45, .1, 3.2);
-const yarn = Sph(.08, M('#c96a68', { flatShading: false }), 2.85, .08, 2.0, scene, 12);
+const yarn = Sph(.08, M('#c96a68', { flatShading: false }), 2.5, .08, 1.45, scene, 12);
 Sph(.06, M('#7d8a58', { flatShading: false }), 1.4, .22, 3.17); Sph(.06, M('#e6c48a', { flatShading: false }), 1.51, .22, 3.23);
-plant('monstera', .35, 1.4, .9);
+plant('monstera', .4, .85, .85);   // between the easel and the crochet chair
 const wand = { active: false, pos: new THREE.Vector3() }, UP = new THREE.Vector3(0, 1, 0), tmpV = new THREE.Vector3();
 const wandStick = add(new THREE.CylinderGeometry(.007, .007, 1, 4), '#8a5634', 0, 0, 0); wandStick.castShadow = false;
 const feather = add(new THREE.ConeGeometry(.04, .17, 5), M('#e85d8a'), 0, 0, 0);
@@ -830,55 +830,84 @@ scene.add(fl);
 // ---------------------------------------------------------------- characters
 function makePerson(c) {
   const root = new THREE.Group(); root.rotation.order = 'YXZ'; scene.add(root);
-  const mS = smooth(c.skin), mP = fabric(c.pants), mSh = fabric(c.shirt), mH = smooth(c.hair), mShoe = smooth(c.shoes), mDark = smooth('#2a1a14');
+  // chibi proportions: big round head, big sparkly eyes, small body
+  const mS = smooth(c.skin), mP = fabric(c.pants), mSh = fabric(c.shirt), mH = smooth(c.hair), mShoe = smooth(c.shoes), mDark = smooth('#22160f');
+  const white = new THREE.MeshBasicMaterial({ color: '#ffffff' });
   const thighs = [], knees = [];
   for (const x of [-.085, .085]) {
     const th = group(x, .76, 0, 0, root); add(new THREE.CapsuleGeometry(.08, .24, 6, 14), mP, 0, -.19, 0, th);
     const kn = group(0, -.38, 0, 0, th); add(new THREE.CapsuleGeometry(.07, .26, 6, 14), mP, 0, -.19, 0, kn);
-    soft(.115, .075, .21, .035, mShoe, 0, -.37, .045, kn);
+    soft(.12, .08, .21, .035, mShoe, 0, -.37, .045, kn);
     thighs.push(th); knees.push(kn);
   }
   const body = group(0, .76, 0, 0, root);
-  add(new THREE.CapsuleGeometry(.17, .26, 8, 18), mSh, 0, .28, 0, body).scale.z = .88;
-  add(new THREE.TorusGeometry(.158, .03, 8, 20), fabric(c.trim), 0, .05, 0, body).rotation.x = Math.PI / 2;      // sweater hem
-  if (c.outfit === 'cardigan') {   // open cardigan over a cream top
-    soft(.1, .44, .03, .012, fabric(c.inner), 0, .3, .142, body);
-    [.36, .25, .14].forEach(y => Sph(.012, smooth('#8a5634'), .062, y, .15, body, 6));
-  } else {   // hoodie: hood, kangaroo pocket, drawstrings
-    add(new THREE.TorusGeometry(.1, .05, 10, 18), mSh, 0, .53, -.07, body).rotation.x = Math.PI / 2 + .5;
-    soft(.22, .11, .03, .02, fabric(c.trim), 0, .17, .14, body);
-    [-.035, .035].forEach(x => C(.006, .006, .13, 5, '#efe2c8', x, .45, .15, body));
+  add(new THREE.CapsuleGeometry(.165, .24, 8, 18), mSh, 0, .27, 0, body).scale.z = .88;
+  add(new THREE.TorusGeometry(.155, .026, 8, 20), fabric(c.trim), 0, .05, 0, body).rotation.x = Math.PI / 2;     // hem
+  if (c.outfit === 'polo') {   // collar, placket, buttons
+    [-1, 1].forEach(sd => soft(.11, .03, .08, .012, mSh, sd * .055, .53, .09, body).rotation.set(.5, 0, sd * .45));
+    soft(.045, .15, .012, .005, fabric(c.trim), 0, .44, .148, body);
+    [.48, .41].forEach(y => Sph(.009, smooth('#e8e4da'), 0, y, .156, body, 6));
+  } else {   // sleeveless top: soft scoop neckline
+    add(new THREE.TorusGeometry(.085, .018, 8, 18, Math.PI), fabric(c.trim), 0, .53, .06, body).rotation.set(Math.PI / 2 + .35, 0, Math.PI);
   }
-  const arms = [-.23, .23].map(x => {
-    const a = group(x, .5, 0, 0, body);
-    add(new THREE.CapsuleGeometry(.058, .27, 6, 12), mSh, 0, -.18, 0, a); Sph(.052, mS, 0, -.41, 0, a, 14);
-    add(new THREE.TorusGeometry(.055, .018, 6, 14), fabric(c.trim), 0, -.35, 0, a).rotation.x = Math.PI / 2;   // cuff
+  const arms = [-.225, .225].map(x => {
+    const a = group(x, .48, 0, 0, body);
+    // children[0] = arm, children[1] = hand (props and the feather wand rely on this order)
+    add(new THREE.CapsuleGeometry(.052, .27, 6, 12), c.outfit === 'polo' ? mS : mS, 0, -.18, 0, a); Sph(.054, mS, 0, -.41, 0, a, 14);
+    if (c.outfit === 'polo') add(new THREE.CapsuleGeometry(.068, .08, 6, 12), mSh, 0, -.05, 0, a);             // short sleeve
+    else Sph(.06, mS, 0, 0, 0, a, 12);                                                                           // bare shoulder
     return a;
   });
-  C(.055, .062, .1, 12, mS, 0, .61, 0, body);
-  const head = group(0, .8, 0, 0, body);
-  Sph(.175, mS, 0, 0, 0, head, 28).scale.set(1, 1.03, .97);
-  [-1, 1].forEach(sd => Sph(.036, mS, sd * .172, -.01, -.005, head, 10).scale.set(.6, 1, 1));                    // ears
+  C(.055, .06, .08, 12, mS, 0, .58, 0, body);
+  const head = group(0, .84, 0, 0, body);
+  const R = .265;
+  Sph(R, mS, 0, 0, 0, head, 36);
+  // put a feature flush on the face: z of the head surface at (x, y), plus a small offset
+  const onFace = (x, y, off = 0) => Math.sqrt(Math.max(0, R * R - x * x - y * y)) + off;
+  [-1, 1].forEach(sd => Sph(.045, mS, sd * .255, -.03, -.01, head, 12).scale.set(.5, .9, .9));                 // ears
+  const ex = .1, ey = -.035;
   [-1, 1].forEach(sd => {
-    Sph(.022, mDark, sd * .062, .005, .155, head, 10).scale.set(1, 1.3, .6);                                     // eyes
-    const hl = Sph(.007, new THREE.MeshBasicMaterial({ color: '#ffffff' }), sd * .062 - .007, .016, .168, head, 6); hl.castShadow = false;
-    soft(.052, .012, .012, .005, mH, sd * .064, .062, .158, head).rotation.z = -sd * .12;                      // eyebrows
-    const ch = Sph(.032, M('#f08c7a', { transparent: true, opacity: .45, flatShading: false }), sd * .1, -.05, .14, head, 8); ch.castShadow = false;
+    const x = sd * ex;
+    const eye = Sph(.052, mDark, x, ey, onFace(x, ey, -.012), head, 18); eye.scale.set(.85, 1.15, .4);          // big glossy oval eyes
+    const h1 = Sph(.017, white, x - sd * .014 - .006, ey + .024, onFace(x, ey + .024, .006), head, 10); h1.castShadow = false;
+    const h2 = Sph(.008, white, x + .014, ey - .022, onFace(x, ey - .022, .006), head, 8); h2.castShadow = false;
+    const brow = add(new THREE.TorusGeometry(.03, .006, 6, 14, Math.PI * .7), mH, x, ey + .085, onFace(x, ey + .085, .002), head);
+    brow.rotation.z = Math.PI * .15; brow.castShadow = false;                                                      // soft arched brow
+    const ch = Sph(.045, M('#ff9a8a', { transparent: true, opacity: .5, flatShading: false }), sd * .165, -.1, onFace(sd * .165, -.1, -.01), head, 12);
+    ch.scale.set(1.2, .7, .35); ch.castShadow = false;                                                             // rosy cheeks
   });
-  Sph(.02, mS, 0, -.028, .172, head, 10).scale.set(1, .8, .8);                                                    // nose
-  const smile = add(new THREE.TorusGeometry(.024, .006, 6, 14, Math.PI), smooth('#8a4a3a'), 0, -.07, .16, head); smile.rotation.z = Math.PI; smile.castShadow = false;
-  add(new THREE.SphereGeometry(.188, 28, 16, 0, Math.PI * 2, 0, Math.PI * .56), mH, 0, .012, -.01, head);         // hair cap
-  Sph(.17, mH, 0, -.01, -.06, head, 20).scale.set(1.1, 1.02, 1);
-  if (c.style === 'long') {   // long wavy hair, side-swept bangs, clip
-    soft(.36, .44, .14, .07, mH, 0, -.22, -.1, head);
-    [-1, 1].forEach(sd => { Sph(.062, mH, sd * .155, -.13, .02, head, 12).scale.set(.85, 2.3, .9); Sph(.05, mH, sd * .15, -.33, -.02, head, 10); });
-    const bang = Sph(.13, mH, .03, .12, .1, head, 16); bang.scale.set(1.35, .42, .62); bang.rotation.set(-.35, 0, -.2);
-    Sph(.022, smooth('#e8b86a'), -.12, .12, .1, head, 8).scale.set(1.6, .7, .7);
-  } else {   // short tousled hair + round glasses
-    [[-.08, .15, .08], [0, .175, .1], [.08, .155, .07], [.04, .19, .02], [-.05, .19, 0], [.11, .1, .06]].forEach(([x, y, z]) => Sph(.055, mH, x, y, z, head, 10));
-    const gl = smooth('#3a2a22');
-    [-1, 1].forEach(sd => add(new THREE.TorusGeometry(.036, .006, 6, 18), gl, sd * .062, .005, .17, head));
-    B(.035, .006, .006, gl, 0, .01, .176, head);
+  const my = -.115;
+  if (c.bigSmile) {   // little open smile
+    const m = add(new THREE.CircleGeometry(.032, 18, Math.PI, Math.PI), smooth('#8e3434'), 0, my + .012, onFace(0, my, .003), head); m.castShadow = false;
+    const tongue = add(new THREE.CircleGeometry(.015, 12, Math.PI, Math.PI), smooth('#e07a7a'), 0, my - .006, onFace(0, my, .004), head); tongue.castShadow = false;
+  } else {
+    const sm = add(new THREE.TorusGeometry(.022, .006, 6, 14, Math.PI), smooth('#7a3a30'), 0, my + .01, onFace(0, my, .004), head); sm.rotation.z = Math.PI; sm.castShadow = false;
+  }
+  add(new THREE.SphereGeometry(R + .013, 32, 12, 0, Math.PI * 2, 0, Math.PI * .36), mH, 0, .01, -.01, head);    // crown (stops above the brows)
+  add(new THREE.SphereGeometry(R + .013, 32, 18, Math.PI / 2 + 1.0, Math.PI * 2 - 2.0, 0, Math.PI * .6), mH, 0, .01, -.01, head);   // back + sides, open at the face
+  Sph(.25, mH, 0, -.03, -.08, head, 24).scale.set(1.08, 1.03, 1);
+  if (c.style === 'long') {   // long fluffy hair past the shoulders, centre-parted curtain bangs
+    soft(.52, .62, .17, .09, mH, 0, -.34, -.12, head);
+    Sph(.17, mH, 0, .18, -.02, head, 20).scale.set(1.5, .75, 1.3);                                                // fluffy crown
+    [-1, 1].forEach(sd => {
+      Sph(.072, mH, sd * .228, -.2, .06, head, 14).scale.set(1, 3.2, 1);
+      Sph(.075, mH, sd * .21, -.47, .02, head, 12).scale.set(1.05, 1.2, 1);
+      const bang = Sph(.13, mH, sd * .1, .14, onFace(sd * .1, .14, -.07), head, 16); bang.scale.set(1.2, .42, .55); bang.rotation.set(-.35, 0, sd * .5);
+    });
+  } else {   // swept-up hair, light beard + moustache, thin rectangular glasses
+    const top = Sph(.155, mH, 0, .2, .05, head, 20); top.scale.set(1.5, .72, 1.2); top.rotation.x = -.2;
+    const swoop = Sph(.1, mH, .05, .21, .17, head, 16); swoop.scale.set(1.5, .55, .9); swoop.rotation.z = -.25;
+    const mBeard = smooth('#3a2a20');
+    add(new THREE.SphereGeometry(R + .006, 32, 10, Math.PI / 2 - 1.05, 2.1, Math.PI * .66, Math.PI * .26), mBeard, 0, 0, 0, head);   // jaw + chin
+    const mo = soft(.075, .018, .016, .008, mBeard, 0, my + .032, onFace(0, my + .032, .002), head); mo.castShadow = false;           // moustache
+    const fr = smooth('#1c2230'), gz = d => onFace(ex, ey, .018 + d);
+    [-1, 1].forEach(sd => {
+      const gx = sd * ex;
+      [[0, .046, .12, .008], [0, -.044, .12, .007]].forEach(([dx, dy, w, h]) => B(w, h, .008, fr, gx + dx, ey + dy, gz(0), head));
+      [-.06, .06].forEach(dx => B(.008, .09, .008, fr, gx + dx, ey, gz(0), head));
+      B(.008, .01, .2, fr, sd * .165, ey + .03, .15, head);                                                       // temple arm
+    });
+    B(.04, .008, .008, fr, 0, ey + .02, gz(.004), head);
   }
   const book = B(.26, .2, .03, M('#3f6a6a'), 0, .32, .3, body); book.rotation.x = -.7;
   const mug = C(.045, .04, .09, 8, '#efe2c4', 0, -.44, .05, arms[1]);
@@ -998,7 +1027,7 @@ const CAT_SPOTS = {
 };
 const OPEN = { B: [[-1.0, -1.0], [-3.5, -.6], [-3.6, -1.0]], L: [[-1.2, 1.2], [-3.0, 1.2], [-1.2, 3.0], [-3.2, 2.4]],
                S: [[2.5, 1.0], [3.0, 2.2], [2.0, 2.6], [3.2, .8], [2.0, .6]], K: [[3.4, -1.4], [.9, -2.5], [2.8, -2.2], [.5, -1.1]] };
-const PLAY = { x: 2.85, z: 2.0 }, PLAY_SPOTS = [PLAY, { x: -1.15, z: 2.0 }];
+const PLAY = { x: 2.5, z: 1.45 }, PLAY_SPOTS = [PLAY, { x: -1.15, z: 2.0 }];
 const LAP = { crochet: .56, knit: .56, tea: .56, tv1: .56, tv2: .56, games: .56, football: .56, read: .56, nook: .64 };   // lap height per seat
 const WAND_AT = { x: -2.95, z: -.65 };
 const ROOM_NAME = { B: 'bedroom', L: 'living room', S: 'studio', K: 'kitchen', Y: 'garden' };
@@ -1052,8 +1081,8 @@ function updateHouse() {
 }
 
 const people = [
-  { name: 'June', rig: makePerson({ skin: '#eab48f', hair: '#7a4126', style: 'long', outfit: 'cardigan', shirt: '#c9763f', trim: '#b5643a', inner: '#f3e6cf', pants: '#4f5f80', shoes: '#7a3a2a' }), x: 0, z: 0 },
-  { name: 'Theo', rig: makePerson({ skin: '#a8714f', hair: '#2a1a12', style: 'short', outfit: 'hoodie', shirt: '#6f8a66', trim: '#5e7756', pants: '#3a3f55', shoes: '#ece7dc' }), x: 0, z: 0 },
+  { name: 'June', rig: makePerson({ skin: '#c98e69', hair: '#2b1a12', style: 'long', outfit: 'tank', bigSmile: true, shirt: '#f3f1ea', trim: '#e4e0d6', pants: '#4f5f80', shoes: '#d9cbb5' }), x: 0, z: 0 },
+  { name: 'Theo', rig: makePerson({ skin: '#b98060', hair: '#1e1510', style: 'short', outfit: 'polo', glasses: true, shirt: '#1f5f66', trim: '#184d53', pants: '#3d3f48', shoes: '#2a2a2a' }), x: 0, z: 0 },
 ];
 const cats = [
   { name: 'Biscuit', rig: makeCat('#e0913f', '#f7e8d4'), x: -1.2, z: 1.2 },
