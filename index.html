@@ -828,10 +828,22 @@ function spawnLeaf(l, anywhere) {
 scene.add(fl);
 
 // ---------------------------------------------------------------- characters
+function knitTexture(base, rib, band) {   // vertical knit ribs, optional fair-isle band across the chest
+  return canvasTex(128, 128, g => {
+    g.fillStyle = base; g.fillRect(0, 0, 128, 128);
+    g.fillStyle = rib; for (let x = 0; x < 128; x += 8) g.fillRect(x, 0, 3, 128);
+    g.fillStyle = 'rgba(255,255,255,.08)'; for (let x = 4; x < 128; x += 8) for (let y = 0; y < 128; y += 6) g.fillRect(x, y, 3, 3);
+    if (band) {
+      g.fillStyle = band[0]; g.fillRect(0, 34, 128, 18); g.fillStyle = band[1];
+      for (let x = 0; x < 128; x += 12) { g.beginPath(); g.moveTo(x, 43); g.lineTo(x + 6, 37); g.lineTo(x + 12, 43); g.lineTo(x + 6, 49); g.fill(); }
+      g.fillRect(0, 32, 128, 2); g.fillRect(0, 52, 128, 2);
+    }
+  });
+}
 function makePerson(c) {
   const root = new THREE.Group(); root.rotation.order = 'YXZ'; scene.add(root);
   // chibi proportions: big round head, big sparkly eyes, small body
-  const mS = smooth(c.skin), mP = fabric(c.pants), mSh = fabric(c.shirt), mH = smooth(c.hair), mShoe = smooth(c.shoes), mDark = smooth('#22160f');
+  const mS = smooth(c.skin), mP = fabric(c.pants), mH = smooth(c.hair), mShoe = smooth(c.shoes), mDark = smooth('#22160f');
   const white = new THREE.MeshBasicMaterial({ color: '#ffffff' });
   const thighs = [], knees = [];
   for (const x of [-.085, .085]) {
@@ -841,21 +853,16 @@ function makePerson(c) {
     thighs.push(th); knees.push(kn);
   }
   const body = group(0, .76, 0, 0, root);
-  add(new THREE.CapsuleGeometry(.165, .24, 8, 18), mSh, 0, .27, 0, body).scale.z = .88;
-  add(new THREE.TorusGeometry(.155, .026, 8, 20), fabric(c.trim), 0, .05, 0, body).rotation.x = Math.PI / 2;     // hem
-  if (c.outfit === 'polo') {   // collar, placket, buttons
-    [-1, 1].forEach(sd => soft(.11, .03, .08, .012, mSh, sd * .055, .53, .09, body).rotation.set(.5, 0, sd * .45));
-    soft(.045, .15, .012, .005, fabric(c.trim), 0, .44, .148, body);
-    [.48, .41].forEach(y => Sph(.009, smooth('#e8e4da'), 0, y, .156, body, 6));
-  } else {   // sleeveless top: soft scoop neckline
-    add(new THREE.TorusGeometry(.085, .018, 8, 18, Math.PI), fabric(c.trim), 0, .53, .06, body).rotation.set(Math.PI / 2 + .35, 0, Math.PI);
-  }
+  const knit = new THREE.MeshStandardMaterial({ map: knitTexture(c.sweater, c.rib, c.band), roughness: 1 }), mRib = fabric(c.rib);
+  add(new THREE.CapsuleGeometry(c.oversized ? .178 : .165, .24, 8, 20), knit, 0, .27, 0, body).scale.z = .9;     // cosy knit sweater
+  add(new THREE.TorusGeometry(c.oversized ? .17 : .157, .03, 8, 22), mRib, 0, c.oversized ? .02 : .05, 0, body).rotation.x = Math.PI / 2;   // ribbed hem
+  if (c.collar === 'turtle') add(new THREE.TorusGeometry(.07, .038, 10, 20), mRib, 0, .56, 0, body).rotation.x = Math.PI / 2;
+  else add(new THREE.TorusGeometry(.085, .018, 8, 20), mRib, 0, .53, .01, body).rotation.x = Math.PI / 2 + .25;
   const arms = [-.225, .225].map(x => {
     const a = group(x, .48, 0, 0, body);
-    // children[0] = arm, children[1] = hand (props and the feather wand rely on this order)
-    add(new THREE.CapsuleGeometry(.052, .27, 6, 12), c.outfit === 'polo' ? mS : mS, 0, -.18, 0, a); Sph(.054, mS, 0, -.41, 0, a, 14);
-    if (c.outfit === 'polo') add(new THREE.CapsuleGeometry(.068, .08, 6, 12), mSh, 0, -.05, 0, a);             // short sleeve
-    else Sph(.06, mS, 0, 0, 0, a, 12);                                                                           // bare shoulder
+    // children[0] = sleeve, children[1] = hand (props and the feather wand rely on this order)
+    add(new THREE.CapsuleGeometry(c.oversized ? .066 : .06, .27, 6, 12), knit, 0, -.18, 0, a); Sph(.054, mS, 0, -.41, 0, a, 14);
+    add(new THREE.TorusGeometry(.056, .022, 8, 16), mRib, 0, -.34, 0, a).rotation.x = Math.PI / 2;               // ribbed cuff
     return a;
   });
   C(.055, .06, .08, 12, mS, 0, .58, 0, body);
@@ -886,14 +893,17 @@ function makePerson(c) {
   add(new THREE.SphereGeometry(R + .013, 32, 12, 0, Math.PI * 2, 0, Math.PI * .36), mH, 0, .01, -.01, head);    // crown (stops above the brows)
   add(new THREE.SphereGeometry(R + .013, 32, 18, Math.PI / 2 + 1.0, Math.PI * 2 - 2.0, 0, Math.PI * .6), mH, 0, .01, -.01, head);   // back + sides, open at the face
   Sph(.25, mH, 0, -.03, -.08, head, 24).scale.set(1.08, 1.03, 1);
-  if (c.style === 'long') {   // long fluffy hair past the shoulders, centre-parted curtain bangs
-    soft(.52, .62, .17, .09, mH, 0, -.34, -.12, head);
-    Sph(.17, mH, 0, .18, -.02, head, 20).scale.set(1.5, .75, 1.3);                                                // fluffy crown
+  if (c.style === 'long') {   // soft, rounded hair falling to the shoulders, curtain bangs, a little bow
+    Sph(.27, mH, 0, -.1, -.08, head, 28).scale.set(1.06, 1.08, .86);                                              // mane behind the head
+    Sph(.22, mH, 0, -.3, -.1, head, 24).scale.set(1.18, .85, .7);                                                 // ends resting on the shoulders
     [-1, 1].forEach(sd => {
-      Sph(.072, mH, sd * .228, -.2, .06, head, 14).scale.set(1, 3.2, 1);
-      Sph(.075, mH, sd * .21, -.47, .02, head, 12).scale.set(1.05, 1.2, 1);
-      const bang = Sph(.13, mH, sd * .1, .14, onFace(sd * .1, .14, -.07), head, 16); bang.scale.set(1.2, .42, .55); bang.rotation.set(-.35, 0, sd * .5);
+      Sph(.085, mH, sd * .215, -.16, .06, head, 16).scale.set(.85, 2.1, .8);                                     // face-framing locks
+      Sph(.07, mH, sd * .205, -.31, .05, head, 14).scale.set(1, 1.1, .85);
+      const bang = Sph(.125, mH, sd * .095, .135, onFace(sd * .095, .135, -.075), head, 18); bang.scale.set(1.2, .4, .55); bang.rotation.set(-.35, 0, sd * .55);
     });
+    const bow = smooth('#f3e6cf');                                                                                  // little bow
+    [-1, 1].forEach(sd => Sph(.032, bow, -.17 + sd * .028, .17, .08, head, 10).scale.set(1.1, .7, .6));
+    Sph(.014, bow, -.17, .17, .095, head, 8);
   } else {   // swept-up hair, light beard + moustache, thin rectangular glasses
     const top = Sph(.155, mH, 0, .2, .05, head, 20); top.scale.set(1.5, .72, 1.2); top.rotation.x = -.2;
     const swoop = Sph(.1, mH, .05, .21, .17, head, 16); swoop.scale.set(1.5, .55, .9); swoop.rotation.z = -.25;
@@ -1084,8 +1094,8 @@ function updateHouse() {
 }
 
 const people = [
-  { name: 'June', rig: makePerson({ skin: '#c98e69', hair: '#2b1a12', style: 'long', outfit: 'tank', bigSmile: true, shirt: '#f3f1ea', trim: '#e4e0d6', pants: '#4f5f80', shoes: '#d9cbb5' }), x: 0, z: 0 },
-  { name: 'Theo', rig: makePerson({ skin: '#b98060', hair: '#1e1510', style: 'short', outfit: 'polo', glasses: true, shirt: '#1f5f66', trim: '#184d53', pants: '#3d3f48', shoes: '#2a2a2a' }), x: 0, z: 0 },
+  { name: 'June', rig: makePerson({ skin: '#c98e69', hair: '#2b1a12', style: 'long', bigSmile: true, oversized: true, collar: 'turtle', sweater: '#d9a0a0', rib: '#c48a8a', pants: '#26242a', shoes: '#f6eee2' }), x: 0, z: 0 },
+  { name: 'Theo', rig: makePerson({ skin: '#b98060', hair: '#1e1510', style: 'short', glasses: true, collar: 'crew', sweater: '#2f6a6a', rib: '#285a5a', band: ['#efe2c8', '#c9763f'], pants: '#4a4a52', shoes: '#8a6a4a' }), x: 0, z: 0 },
 ];
 const cats = [
   { name: 'Biscuit', rig: makeCat('#e0913f', '#f7e8d4'), x: -1.2, z: 1.2 },
