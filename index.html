@@ -1049,6 +1049,9 @@ function bubbleSprite() { const s = new THREE.Sprite(bubbleMat('💤')); s.scale
 const Q = new URLSearchParams(location.search);
 let simT = 0, hour = +(Q.get('hour') ?? 6.97), speed = +(Q.get('speed') ?? 1);
 const night = () => hour >= 22 || hour < 6.5;
+const MIN_ACT = 20;   // in-game minutes an activity runs before routines (meals, movie, walk invites) may interrupt it
+const settled = p => simT - (p.startedAt ?? -1e9) >= MIN_ACT;
+const cut = (p, t) => { p.timer = Math.min(p.timer, Math.max(t, (p.startedAt ?? -1e9) + MIN_ACT - simT)); };
 const bedtime = p => hour >= p.bed || hour < p.wake;   // each person has their own bed/wake time
 // household routine: someone cooks at each mealtime, then both sit down and eat together
 const MEALS = [[7.75, 'breakfast', '🥞'], [12.5, 'lunch', '🥪'], [18.5, 'dinner', '🍲']];
@@ -1149,7 +1152,7 @@ function choosePerson(p) {
 }
 function startPersonAct(p) {
   const sp = SPOTS[p.target]; p.spot = p.target; p.last = p.target; p.mode = 'act';
-  p.x = sp.x; p.z = sp.z; p.heading = sp.h; p.timer = sp.pose === 'lie' ? 9e9 : p.target === 'cook' || p.target === 'prep' || sp.anim === 'eat' ? rand(25, 35) : p.target === 'coffee' ? rand(18, 24) : rand(45, 75); p.callT = 0; p.bubbleT = 0; p.dur = p.timer; if (p.target === 'coffee') p.hadCoffee = true;
+  p.x = sp.x; p.z = sp.z; p.heading = sp.h; p.timer = sp.pose === 'lie' ? 9e9 : p.target === 'cook' || p.target === 'prep' || sp.anim === 'eat' ? rand(25, 35) : p.target === 'coffee' ? rand(18, 24) : rand(45, 75); p.callT = 0; p.bubbleT = 0; p.dur = p.timer; p.startedAt = simT; if (p.target === 'coffee') p.hadCoffee = true;
   p.recent = [p.target, ...(p.recent || [])].slice(0, 4);
   if (p.target === 'bake') SPOTS.bake.label = pick(['baking cookies', 'baking banana bread', 'baking an apple pie', 'baking cinnamon rolls']);
   if (sp.loop) { p.loopA = Math.PI / 2; p.timer = p.dur = sp.loop.laps * 2 * Math.PI * (sp.loop.rx + sp.loop.rz) / 2 / sp.loop.speed; }
@@ -1157,8 +1160,8 @@ function startPersonAct(p) {
   else if (p.target === 'stroll1' && !p.cmd) {   // sometimes ask the other one to come along
     SPOTS.stroll1.label = SPOTS.stroll2.label = 'going for a walk';
     const q = people.find(o => o !== p);
-    if (Math.random() < .55 && !bedtime(q) && !house.meal && !house.tv && q.mode === 'act' && SPOTS[q.spot].pose !== 'lie') {
-      house.walkInvite = q; q.timer = Math.min(q.timer, 1.5); p.waitFor = q; p.waitT = 25;
+    if (Math.random() < .55 && !bedtime(q) && !house.meal && !house.tv && q.mode === 'act' && SPOTS[q.spot].pose !== 'lie' && settled(q)) {
+      house.walkInvite = q; cut(q, 1.5); p.waitFor = q; p.waitT = 40;
     }
   }
   if (p.target === 'eat1' || p.target === 'eat2') bowls[p.target === 'eat1' ? 0 : 1].visible = true;
@@ -1311,13 +1314,13 @@ function updatePerson(p, dt) {
     p.timer -= dt;
     const hm = house.meal, sp = SPOTS[p.spot], eating = p.spot === 'eat1' || p.spot === 'eat2';
     if (sp.pose === 'lie' && !bedtime(p) && !p.cmd) p.timer = 0;
-    if (bedtime(p) && sp.pose !== 'lie' && !p.cmd) p.timer = Math.min(p.timer, 2);
-    if (hm && hm.stage === 'cook' && p === hm.cook && p.spot !== 'cook' && p.spot !== 'coffee') p.timer = Math.min(p.timer, 1.5);
-    if (hm && hm.stage === 'cook' && p === hm.helper && p.spot !== 'coffee') p.timer = p.spot === 'prep' ? Math.max(p.timer, 1) : Math.min(p.timer, 1.5);
-    if (hm && hm.stage === 'eat' && !hm.ate.has(p) && !eating && sp.pose !== 'lie' && p.spot !== 'coffee') p.timer = Math.min(p.timer, 1.5);
+    if (bedtime(p) && sp.pose !== 'lie' && !p.cmd) cut(p, 2);
+    if (hm && hm.stage === 'cook' && p === hm.cook && p.spot !== 'cook' && p.spot !== 'coffee') cut(p, 1.5);
+    if (hm && hm.stage === 'cook' && p === hm.helper && p.spot !== 'coffee') { if (p.spot === 'prep') p.timer = Math.max(p.timer, 1); else cut(p, 1.5); }
+    if (hm && hm.stage === 'eat' && !hm.ate.has(p) && !eating && sp.pose !== 'lie' && p.spot !== 'coffee') cut(p, 1.5);
     const atTV = p.spot === 'tv1' || p.spot === 'tv2';
     if (house.tv && !hm && atTV) p.timer = Math.max(p.timer, 1);
-    if (house.tv && !hm && !atTV && sp.pose !== 'lie') p.timer = Math.min(p.timer, 1.5);
+    if (house.tv && !hm && !atTV && sp.pose !== 'lie') cut(p, 1.5);
     if (p.cmd) {   // player's choice overrides the routine until its time is up
       if (simT >= p.cmd.until) { endCommand(p); p.timer = 0; }
       else if (p.spot === p.cmd.key) p.timer = Math.max(p.timer, 1);
