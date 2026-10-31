@@ -16,29 +16,34 @@ function knitTexture(base, rib, band) {   // vertical knit ribs, optional fair-i
     }
   });
 }
+function teeTexture(base) {   // soft cotton: flat colour with a faint weave
+  return canvasTex(64, 64, g => { g.fillStyle = base; g.fillRect(0, 0, 64, 64); for (let i = 0; i < 400; i++) { g.fillStyle = `rgba(${Math.random() < .5 ? '255,255,255' : '0,0,0'},.05)`; g.fillRect(Math.random() * 64, Math.random() * 64, 2, 1); } });
+}
 export function makePerson(c) {
   const root = new THREE.Group(); root.rotation.order = 'YXZ'; scene.add(root);
   // chibi proportions: big round head, big sparkly eyes, small body
-  const mS = smooth(c.skin), mP = fabric(c.pants), mH = smooth(c.hair), mShoe = smooth(c.shoes), mDark = smooth('#22160f');
+  const mS = smooth(c.skin), mP = fabric('#444'), mH = smooth(c.hair), mShoe = smooth('#444'), mDark = smooth('#22160f');   // clothes are coloured by setOutfit
   const white = new THREE.MeshBasicMaterial({ color: '#ffffff' });
-  const thighs = [], knees = [];
+  const thighs = [], knees = [], shins = [];
   for (const x of [-.085, .085]) {
     const th = group(x, .76, 0, 0, root); add(new THREE.CapsuleGeometry(.08, .24, 6, 14), mP, 0, -.19, 0, th);
-    const kn = group(0, -.38, 0, 0, th); add(new THREE.CapsuleGeometry(.07, .26, 6, 14), mP, 0, -.19, 0, kn);
+    const kn = group(0, -.38, 0, 0, th); shins.push(add(new THREE.CapsuleGeometry(.07, .26, 6, 14), mP, 0, -.19, 0, kn));
     soft(.12, .08, .21, .035, mShoe, 0, -.37, .045, kn);
     thighs.push(th); knees.push(kn);
   }
   const body = group(0, .76, 0, 0, root);
-  const knit = new THREE.MeshStandardMaterial({ map: knitTexture(c.sweater, c.rib, c.band), roughness: 1 }), mRib = fabric(c.rib);
+  const knit = new THREE.MeshStandardMaterial({ roughness: 1 }), mRib = fabric('#444');
   add(new THREE.CapsuleGeometry(c.oversized ? .178 : .165, .24, 8, 20), knit, 0, .27, 0, body).scale.z = .9;     // cosy knit sweater
   add(new THREE.TorusGeometry(c.oversized ? .17 : .157, .03, 8, 22), mRib, 0, c.oversized ? .02 : .05, 0, body).rotation.x = Math.PI / 2;   // ribbed hem
-  if (c.collar === 'turtle') add(new THREE.TorusGeometry(.07, .038, 10, 20), mRib, 0, .56, 0, body).rotation.x = Math.PI / 2;
-  else add(new THREE.TorusGeometry(.085, .018, 8, 20), mRib, 0, .53, .01, body).rotation.x = Math.PI / 2 + .25;
+  const turtle = add(new THREE.TorusGeometry(.07, .038, 10, 20), mRib, 0, .56, 0, body); turtle.rotation.x = Math.PI / 2;
+  const crew = add(new THREE.TorusGeometry(.085, .018, 8, 20), mRib, 0, .53, .01, body); crew.rotation.x = Math.PI / 2 + .25;
   const arms = [-.225, .225].map(x => {
     const a = group(x, .48, 0, 0, body);
     // children[0] = sleeve, children[1] = hand (props and the feather wand rely on this order)
     add(new THREE.CapsuleGeometry(c.oversized ? .066 : .06, .27, 6, 12), knit, 0, -.18, 0, a); Sph(.054, mS, 0, -.41, 0, a, 14);
     add(new THREE.TorusGeometry(.056, .022, 8, 16), mRib, 0, -.34, 0, a).rotation.x = Math.PI / 2;               // ribbed cuff
+    add(new THREE.CapsuleGeometry(.052, .27, 6, 12), mS, 0, -.18, 0, a);                                        // bare arm (summer)
+    add(new THREE.CapsuleGeometry(c.oversized ? .07 : .066, .08, 6, 12), knit, 0, -.05, 0, a);                    // short sleeve (summer)
     return a;
   });
   C(.055, .06, .08, 12, mS, 0, .58, 0, body);
@@ -110,7 +115,26 @@ export function makePerson(c) {
   const pad = group(.23, -.42, .06, 0, arms[0]); B(.2, .04, .1, M('#2a2a32'), 0, 0, 0, pad); Sph(.012, M('#e85d5d'), .05, .025, 0, pad, 6); Sph(.012, M('#5d9ae8'), -.05, .025, 0, pad, 6);
   const bowl = group(.2, -.44, .1, 0, arms[0]); C(.09, .06, .08, 14, smooth('#efe2c8'), 0, 0, 0, bowl); C(.075, .075, .01, 14, smooth('#e8d2a0'), 0, .035, 0, bowl);
   const yarn = group(.2, -.44, .08, 0, arms[0]); Sph(.05, fabric('#c96a68'), 0, 0, 0, yarn, 10); C(.006, .006, .14, 5, '#d9c9a0', -.1, .03, 0, yarn).rotation.z = 1.2;
-  return { root, body, arms, head, thighs, knees, book, mug, can, rake, broom, vac, duster, pad, bowl, yarn };
+  // winter woollies, worn outdoors: beanie with a pom-pom and a scarf
+  const woolly = fabric('#b5343a');
+  const beanie = group(0, 0, 0, 0, head);
+  add(new THREE.SphereGeometry(R + .035, 28, 12, 0, Math.PI * 2, 0, Math.PI * .42), woolly, 0, .02, -.01, beanie);
+  add(new THREE.TorusGeometry(R * .93, .03, 8, 28), fabric('#efe2c8'), 0, .095, -.01, beanie).rotation.x = Math.PI / 2;
+  Sph(.06, fabric('#efe2c8'), 0, R + .07, -.01, beanie, 12);
+  const scarf = group(0, 0, 0, 0, body);
+  add(new THREE.TorusGeometry(.1, .045, 10, 22), woolly, 0, .56, .01, scarf).rotation.x = Math.PI / 2;
+  soft(.08, .26, .04, .02, woolly, .07, .4, .15, scarf).rotation.z = .15;
+  beanie.visible = scarf.visible = false;
+  // dress for the season: { top: 'knit' | 'tee', color, rib, band?, collar: 'turtle' | 'crew', short?, shorts?, pants, shoes }
+  function setOutfit(o) {
+    knit.map?.dispose(); knit.map = o.top === 'tee' ? teeTexture(o.color) : knitTexture(o.color, o.rib, o.band); knit.needsUpdate = true;
+    mRib.color.set(o.rib); mP.color.set(o.pants); mShoe.color.set(o.shoes);
+    turtle.visible = o.collar === 'turtle'; crew.visible = o.collar !== 'turtle';
+    arms.forEach(a => { a.children[0].visible = a.children[2].visible = !o.short; a.children[3].visible = a.children[4].visible = !!o.short; });
+    shins.forEach(m => m.material = o.shorts ? mS : mP);
+  }
+  setOutfit(c.outfit);
+  return { root, body, arms, head, thighs, knees, book, mug, can, rake, broom, vac, duster, pad, bowl, yarn, beanie, scarf, setOutfit };
 }
 export function makeCat(col, accent) {
   const root = new THREE.Group(); scene.add(root);

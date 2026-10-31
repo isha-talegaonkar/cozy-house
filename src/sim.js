@@ -155,10 +155,26 @@ export function updateHouse() {
   SPOTS.eat1.label = SPOTS.eat2.label = `having ${m[1]} together`;
 }
 
+// seasonal wardrobes
+const OUTFITS = {
+  June: {
+    spring: { top: 'knit', color: '#c9b6e0', rib: '#b8a3d2', collar: 'crew', pants: '#7f98bd', shoes: '#efe6d8' },
+    summer: { top: 'tee', color: '#f2d27a', rib: '#e6c060', collar: 'crew', short: true, shorts: true, pants: '#7d95b5', shoes: '#e9d9c4' },
+    fall:   { top: 'knit', color: '#d9a0a0', rib: '#c48a8a', collar: 'turtle', pants: '#26242a', shoes: '#f6eee2' },
+    winter: { top: 'knit', color: '#efe6d8', rib: '#ddd2c0', band: ['#b5343a', '#2f5a34'], collar: 'turtle', pants: '#26242a', shoes: '#8a5a3a' },
+  },
+  Theo: {
+    spring: { top: 'knit', color: '#8fb0c8', rib: '#7f9fb8', collar: 'crew', pants: '#b8a888', shoes: '#ece7dc' },
+    summer: { top: 'tee', color: '#2f8a8a', rib: '#287878', collar: 'crew', short: true, shorts: true, pants: '#b8a888', shoes: '#ece7dc' },
+    fall:   { top: 'knit', color: '#2f6a6a', rib: '#285a5a', band: ['#efe2c8', '#c9763f'], collar: 'crew', pants: '#4a4a52', shoes: '#8a6a4a' },
+    winter: { top: 'knit', color: '#2f5a3a', rib: '#284e32', band: ['#efe2c8', '#b5343a'], collar: 'crew', pants: '#4a4a52', shoes: '#5a3d28' },
+  },
+};
 export const people = [
-  { name: 'June', rig: makePerson({ skin: '#c98e69', hair: '#2b1a12', style: 'long', bigSmile: true, oversized: true, collar: 'turtle', sweater: '#d9a0a0', rib: '#c48a8a', pants: '#26242a', shoes: '#f6eee2' }), x: 0, z: 0 },
-  { name: 'Theo', rig: makePerson({ skin: '#b98060', hair: '#1e1510', style: 'short', glasses: true, collar: 'crew', sweater: '#2f6a6a', rib: '#285a5a', band: ['#efe2c8', '#c9763f'], pants: '#4a4a52', shoes: '#8a6a4a' }), x: 0, z: 0 },
+  { name: 'June', rig: makePerson({ skin: '#c98e69', hair: '#2b1a12', style: 'long', bigSmile: true, oversized: true, outfit: OUTFITS.June.fall }), x: 0, z: 0 },
+  { name: 'Theo', rig: makePerson({ skin: '#b98060', hair: '#1e1510', style: 'short', glasses: true, outfit: OUTFITS.Theo.fall }), x: 0, z: 0 },
 ];
+onSeason(s => people.forEach(p => p.rig.setOutfit(OUTFITS[p.name][s])));
 export const cats = [
   { name: 'Biscuit', rig: makeCat('#e0913f', '#f7e8d4'), x: -1.2, z: 1.2 },
   { name: 'Mochi', rig: makeCat('#8d8a86', '#f2efe9'), x: -3.4, z: 2.95 },
@@ -433,6 +449,7 @@ export function updatePerson(p, dt) {
   r.head.rotation.x = hx;
   r.head.rotation.y = sp && sp.anim === 'chop' && Math.sin(T * .5) > .7 ? -.6 : 0;
   p.gy = (p.gy || 0) + ((roomOf(p.x, p.z) === 'Y' ? -.4 : 0) - (p.gy || 0)) * Math.min(1, dt * 6);
+  r.beanie.visible = r.scarf.visible = season === 'winter' && roomOf(p.x, p.z) === 'Y';   // bundled up outdoors in winter
   r.root.position.set(p.x, (lie ? .72 : 0) + p.gy, p.z); r.root.rotation.set(lie ? -Math.PI / 2 : 0, p.heading, 0);
   if (sp && sp.anim === 'wand') {   // feather toy dances in front of them; stick runs from hand to toy
     wand.active = true; wandStick.visible = feather.visible = true;
