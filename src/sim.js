@@ -155,6 +155,11 @@ export function updateHouse() {
   SPOTS.eat1.label = SPOTS.eat2.label = `having ${m[1]} together`;
 }
 
+// pyjamas: worn from bedtime until the morning coffee (short sleeves and shorts in summer)
+const PJS = {
+  June: { top: 'pj', pattern: 'dots', color: '#f2c6cf', rib: '#ffffff', collar: 'crew', pants: '#f2c6cf', shoes: '#f6eee2' },
+  Theo: { top: 'pj', pattern: 'plaid', color: '#3d4f7a', rib: '#6d84b8', collar: 'crew', pants: '#3d4f7a', shoes: '#8a6a4a' },
+};
 // seasonal wardrobes
 const OUTFITS = {
   June: {
@@ -174,7 +179,7 @@ export const people = [
   { name: 'June', rig: makePerson({ skin: '#c98e69', hair: '#2b1a12', style: 'long', bigSmile: true, oversized: true, outfit: OUTFITS.June.fall }), x: 0, z: 0 },
   { name: 'Theo', rig: makePerson({ skin: '#b98060', hair: '#1e1510', style: 'short', glasses: true, outfit: OUTFITS.Theo.fall }), x: 0, z: 0 },
 ];
-onSeason(s => people.forEach(p => p.rig.setOutfit(OUTFITS[p.name][s])));
+onSeason(() => people.forEach(p => p.outfitKey = null));   // re-dress on the next frame
 export const cats = [
   { name: 'Biscuit', rig: makeCat('#e0913f', '#f7e8d4'), x: -1.2, z: 1.2 },
   { name: 'Mochi', rig: makeCat('#8d8a86', '#f2efe9'), x: -3.4, z: 2.95 },
@@ -451,7 +456,12 @@ export function updatePerson(p, dt) {
   r.head.rotation.y = sp && sp.anim === 'chop' && Math.sin(T * .5) > .7 ? -.6 : 0;
   p.gy = (p.gy || 0) + ((roomOf(p.x, p.z) === 'Y' ? -.4 : 0) - (p.gy || 0)) * Math.min(1, dt * 6);
   r.beanie.visible = r.scarf.visible = season === 'winter' && roomOf(p.x, p.z) === 'Y';
-  r.setEyes(!lie && (T % 4.7) > .13);   // eyes closed while sleeping, and a little blink every few seconds   // bundled up outdoors in winter
+  r.setEyes(!lie && (T % 4.7) > .13);
+  const pj = lie || bedtime(p) || (hour < 11 && !p.hadCoffee), want = pj ? 'pj-' + season : season;
+  if (p.outfitKey !== want) {   // change clothes only when needed (textures are rebuilt)
+    p.outfitKey = want;
+    r.setOutfit(pj ? { ...PJS[p.name], ...(season === 'summer' && { short: true, shorts: true }) } : OUTFITS[p.name][season]);
+  }   // eyes closed while sleeping, and a little blink every few seconds   // bundled up outdoors in winter
   r.root.position.set(p.x, (lie ? .72 : 0) + p.gy, p.z); r.root.rotation.set(lie ? -Math.PI / 2 : 0, p.heading, 0);
   if (sp && sp.anim === 'wand') {   // feather toy dances in front of them; stick runs from hand to toy
     wand.active = true; wandStick.visible = feather.visible = true;

@@ -16,6 +16,13 @@ function knitTexture(base, rib, band) {   // vertical knit ribs, optional fair-i
     }
   });
 }
+function pjTexture(base, accent, pattern) {   // pyjama print: polka dots or soft plaid
+  return canvasTex(64, 64, g => {
+    g.fillStyle = base; g.fillRect(0, 0, 64, 64); g.fillStyle = accent;
+    if (pattern === 'dots') { for (let y = 4; y < 64; y += 12) for (let x = (y / 12 % 2) * 6 + 3; x < 64; x += 12) { g.beginPath(); g.arc(x, y, 2.2, 0, 7); g.fill(); } }
+    else { g.globalAlpha = .45; for (let i = 0; i < 64; i += 16) { g.fillRect(i, 0, 6, 64); g.fillRect(0, i, 64, 6); } g.globalAlpha = 1; }
+  });
+}
 function teeTexture(base) {   // soft cotton: flat colour with a faint weave
   return canvasTex(64, 64, g => { g.fillStyle = base; g.fillRect(0, 0, 64, 64); for (let i = 0; i < 400; i++) { g.fillStyle = `rgba(${Math.random() < .5 ? '255,255,255' : '0,0,0'},.05)`; g.fillRect(Math.random() * 64, Math.random() * 64, 2, 1); } });
 }
@@ -128,10 +135,11 @@ export function makePerson(c) {
   add(new THREE.TorusGeometry(.1, .045, 10, 22), woolly, 0, .56, .01, scarf).rotation.x = Math.PI / 2;
   soft(.08, .26, .04, .02, woolly, .07, .4, .15, scarf).rotation.z = .15;
   beanie.visible = scarf.visible = false;
-  // dress for the season: { top: 'knit' | 'tee', color, rib, band?, collar: 'turtle' | 'crew', short?, shorts?, pants, shoes }
+  // dress for the season: { top: 'knit' | 'tee' | 'pj', pattern?, color, rib, band?, collar: 'turtle' | 'crew', short?, shorts?, pants, shoes }
   function setOutfit(o) {
-    knit.map?.dispose(); knit.map = o.top === 'tee' ? teeTexture(o.color) : knitTexture(o.color, o.rib, o.band); knit.needsUpdate = true;
-    mRib.color.set(o.rib); mP.color.set(o.pants); mShoe.color.set(o.shoes);
+    knit.map?.dispose(); knit.map = o.top === 'tee' ? teeTexture(o.color) : o.top === 'pj' ? pjTexture(o.color, o.rib, o.pattern) : knitTexture(o.color, o.rib, o.band); knit.needsUpdate = true;
+    mP.map = o.top === 'pj' ? knit.map : null; mP.needsUpdate = true;   // pyjama bottoms match the top
+    mRib.color.set(o.rib); mP.color.set(o.top === 'pj' ? '#ffffff' : o.pants); mShoe.color.set(o.shoes);
     turtle.visible = o.collar === 'turtle'; crew.visible = o.collar !== 'turtle';
     arms.forEach(a => { a.children[0].visible = a.children[2].visible = !o.short; a.children[3].visible = a.children[4].visible = !!o.short; });
     shins.forEach(m => m.material = o.shorts ? mS : mP);
