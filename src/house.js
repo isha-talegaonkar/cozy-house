@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { scene } from './scene.js';
 import { B, C, M, Sph, add, canvasTex, darkWood, fabric, frameMat, glassMat, group, lightWood, pick, rand, smooth, soft, stone, wallMat, wood } from './helpers.js';
 import { plant } from './plants.js';
-import { onSeason } from './season.js';
+import { WINTER, onSeason } from './season.js';
 
 // ---------------------------------------------------------------- floors
 function planks(c1, c2, c3, line) {
@@ -425,4 +425,4 @@ for (let i = 0; i < 12; i++) { const b = Sph(.016, new THREE.MeshBasicMaterial({
   soft(.07, .26, .12, .03, fabric(c), -4.12, 1.12, z, xmas); soft(.07, .08, .18, .03, fabric(c), -4.12, .98, z + .04, xmas);
   soft(.075, .06, .13, .02, fabric('#f3ead9'), -4.12, 1.26, z, xmas);
 });
-onSeason(s => xmas.visible = s === 'winter');
+onSeason(s => xmas.visible = s === WINTER);

@@ -4,12 +4,13 @@ import { B, C, M, Sph, add, darkWood, fabric, group, pick, rand, smooth, soft, s
 import { chair, pointLight, shades } from './house.js';
 export const xmasYardBulbs = [];   // twinkled in main.js
 import { plant } from './plants.js';
-import { onSeason, onWeather, raining, season } from './season.js';
+import { FALL, SPRING, SUMMER, WINTER, onSeason, onWeather, raining, season } from './season.js';
+import { nearHouse } from './layout.js';
 
 // ---------------------------------------------------------------- yard
 const ground = add(new THREE.CircleGeometry(60, 48), '#6e6a3a', 0, -.42, 0); ground.rotation.x = -Math.PI / 2;
 const lawn = add(new THREE.PlaneGeometry(24, 24), '#7d7742', 0, -.41, 0); lawn.rotation.x = -Math.PI / 2;
-const GROUND = { spring: ['#5d8a3c', '#6c9a44'], summer: ['#50803a', '#5f9040'], fall: ['#6e6a3a', '#7d7742'], winter: ['#d9e0e8', '#e9eef4'] };
+const GROUND = { [SPRING]: ['#5d8a3c', '#6c9a44'], [SUMMER]: ['#50803a', '#5f9040'], [FALL]: ['#6e6a3a', '#7d7742'], [WINTER]: ['#d9e0e8', '#e9eef4'] };
 onSeason(s => { ground.material.color.set(GROUND[s][0]); lawn.material.color.set(GROUND[s][1]); });
 B(1.4, .3, .6, stone, -1.0, -.27, 4.65); B(.8, .02, .4, M('#a8432a'), -1.0, -.1, 4.7);
 const stones = new THREE.InstancedMesh(new THREE.CylinderGeometry(.24, .26, .05, 7), M('#a39a8e'), 16);
@@ -17,21 +18,21 @@ export const dummy = new THREE.Object3D();
 for (let i = 0; i < 14; i++) { dummy.position.set(-1.0 + rand(-.12, .12), -.39, 5.3 + i * .5); dummy.rotation.set(0, rand(0, 3), 0); dummy.updateMatrix(); stones.setMatrixAt(i, dummy.matrix); }
 stones.receiveShadow = true; scene.add(stones);
 // seasonal things by the door: the same flower pots hold tulips, sunflowers or mums; pumpkins in fall
-export const decor = { spring: group(0, 0, 0), summer: group(0, 0, 0), fall: group(0, 0, 0), winter: group(0, 0, 0) };
-[[-1.9, 4.8, .2], [-1.6, 5.05, .14], [-.15, 4.85, .17]].forEach(([x, z, r]) => { Sph(r, M('#e07b39'), x, -.4 + r * .7, z, decor.fall).scale.y = .75; C(.015, .02, .08, 5, '#4a3a20', x, -.4 + r * 1.3, z, decor.fall); });
+export const decor = { [SPRING]: group(0, 0, 0), [SUMMER]: group(0, 0, 0), [FALL]: group(0, 0, 0), [WINTER]: group(0, 0, 0) };
+[[-1.9, 4.8, .2], [-1.6, 5.05, .14], [-.15, 4.85, .17]].forEach(([x, z, r]) => { Sph(r, M('#e07b39'), x, -.4 + r * .7, z, decor[FALL]).scale.y = .75; C(.015, .02, .08, 5, '#4a3a20', x, -.4 + r * 1.3, z, decor[FALL]); });
 const stemMat = smooth('#4f8a3a');
 [[-4.3, 4.7, '#e8a23a', '#e0505a'], [-3.2, 4.7, '#b5543f', '#f08aa0'], [1.0, 4.7, '#e8c25a', '#f2d04a'], [3.2, 4.7, '#c9512c', '#f7f2e8'], [4.4, 4.7, '#e8a23a', '#e0505a']].forEach(([x, z, mumCol, tulipCol]) => {
   C(.14, .11, .2, 18, terracotta, x, -.32, z);
-  Sph(.22, smooth(mumCol), x, -.25, z, decor.fall, 18).scale.y = .7;                                   // fall: mums
+  Sph(.22, smooth(mumCol), x, -.25, z, decor[FALL], 18).scale.y = .7;                                   // fall: mums
   for (let i = 0; i < 5; i++) {                                                                          // spring: tulips
     const a = i / 5 * Math.PI * 2, dx = Math.cos(a) * .06, dz = Math.sin(a) * .06, h = rand(.2, .3);
-    C(.008, .008, h, 5, stemMat, x + dx, -.22 + h / 2, z + dz, decor.spring);
-    Sph(.042, smooth(tulipCol), x + dx, -.2 + h, z + dz, decor.spring, 10).scale.set(.9, 1.35, .9);
+    C(.008, .008, h, 5, stemMat, x + dx, -.22 + h / 2, z + dz, decor[SPRING]);
+    Sph(.042, smooth(tulipCol), x + dx, -.2 + h, z + dz, decor[SPRING], 10).scale.set(.9, 1.35, .9);
   }
   [-.05, .06].forEach((dx, i) => {                                                                       // summer: sunflowers
-    const h = .62 + i * .12, head = group(x + dx, -.22 + h, z + .02, 0, decor.summer); head.rotation.x = -.5;
-    C(.012, .016, h, 6, stemMat, x + dx, -.22 + h / 2, z, decor.summer);
-    Sph(.05, stemMat, x + dx + .04, -.22 + h * .5, z, decor.summer, 8).scale.set(1.4, .4, .9);
+    const h = .62 + i * .12, head = group(x + dx, -.22 + h, z + .02, 0, decor[SUMMER]); head.rotation.x = -.5;
+    C(.012, .016, h, 6, stemMat, x + dx, -.22 + h / 2, z, decor[SUMMER]);
+    Sph(.05, stemMat, x + dx + .04, -.22 + h * .5, z, decor[SUMMER], 8).scale.set(1.4, .4, .9);
     C(.1, .1, .02, 16, smooth('#f2c230'), 0, 0, 0, head).rotation.x = Math.PI / 2; C(.05, .05, .03, 14, smooth('#5a3a1a'), 0, 0, .006, head).rotation.x = Math.PI / 2;
   });
 });
@@ -98,7 +99,7 @@ const patioLight = pointLight('#ffcf8a', -4.1, .6, 7.9, 1.5);
 export const trees = [];
 const TREE_PALETTES = [['#a8432a', '#c4552f', '#d9693c'], ['#c9612c', '#dc7a3a', '#eb9550'], ['#d0852f', '#e29d3e', '#efb85a'], ['#c09a2e', '#d6b23e', '#e8c95a']];
 const snowMat = M('#f4f7fb', { transparent: true, flatShading: false });
-function tree(x, z, s, kind = 'fall') {
+function tree(x, z, s, kind = 'leafy') {
   const g = group(x, -.4, z, rand(0, 6)), mats = [];
   const mm = c => { const m = M(c, { transparent: true, flatShading: false }); mats.push(m); return m; };
   const snow = [], twigs = group(0, 0, 0, 0, g);
@@ -135,7 +136,7 @@ function tree(x, z, s, kind = 'fall') {
 }
 [[-7.5, -7.5, 1.3], [-2.5, -7.8, 1.1, 'pine'], [3.5, -8.2, 1.4], [8.5, -6.5, 1.2], [-9.5, -1.5, 1.2], [9.2, 1.0, 1.3],
  [-8.6, 5.8, 1.1], [8.6, 6.8, 1.0, 'pine'], [-5.8, 9.4, 1.2], [5.5, 9.8, 1.3], [-10.4, -10, 1.1, 'pine'], [10.6, -10.4, 1.2]].forEach(a => tree(...a));
-for (let i = 0; i < 26; i++) { const a = i / 26 * Math.PI * 2 + rand(-.1, .1), r = rand(16, 22); tree(Math.cos(a) * r, Math.sin(a) * r, rand(1.1, 1.6), Math.random() < .3 ? 'pine' : 'fall'); }
+for (let i = 0; i < 26; i++) { const a = i / 26 * Math.PI * 2 + rand(-.1, .1), r = rand(16, 22); tree(Math.cos(a) * r, Math.sin(a) * r, rand(1.1, 1.6), Math.random() < .3 ? 'pine' : 'leafy'); }
 const leafTrees = trees.filter(t => t.decid && Math.hypot(t.x, t.z) < 14);
 let dropTrees = leafTrees;   // trees that currently drop leaves or petals
 
@@ -146,7 +147,7 @@ for (let i = 0; i < 1400; i++) {
   let x, z;
   if (i < 900) { const t = pick(leafTrees), a = rand(0, 6.28), r = Math.abs(rand(0, 1) + rand(0, 1) - 1) * 2.6; x = t.x + Math.cos(a) * r; z = t.z + Math.sin(a) * r; }
   else { x = rand(-12, 12); z = rand(-12, 12); }
-  if (Math.abs(x) < 5.4 && z > -3.9 && z < 4.7) { x += x < 0 ? -6 : 6; }
+  if (nearHouse(x, z, .4)) { x += x < 0 ? -6 : 6; }
   dummy.position.set(x, -.395 + Math.random() * .01, z); dummy.rotation.set(-Math.PI / 2, 0, rand(0, 6)); dummy.updateMatrix();
   gl.setMatrixAt(i, dummy.matrix); gl.setColorAt(i, tmpC.set(pick(fallCols)));
 }
@@ -166,7 +167,7 @@ scene.add(fl);
 
 // summer nights: fireflies drifting around the garden (main.js shows them after dark)
 export const fireflies = Array.from({ length: 40 }, () => ({ x: rand(-11, 11), z: rand(-11, 11), y: rand(-.1, 1.2), ph: rand(0, 6) }))
-  .filter(f => !(Math.abs(f.x) < 5.5 && f.z > -4 && f.z < 4.8));
+  .filter(f => !nearHouse(f.x, f.z, .5));
 export const flies = new THREE.InstancedMesh(new THREE.SphereGeometry(.03, 6, 6), new THREE.MeshBasicMaterial({ color: '#e8ff8a' }), fireflies.length);
 flies.visible = false; scene.add(flies);
 
@@ -176,7 +177,7 @@ export const snowflakes = new THREE.InstancedMesh(new THREE.SphereGeometry(.03, 
 snowflakes.visible = false; scene.add(snowflakes);
 // winter decor: a snowman, two little lit firs on the porch, a garland on the lamp post
 {
-  const w = decor.winter, white = smooth('#f6f8fb');
+  const w = decor[WINTER], white = smooth('#f6f8fb');
   const sm = group(2.6, -.4, 6.7, -.4, w);
   Sph(.34, white, 0, .3, 0, sm, 20); Sph(.25, white, 0, .78, 0, sm, 18); Sph(.18, white, 0, 1.12, 0, sm, 16);
   add(new THREE.ConeGeometry(.035, .16, 8), smooth('#e8772a'), 0, 1.12, .24, sm).rotation.x = Math.PI / 2;
@@ -197,8 +198,7 @@ snowflakes.visible = false; scene.add(snowflakes);
 
 // rain: falling streaks (moved in main.js) and puddles on the lawn
 // rain only falls outside the house, so the rooms stay clear
-export const overHouse = (x, z) => x > -5.6 && x < 5.6 && z > -4.1 && z < 4.9;
-export function placeDrop(d) { do { d.x = rand(-16, 14); d.z = rand(-15, 15); } while (overHouse(d.x + 1, d.z)); }
+export function placeDrop(d) { do { d.x = rand(-16, 14); d.z = rand(-15, 15); } while (nearHouse(d.x + 1, d.z, .6)); }
 export const drops = Array.from({ length: 700 }, () => { const d = { y: rand(-.4, 10), v: rand(8, 11) }; placeDrop(d); return d; });
 export const rain = new THREE.InstancedMesh(new THREE.BoxGeometry(.012, .38, .012), new THREE.MeshBasicMaterial({ color: '#b8c8d8', transparent: true, opacity: .5, depthWrite: false }), drops.length);
 rain.visible = false; scene.add(rain);
@@ -208,30 +208,30 @@ const puddles = group(0, 0, 0);
   p.rotation.x = -Math.PI / 2; p.scale.y = rand(.5, .8); p.castShadow = false;
 });
 puddles.visible = false;
-onWeather(() => { rain.visible = puddles.visible = raining; snowflakes.visible = season === 'winter' && !raining; });
+onWeather(() => { rain.visible = puddles.visible = raining; snowflakes.visible = season === WINTER && !raining; });
 
 // ---- seasons outdoors
-const PAL = { spring: { blossom: ['#e9a3b8', '#f2bfcd', '#fbe0e8'], green: ['#6aa84f', '#86c060', '#a6d67a'] }, summer: ['#3f7a34', '#4f8f3f', '#62a24c'] };
+const PAL = { [SPRING]: { blossom: ['#e9a3b8', '#f2bfcd', '#fbe0e8'], green: ['#6aa84f', '#86c060', '#a6d67a'] }, [SUMMER]: ['#3f7a34', '#4f8f3f', '#62a24c'] };
 const PETALS = ['#f2bfcd', '#fbe0e8', '#ffffff', '#e9a3b8'];
 onSeason(s => {
   for (const t of trees) if (t.decid) {
-    const pal = s === 'spring' ? PAL.spring[t.blossom ? 'blossom' : 'green'] : s === 'summer' ? PAL.summer : t.fallPal;
+    const pal = s === SPRING ? PAL[SPRING][t.blossom ? 'blossom' : 'green'] : s === SUMMER ? PAL[SUMMER] : t.fallPal;
     t.shades.forEach((m, i) => m.color.set(pal[i]));
-    t.canopy.forEach(m => m.visible = s !== 'winter');
+    t.canopy.forEach(m => m.visible = s !== WINTER);
   }
-  for (const t of trees) { t.snow.forEach(m => m.visible = s === 'winter'); t.twigs.visible = !t.decid || s === 'winter'; }
-  snowflakes.visible = s === 'winter' && !raining;
+  for (const t of trees) { t.snow.forEach(m => m.visible = s === WINTER); t.twigs.visible = !t.decid || s === WINTER; }
+  snowflakes.visible = s === WINTER && !raining;
   Object.entries(decor).forEach(([k, g]) => g.visible = k === s);
-  leafPile.visible = s === 'fall';
+  leafPile.visible = s === FALL;
   // fallen leaves: petals under trees in spring, leaves in fall, nothing in summer/winter
-  gl.visible = s === 'spring' || s === 'fall'; gl.count = s === 'spring' ? 500 : 1400;
-  for (let i = 0; i < 1400; i++) gl.setColorAt(i, tmpC.set(pick(s === 'spring' ? PETALS : fallCols)));
+  gl.visible = s === SPRING || s === FALL; gl.count = s === SPRING ? 500 : 1400;
+  for (let i = 0; i < 1400; i++) gl.setColorAt(i, tmpC.set(pick(s === SPRING ? PETALS : fallCols)));
   gl.instanceColor.needsUpdate = true;
   // falling: petals from blossom trees in spring, leaves in fall
   const blossoms = leafTrees.filter(t => t.blossom);
-  dropTrees = s === 'spring' && blossoms.length ? blossoms : leafTrees;
-  fl.visible = s === 'spring' || s === 'fall';
-  for (let i = 0; i < LN; i++) fl.setColorAt(i, tmpC.set(pick(s === 'spring' ? PETALS : fallCols)));
+  dropTrees = s === SPRING && blossoms.length ? blossoms : leafTrees;
+  fl.visible = s === SPRING || s === FALL;
+  for (let i = 0; i < LN; i++) fl.setColorAt(i, tmpC.set(pick(s === SPRING ? PETALS : fallCols)));
   fl.instanceColor.needsUpdate = true;
   fallLeaves.forEach(l => spawnLeaf(l, true));
 });

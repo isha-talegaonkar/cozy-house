@@ -4,12 +4,14 @@ import { canvasTex, lerpAngle, pick, rand } from './helpers.js';
 import { UP, bowls, feather, paintStroke, popcorn, tmpV, wand, wandStick, yarn } from './house.js';
 import { growPile, resetPile } from './yard.js';
 import { makeCat, makePerson } from './characters.js';
-import { GARDEN, fireLit, onSeason, raining, season } from './season.js';
+import { FALL, GARDEN, SPRING, SUMMER, WINTER, fireLit, onSeason, raining, season } from './season.js';
+import { BEDROOM_WALL_Z, KITCHEN_WALL_Z, MIDDLE_WALL_X, nearHouse } from './layout.js';
 
 // ---------------------------------------------------------------- navigation
 const ORDER = ['B', 'L', 'S', 'K'];
 const DOORS = { 'B-L': { B: [-.8, -.5], L: [-.8, .5] }, 'L-S': { L: [-.5, 2.8], S: [.5, 2.8] }, 'S-K': { S: [3.0, -.1], K: [3.0, -1.1] }, 'L-Y': { L: [-1.0, 3.8], Y: [-1.0, 5.2] } };
-export const roomOf = (x, z) => Math.abs(x) > 5 || z > 4.3 || z < -3.5 ? 'Y' : x < 0 ? (z < 0 ? 'B' : 'L') : (z < -.6 ? 'K' : 'S');
+// which room a point is in: B(edroom), L(iving), S(tudio / hobby room), K(itchen), or Y(ard)
+export const roomOf = (x, z) => !nearHouse(x, z) ? 'Y' : x < MIDDLE_WALL_X ? (z < BEDROOM_WALL_Z ? 'B' : 'L') : (z < KITCHEN_WALL_Z ? 'K' : 'S');
 const ADJ = { B: ['L'], L: ['B', 'S', 'Y'], S: ['L', 'K'], K: ['S'], Y: ['L'] };
 function roomRoute(a, b) {   // breadth-first search over rooms
   const prev = { [a]: null }, q = [a];
@@ -126,9 +128,9 @@ const MEALS = [[7.75, 'breakfast', '🥞'], [12.5, 'lunch', '🥪'], [18.5, 'din
 const house = { meal: null, lastMeal: null };
 function startTV() { house.tv = { until: rand(21.2, 21.6) }; SPOTS.tv1.label = SPOTS.tv2.label = 'movie night together'; SPOTS.tv1.icon = SPOTS.tv2.icon = '🍿'; popcorn.visible = true; }
 function endTV() { house.tv = null; SPOTS.tv1.label = SPOTS.tv2.label = 'watching TV'; SPOTS.tv1.icon = SPOTS.tv2.icon = '📺'; popcorn.visible = false; }
-const TEA = { winter: ['sipping hot cocoa', '🍫'] };
+const TEA = { [WINTER]: ['sipping hot cocoa', '🍫'] };
 onSeason(s => { const [label, icon] = TEA[s] || ['sipping tea', '☕']; Object.assign(SPOTS.tea, { label, icon }); });
-const FLOWER_JOB = { spring: 'watering the tulips', summer: 'watering the sunflowers', fall: 'watering the mums', winter: 'checking on the garden' };
+const FLOWER_JOB = { [SPRING]: 'watering the tulips', [SUMMER]: 'watering the sunflowers', [FALL]: 'watering the mums', [WINTER]: 'checking on the garden' };
 onSeason(s => { SPOTS.mums.label = FLOWER_JOB[s]; });
 function updateBenchMood() {
   const [label, icon] = hour < 17 ? ['enjoying the garden', '🍵'] : hour < 19.3 ? ['watching the sunset', '🌅'] : ['stargazing in the garden', '✨'];
@@ -163,16 +165,16 @@ const PJS = {
 // seasonal wardrobes
 const OUTFITS = {
   June: {
-    spring: { top: 'knit', color: '#c9b6e0', rib: '#b8a3d2', collar: 'crew', pants: '#7f98bd', shoes: '#efe6d8' },
-    summer: { top: 'tee', color: '#f2d27a', rib: '#e6c060', collar: 'crew', short: true, shorts: true, pants: '#7d95b5', shoes: '#e9d9c4' },
-    fall:   { top: 'knit', color: '#d9a0a0', rib: '#c48a8a', collar: 'turtle', pants: '#26242a', shoes: '#f6eee2' },
-    winter: { top: 'knit', color: '#efe6d8', rib: '#ddd2c0', band: ['#b5343a', '#2f5a34'], collar: 'turtle', pants: '#26242a', shoes: '#8a5a3a' },
+    [SPRING]: { top: 'knit', color: '#c9b6e0', rib: '#b8a3d2', collar: 'crew', pants: '#7f98bd', shoes: '#efe6d8' },
+    [SUMMER]: { top: 'tee', color: '#f2d27a', rib: '#e6c060', collar: 'crew', short: true, shorts: true, pants: '#7d95b5', shoes: '#e9d9c4' },
+    [FALL]:   { top: 'knit', color: '#d9a0a0', rib: '#c48a8a', collar: 'turtle', pants: '#26242a', shoes: '#f6eee2' },
+    [WINTER]: { top: 'knit', color: '#efe6d8', rib: '#ddd2c0', band: ['#b5343a', '#2f5a34'], collar: 'turtle', pants: '#26242a', shoes: '#8a5a3a' },
   },
   Theo: {
-    spring: { top: 'knit', color: '#8fb0c8', rib: '#7f9fb8', collar: 'crew', pants: '#b8a888', shoes: '#ece7dc' },
-    summer: { top: 'tee', color: '#2f8a8a', rib: '#287878', collar: 'crew', short: true, shorts: true, pants: '#b8a888', shoes: '#ece7dc' },
-    fall:   { top: 'knit', color: '#2f6a6a', rib: '#285a5a', band: ['#efe2c8', '#c9763f'], collar: 'crew', pants: '#4a4a52', shoes: '#8a6a4a' },
-    winter: { top: 'knit', color: '#2f5a3a', rib: '#284e32', band: ['#efe2c8', '#b5343a'], collar: 'crew', pants: '#4a4a52', shoes: '#5a3d28' },
+    [SPRING]: { top: 'knit', color: '#8fb0c8', rib: '#7f9fb8', collar: 'crew', pants: '#b8a888', shoes: '#ece7dc' },
+    [SUMMER]: { top: 'tee', color: '#2f8a8a', rib: '#287878', collar: 'crew', short: true, shorts: true, pants: '#b8a888', shoes: '#ece7dc' },
+    [FALL]:   { top: 'knit', color: '#2f6a6a', rib: '#285a5a', band: ['#efe2c8', '#c9763f'], collar: 'crew', pants: '#4a4a52', shoes: '#8a6a4a' },
+    [WINTER]: { top: 'knit', color: '#2f5a3a', rib: '#284e32', band: ['#efe2c8', '#b5343a'], collar: 'crew', pants: '#4a4a52', shoes: '#5a3d28' },
   },
 };
 export const people = [
@@ -227,15 +229,15 @@ function choosePerson(p) {
   if (house.walkInvite === p) { house.walkInvite = null; return goTo(p, 'stroll2', SPOTS); }
   if (hour < 11 && !p.hadCoffee && free('coffee', p)) return goTo(p, 'coffee', SPOTS);   // one coffee every morning
   const evening = hour > 17 || hour < 9;
-  const w = { paint: 3, crochet: 3, draw: 2.5, laptop: 2, computer: 2.5, bake: weekend() ? 3 : 2, games: 3, football: weekend() && hour > 12 ? 4 : 1.2, read: 2, nook: 3, browse: 1, knit: 2, tea: 2, plants: 1.2, warm: fireLit(hour) ? (evening ? 2 : .5) * (season === 'winter' ? 1.8 : 1) : 0, wash: .2,
+  const w = { paint: 3, crochet: 3, draw: 2.5, laptop: 2, computer: 2.5, bake: weekend() ? 3 : 2, games: 3, football: weekend() && hour > 12 ? 4 : 1.2, read: 2, nook: 3, browse: 1, knit: 2, tea: 2, plants: 1.2, warm: fireLit(hour) ? (evening ? 2 : .5) * (season === WINTER ? 1.8 : 1) : 0, wash: .2,
               playcats: cats.some(wandReady) ? 2.5 : 0, tv1: .5 };
-  if (season === 'winter' || raining) { w.tea *= 1.5; w.read *= 1.4; w.nook *= 1.3; w.tv1 *= 1.6; w.bake *= 1.3; }        // cosy indoor days
+  if (season === WINTER || raining) { w.tea *= 1.5; w.read *= 1.4; w.nook *= 1.3; w.tv1 *= 1.6; w.bake *= 1.3; }        // cosy indoor days
   const g = (house.gardenDay ? 2 : 1) * (weekend() ? 1.5 : 1) * GARDEN[season] * (raining ? 0 : 1), partnerOnBench = people.some(q => q !== p && q.mode === 'act' && /^bench/.test(q.spot));
-  if (hour >= 9 && hour < 17.5) Object.assign(w, { rake: season === 'fall' ? 1.2 * g : 0, mums: season === 'winter' ? 0 : .8 * g, stroll1: 1.2 * g });            // garden time on nice afternoons
+  if (hour >= 9 && hour < 17.5) Object.assign(w, { rake: season === FALL ? 1.2 * g : 0, mums: season === WINTER ? 0 : .8 * g, stroll1: 1.2 * g });            // garden time on nice afternoons
   if (hour >= 9 && hour < 21) w.bench1 = w.bench2 = (partnerOnBench ? 6 : hour >= 17.5 ? 1.8 : 1) * g;          // incl. sunset + stargazing
   const partnerOnPatio = people.some(q => q !== p && q.mode === 'act' && /^patio/.test(q.spot));
   if (hour >= 8 && hour < 20.5) w.patio1 = w.patio2 = (partnerOnPatio ? 6 : 1) * g;
-  if ((hour >= 7 && hour < 10) || (hour >= 16 && hour < 18)) w.jog = (hour < 10 ? 1.6 : .8) * (season === 'winter' ? .4 : 1);                    // morning / late-afternoon runs
+  if ((hour >= 7 && hour < 10) || (hour >= 16 && hour < 18)) w.jog = (hour < 10 ? 1.6 : .8) * (season === WINTER ? .4 : 1);                    // morning / late-afternoon runs
   const c = house.cleanDay ? 4 : .35;                                                                            // cleaning, mostly on cleaning days
   Object.assign(w, { sweep: c, vacuum: c, dust: c * .8, makebed: hour < 12 ? 1 + c : 0 });
   for (const k in w) w[k] *= (likes(p, k) ? 1 : 0) * (p.mood[k] ?? 1) * (p.recent.includes(k) ? .25 : 1);
@@ -455,12 +457,12 @@ export function updatePerson(p, dt) {
   r.head.rotation.x = hx;
   r.head.rotation.y = sp && sp.anim === 'chop' && Math.sin(T * .5) > .7 ? -.6 : 0;
   p.gy = (p.gy || 0) + ((roomOf(p.x, p.z) === 'Y' ? -.4 : 0) - (p.gy || 0)) * Math.min(1, dt * 6);
-  r.beanie.visible = r.scarf.visible = season === 'winter' && roomOf(p.x, p.z) === 'Y';
+  r.beanie.visible = r.scarf.visible = season === WINTER && roomOf(p.x, p.z) === 'Y';
   r.setEyes(!lie && (T % 4.7) > .13);
   const pj = lie || bedtime(p) || (hour < 11 && !p.hadCoffee), want = pj ? 'pj-' + season : season;
   if (p.outfitKey !== want) {   // change clothes only when needed (textures are rebuilt)
     p.outfitKey = want;
-    r.setOutfit(pj ? { ...PJS[p.name], ...(season === 'summer' && { short: true, shorts: true }) } : OUTFITS[p.name][season]);
+    r.setOutfit(pj ? { ...PJS[p.name], ...(season === SUMMER && { short: true, shorts: true }) } : OUTFITS[p.name][season]);
   }   // eyes closed while sleeping, and a little blink every few seconds   // bundled up outdoors in winter
   r.root.position.set(p.x, (lie ? .72 : 0) + p.gy, p.z); r.root.rotation.set(lie ? -Math.PI / 2 : 0, p.heading, 0);
   if (sp && sp.anim === 'wand') {   // feather toy dances in front of them; stick runs from hand to toy

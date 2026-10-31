@@ -5,7 +5,7 @@ import { xmas, xmasBulbs, xmasStar, candleFlames, coffeeCup, coffeeLight, coffee
 import { placeDrop, drops, rain, dummy, fallLeaves, fireflies, fl, flakes, flies, snowflakes, spawnLeaf, trees, updatePile, xmasYardBulbs } from './yard.js';
 import { CAT_ICON, CAT_LABEL, ROOM_NAME, SPOTS, advanceClock, cats, hour, people, roomOf, simT, updateBubble, updateCat, updateHouse, updatePerson, updatePlay, updateTV } from './sim.js';
 import { lampLevel, updateDay } from './daycycle.js';
-import { fireLit, raining, season, updateWeather } from './season.js';
+import { SUMMER, fireLit, raining, season, updateWeather } from './season.js';
 import './plants.js';
 import './characters.js';
 import './ui.js';
@@ -80,7 +80,7 @@ function frame() {
     });
     rain.instanceMatrix.needsUpdate = true;
   }
-  flies.visible = season === 'summer' && lampLevel > .6 && !raining;   // fireflies on clear summer nights
+  flies.visible = season === SUMMER && lampLevel > .6 && !raining;   // fireflies on clear summer nights
   if (flies.visible) {
     fireflies.forEach((f, i) => {
       dummy.position.set(f.x + Math.sin(T * .4 + f.ph) * .6, f.y + Math.sin(T * .9 + f.ph * 2) * .25, f.z + Math.cos(T * .35 + f.ph) * .6);

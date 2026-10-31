@@ -1,15 +1,15 @@
 import { pick, rand } from './helpers.js';
-import { fireLit, raining, season } from './season.js';
+import { FALL, SPRING, SUMMER, WINTER, fireLit, raining, season } from './season.js';
 import { hour } from './sim.js';
 
 // ---------------------------------------------------------------- music (generated in the browser, no files)
 let audio = null, musicOn = false;
 // each season has its own chords, melody notes, tempo and timbre; changes take effect at the next chord
 const STYLE = {
-  spring: { chords: [[48, 55, 64, 67], [43, 50, 59, 62], [45, 52, 60, 64], [41, 48, 57, 60]], scale: [60, 62, 64, 67, 69, 72, 74, 76, 79], beat: .9, prob: .5, voice: 'soft', decay: 1.8, bright: 2400, pad: .02 },
-  summer: { chords: [[41, 48, 57, 64], [40, 47, 55, 62], [38, 45, 53, 60], [36, 43, 52, 59]], scale: [57, 60, 62, 64, 67, 69, 72, 74], beat: 1.15, prob: .38, voice: 'sine', decay: 3.2, bright: 1500, pad: .024 },
-  fall:   { chords: [[48, 55, 64, 71], [45, 52, 60, 67], [41, 48, 57, 64], [43, 50, 59, 62]], scale: [60, 62, 64, 67, 69, 72, 74, 76, 79], beat: 1, prob: .42, voice: 'sine', decay: 2.5, bright: 1800, pad: .022 },
-  winter: { chords: [[45, 52, 60, 64], [41, 48, 57, 60], [48, 55, 64, 67], [43, 50, 55, 62]], scale: [69, 71, 72, 74, 76, 79, 81, 84], beat: 1.2, prob: .5, voice: 'bell', decay: 2.4, bright: 3200, pad: .016 },
+  [SPRING]: { chords: [[48, 55, 64, 67], [43, 50, 59, 62], [45, 52, 60, 64], [41, 48, 57, 60]], scale: [60, 62, 64, 67, 69, 72, 74, 76, 79], beat: .9, prob: .5, voice: 'soft', decay: 1.8, bright: 2400, pad: .02 },
+  [SUMMER]: { chords: [[41, 48, 57, 64], [40, 47, 55, 62], [38, 45, 53, 60], [36, 43, 52, 59]], scale: [57, 60, 62, 64, 67, 69, 72, 74], beat: 1.15, prob: .38, voice: 'sine', decay: 3.2, bright: 1500, pad: .024 },
+  [FALL]:   { chords: [[48, 55, 64, 71], [45, 52, 60, 67], [41, 48, 57, 64], [43, 50, 59, 62]], scale: [60, 62, 64, 67, 69, 72, 74, 76, 79], beat: 1, prob: .42, voice: 'sine', decay: 2.5, bright: 1800, pad: .022 },
+  [WINTER]: { chords: [[45, 52, 60, 64], [41, 48, 57, 60], [48, 55, 64, 67], [43, 50, 55, 62]], scale: [69, 71, 72, 74, 76, 79, 81, 84], beat: 1.2, prob: .5, voice: 'bell', decay: 2.4, bright: 3200, pad: .016 },
 };
 function makeAudio() {
   const ctx = new AudioContext(), master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
@@ -50,9 +50,9 @@ function makeAudio() {
       next += bar;
     }
     const day = hour > 6 && hour < 19.5, night = hour >= 20.5 || hour < 5.5;
-    if (season === 'spring' && day && Math.random() < .035) chirp(ctx.currentTime + rand(.1, 1));
+    if (season === SPRING && day && Math.random() < .035) chirp(ctx.currentTime + rand(.1, 1));
     crackleGain.gain.setTargetAtTime(fireLit(hour) ? .25 : 0, ctx.currentTime, 1.5);
-    cricketGain.gain.setTargetAtTime(season === 'summer' && night && !raining ? .035 : 0, ctx.currentTime, 2);
+    cricketGain.gain.setTargetAtTime(season === SUMMER && night && !raining ? .035 : 0, ctx.currentTime, 2);
     rainGain.gain.setTargetAtTime(raining ? .45 : 0, ctx.currentTime, 4);
     if (raining && Math.random() < .004) thunder(ctx.currentTime + rand(.2, 1.5));
   }, 300);

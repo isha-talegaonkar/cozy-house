@@ -3,7 +3,7 @@ import { scene } from './scene.js';
 import { lights, shades } from './house.js';
 import { lantern, postMat } from './yard.js';
 import { DAYS, dayIdx, hour, night } from './sim.js';
-import { SEASONS, raining, season } from './season.js';
+import { FALL, SEASONS, SPRING, SUMMER, WINTER, raining, season } from './season.js';
 
 // ---------------------------------------------------------------- lighting + day cycle
 const hemi = new THREE.HemisphereLight('#c8d0e8', '#5a4030', .8); scene.add(hemi);
@@ -16,7 +16,7 @@ const KEYS = [
   [10, '#b9cfd9', '#fff0d8', 2.6, .9, 0], [15.5, '#d9c9b0', '#ffd9a8', 2.4, .85, 0], [17.5, '#f0a070', '#ff9a5a', 1.8, .65, .6],
   [19, '#6a4a6a', '#ff7a5a', .6, .4, 1], [20.5, '#1f2140', '#6f86c8', .22, .3, 1], [24, '#151a33', '#6f86c8', .2, .3, 1]];
 const cA = new THREE.Color(), cB = new THREE.Color();
-const TINT = { spring: ['#e6ffee', .12], summer: ['#fff2d4', .1], fall: ['#ffffff', 0], winter: ['#dce8ff', .3] };   // sky tint per season
+const TINT = { [SPRING]: ['#e6ffee', .12], [SUMMER]: ['#fff2d4', .1], [FALL]: ['#ffffff', 0], [WINTER]: ['#dce8ff', .3] };   // sky tint per season
 export let lampLevel = 0;
 export function updateDay() {
   let i = 0; while (i < KEYS.length - 2 && KEYS[i + 1][0] <= hour) i++;
@@ -25,7 +25,7 @@ export function updateDay() {
   if (raining) sky.lerp(cB.set('#7d8794'), .45);   // grey, rainy sky (fog distance unchanged so the house stays crisp)
   scene.background = sky.clone(); scene.fog.color.copy(sky);
   sun.color.set(u0).lerp(cB.set(u1), k); sun.intensity = (si0 + (si1 - si0) * k) * (raining ? .3 : 1);
-  hemi.intensity = (hi0 + (hi1 - hi0) * k) * (season === 'winter' ? 1.25 : 1);   // snow bounces light around
+  hemi.intensity = (hi0 + (hi1 - hi0) * k) * (season === WINTER ? 1.25 : 1);   // snow bounces light around
   hemi.color.copy(sky).lerp(cB.set('#ffffff'), .5);
   lampLevel = l0 + (l1 - l0) * k; if (raining) lampLevel = Math.max(lampLevel, .45);   // lamps on early on rainy days
   let dir;
