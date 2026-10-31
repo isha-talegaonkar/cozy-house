@@ -43,23 +43,33 @@
   .seg { display: inline-flex; border-radius: 999px; border: 1px solid rgba(255,220,170,.2); overflow: hidden; vertical-align: middle; margin-left: 4px; }
   .seg button { border: 0; border-radius: 0; padding: 3px 10px; font-size: 12px; background: transparent; }
   .seg button.on { background: rgba(240,180,106,.35); }
-  @media (max-width: 760px) { #menu { width: calc(100vw - 32px); } }
+
   #status .cats { border-top: 1px solid rgba(255,220,170,.15); padding-top: 6px; margin-top: 2px; }
   #status .left { opacity: .7; font-size: 12px; }
   select { font: inherit; font-size: 12.5px; color: #f6e7cf; background: rgba(255, 200, 140, .12); border: 1px solid rgba(255, 220, 170, .25);
            border-radius: 8px; padding: 3px 6px; max-width: 200px; cursor: pointer; }
   select option, select optgroup { background: #3a2a22; color: #f6e7cf; }
   #durRow { font-size: 12.5px; opacity: .85; margin-top: 4px; }
-  @media (max-width: 760px) {
-    #status { top: auto; bottom: 86px; right: 8px; left: 8px; max-width: none; font-size: 12.5px; }
-    #hud { top: 8px; left: 8px; padding: 6px 10px; } #hud .title { font-size: 16px; }
-    #controls { bottom: 12px; flex-wrap: wrap; justify-content: center; width: calc(100% - 40px); } #note { display: none; }
-  }
   #controls { bottom: 28px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; padding: 8px; }
   button { font: inherit; font-size: 14px; color: #f6e7cf; background: rgba(255, 200, 140, .12); border: 1px solid rgba(255, 220, 170, .25);
            border-radius: 10px; padding: 7px 12px; cursor: pointer; }
   button:hover { background: rgba(255, 200, 140, .25); }
   #note { bottom: 16px; right: 14px; font-size: 12px; opacity: .7; }
+  /* collapsible household panel */
+  #fold { display: flex; align-items: center; gap: 8px; width: 100%; padding: 0 0 6px; border: 0; background: none; font-size: 13px; text-align: left; }
+  #fold .t { color: #ffd9a0; } #fold .mini { flex: 1; opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #fold .chev { opacity: .6; transition: transform .2s; }
+  #status.collapsed #statusBody { display: none; } #status.collapsed #fold { padding: 0; } #status.collapsed #fold .chev { transform: rotate(-90deg); }
+  #status:not(.collapsed) #fold .mini { visibility: hidden; }
+  @media (max-width: 760px) {
+    #hud { top: 8px; left: 8px; padding: 6px 10px; } #hud .title { font-size: 15px; } #clock { font-size: 12px; }
+    #status { top: auto; bottom: 66px; right: 8px; left: 8px; min-width: 0; max-width: none; font-size: 12.5px; padding: 8px 12px; max-height: 52vh; overflow: auto; }
+    #status .cmdrow, #status .bar { margin-left: 64px; }
+    #controls { bottom: 8px; gap: 5px; padding: 6px; max-width: calc(100% - 16px); }
+    #controls button { padding: 6px 9px; font-size: 13px; } #controls .txt { display: none; }
+    #note { display: none; }
+    #menu { position: fixed; left: 8px !important; right: 8px; top: auto !important; bottom: 8px; width: auto; max-height: 62vh; border-radius: 18px 18px 14px 14px; }
+  }
 </style>
 <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.164.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.164.0/examples/jsm/" } }</script>
 </head>
@@ -74,7 +84,7 @@
   <button id="zoomIn" title="Zoom in">+</button>
   <button id="home" title="Recenter">⌂</button>
   <button id="speed">Speed 1×</button>
-  <button id="music">♪ Music: off</button>
+  <button id="music">♪<span class="txt"> Music: off</span></button>
 </div>
 <div id="menu"></div>
 <div id="note" class="panel">Drag to move around · scroll wheel or pinch to zoom · two-finger swipe to pan</div>
@@ -243,6 +253,29 @@ const sillPlant = (g, s, inside, kind) => { const p = plant(kind, 0, 0, .8, g); 
 const tvTex = canvasTex(160, 90, () => {}), tvCtx = tvTex.userData.canvas.getContext('2d');
 const tvMat = new THREE.MeshBasicMaterial({ map: tvTex, color: '#111111' });
 const TV_SCENES = [['#f4ad6c', '#c96a68', '#2f5a7a', '#1f3f5a'], ['#cfe6da', '#8fbf9a', '#4f7a43', '#2f4f2f'], ['#dfe6f2', '#9fb0cf', '#f4f6fa', '#b9c4d6']];
+function drawGame(t) {   // a little pixel platformer
+  const g = tvCtx; g.fillStyle = '#7ec4f0'; g.fillRect(0, 0, 160, 90);
+  g.fillStyle = '#fff'; [[20, 15], [90, 22], [140, 12]].forEach(([x, y]) => { const cx = (x - t * 8) % 180 + 10; g.fillRect(cx, y, 18, 5); g.fillRect(cx + 4, y - 3, 10, 3); });
+  for (let x = -16; x < 176; x += 16) { const gx = x - (t * 30) % 16; g.fillStyle = '#6ab04c'; g.fillRect(gx, 70, 16, 4); g.fillStyle = '#a0522d'; g.fillRect(gx, 74, 16, 16); }
+  g.fillStyle = '#c0703a'; for (let i = 0; i < 3; i++) g.fillRect((90 + i * 50 - t * 30) % 190 + 10, 46 - (i % 2) * 8, 14, 8);
+  g.fillStyle = '#f5d142'; for (let i = 0; i < 4; i++) g.fillRect((60 + i * 40 - t * 30) % 180 + 10, 36 + Math.sin(t * 4 + i) * 2, 4, 6);
+  const jy = Math.max(0, Math.sin(t * 3)) * 22; g.fillStyle = '#e74c3c'; g.fillRect(40, 58 - jy, 9, 12); g.fillStyle = '#f2c79c'; g.fillRect(41, 52 - jy, 7, 6);
+  tvTex.needsUpdate = true;
+}
+function drawFootball(t) {   // a match from above: striped pitch, two teams, the ball
+  const g = tvCtx;
+  for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? '#3f8f3f' : '#4a9d48'; g.fillRect(i * 20, 0, 20, 90); }
+  g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 1; g.strokeRect(6, 6, 148, 78); g.beginPath(); g.moveTo(80, 6); g.lineTo(80, 84); g.stroke();
+  g.beginPath(); g.arc(80, 45, 12, 0, 7); g.stroke(); g.strokeRect(6, 28, 14, 34); g.strokeRect(140, 28, 14, 34);
+  const bx = 80 + Math.sin(t * .7) * 55, by = 45 + Math.sin(t * 1.3) * 25;
+  for (let i = 0; i < 10; i++) {
+    const team = i % 2, px = bx + Math.sin(t * .9 + i * 1.7) * (18 + i * 3) + (team ? 12 : -12), py = by + Math.cos(t * .8 + i * 2.1) * (14 + i * 2);
+    g.fillStyle = team ? '#e8e8f0' : '#d94a3a'; g.beginPath(); g.arc(Math.max(8, Math.min(152, px)), Math.max(8, Math.min(82, py)), 2.6, 0, 7); g.fill();
+  }
+  g.fillStyle = '#fff'; g.beginPath(); g.arc(bx, by, 1.6, 0, 7); g.fill();
+  g.fillStyle = 'rgba(20,20,30,.75)'; g.fillRect(4, 3, 36, 9); g.fillStyle = '#fff'; g.font = '7px sans-serif'; g.fillText(`RED ${Math.floor(t / 40) % 3} - ${Math.floor(t / 55) % 3} WHT`, 6, 10);
+  tvTex.needsUpdate = true;
+}
 function drawTV(t) {   // a slow nature film: sky, drifting sun, parallax hills, birds
   const g = tvCtx, [a, b, c, d] = TV_SCENES[Math.floor(t / 14) % 3];
   const gr = g.createLinearGradient(0, 0, 0, 90); gr.addColorStop(0, b); gr.addColorStop(1, a); g.fillStyle = gr; g.fillRect(0, 0, 160, 90);
@@ -460,6 +493,10 @@ const ovenGlow = B(.35, .15, .02, M('#a85a2a', { emissive: '#ff7a2a', emissiveIn
 C(.15, .13, .2, 12, '#8a8f94', 2.0, 1.08, -3.15); C(.16, .16, .02, 12, '#b8bcc0', 2.0, 1.19, -3.15);
 B(.55, .03, .4, M('#b8bcc0'), 3.6, .96, -3.15);
 B(.4, .025, .26, lightWood, 1.05, .97, -3.12);
+const mixingBowl = group(1.5, .96, -3.15); C(.13, .08, .1, 16, smooth('#efe2c8'), 0, .05, 0, mixingBowl); C(.11, .11, .01, 16, smooth('#e8d2a0'), 0, .09, 0, mixingBowl); mixingBowl.visible = false;
+const cookieTray = group(1.55, .96, -3.15); B(.36, .015, .26, M('#9aa0a6'), 0, .01, 0, cookieTray);
+for (let i = 0; i < 6; i++) C(.035, .035, .012, 10, smooth('#c98a4a'), -.11 + (i % 3) * .11, .025, -.06 + Math.floor(i / 3) * .12, cookieTray);
+cookieTray.visible = false;
 [[.95, '#e07b39'], [1.02, '#e07b39'], [1.15, '#7d9a58']].forEach(([x, c], i) => { const v = C(.022, .015, .14, 6, c, x, 1.0, -3.1 + i * .04); v.rotation.z = Math.PI / 2; });
 B(.16, .01, .03, M('#b8bcc0'), 1.2, .99, -3.2); B(.03, .25, .03, M('#b8bcc0'), 3.6, 1.08, -3.38);
 [3.25, 0.55].forEach((x, i) => plant(i ? 'small' : 'succulent', x, -3.2, i ? .9 : 1.1, scene, .96));
@@ -657,27 +694,56 @@ scene.add(fl);
 // ---------------------------------------------------------------- characters
 function makePerson(c) {
   const root = new THREE.Group(); root.rotation.order = 'YXZ'; scene.add(root);
-  const mS = M(c.skin, { flatShading: false }), mP = M(c.pants), mSh = M(c.shirt), mH = M(c.hair), mShoe = M('#3a2418');
+  const mS = smooth(c.skin), mP = fabric(c.pants), mSh = fabric(c.shirt), mH = smooth(c.hair), mShoe = smooth(c.shoes), mDark = smooth('#2a1a14');
   const thighs = [], knees = [];
   for (const x of [-.085, .085]) {
-    const th = group(x, .76, 0, 0, root); add(new THREE.CapsuleGeometry(.075, .25, 4, 8), mP, 0, -.19, 0, th);
-    const kn = group(0, -.38, 0, 0, th); add(new THREE.CapsuleGeometry(.065, .26, 4, 8), mP, 0, -.19, 0, kn);
-    B(.1, .06, .18, mShoe, 0, -.37, .04, kn);
+    const th = group(x, .76, 0, 0, root); add(new THREE.CapsuleGeometry(.08, .24, 6, 14), mP, 0, -.19, 0, th);
+    const kn = group(0, -.38, 0, 0, th); add(new THREE.CapsuleGeometry(.07, .26, 6, 14), mP, 0, -.19, 0, kn);
+    soft(.115, .075, .21, .035, mShoe, 0, -.37, .045, kn);
     thighs.push(th); knees.push(kn);
   }
   const body = group(0, .76, 0, 0, root);
-  add(new THREE.CapsuleGeometry(.17, .28, 4, 12), mSh, 0, .27, 0, body);
-  if (c.collar) add(new THREE.TorusGeometry(.1, .03, 6, 12), M(c.collar), 0, .56, 0, body).rotation.x = Math.PI / 2;
-  const arms = [-.23, .23].map(x => { const a = group(x, .5, 0, 0, body); add(new THREE.CapsuleGeometry(.055, .3, 4, 8), mSh, 0, -.19, 0, a); Sph(.05, mS, 0, -.4, 0, a); return a; });
-  C(.05, .05, .1, 8, mS, 0, .62, 0, body);
+  add(new THREE.CapsuleGeometry(.17, .26, 8, 18), mSh, 0, .28, 0, body).scale.z = .88;
+  add(new THREE.TorusGeometry(.158, .03, 8, 20), fabric(c.trim), 0, .05, 0, body).rotation.x = Math.PI / 2;      // sweater hem
+  if (c.outfit === 'cardigan') {   // open cardigan over a cream top
+    soft(.1, .44, .03, .012, fabric(c.inner), 0, .3, .142, body);
+    [.36, .25, .14].forEach(y => Sph(.012, smooth('#8a5634'), .062, y, .15, body, 6));
+  } else {   // hoodie: hood, kangaroo pocket, drawstrings
+    add(new THREE.TorusGeometry(.1, .05, 10, 18), mSh, 0, .53, -.07, body).rotation.x = Math.PI / 2 + .5;
+    soft(.22, .11, .03, .02, fabric(c.trim), 0, .17, .14, body);
+    [-.035, .035].forEach(x => C(.006, .006, .13, 5, '#efe2c8', x, .45, .15, body));
+  }
+  const arms = [-.23, .23].map(x => {
+    const a = group(x, .5, 0, 0, body);
+    add(new THREE.CapsuleGeometry(.058, .27, 6, 12), mSh, 0, -.18, 0, a); Sph(.052, mS, 0, -.41, 0, a, 14);
+    add(new THREE.TorusGeometry(.055, .018, 6, 14), fabric(c.trim), 0, -.35, 0, a).rotation.x = Math.PI / 2;   // cuff
+    return a;
+  });
+  C(.055, .062, .1, 12, mS, 0, .61, 0, body);
   const head = group(0, .8, 0, 0, body);
-  Sph(.16, mS, 0, 0, 0, head, 16);
-  add(new THREE.SphereGeometry(.172, 16, 12, 0, Math.PI * 2, 0, Math.PI * .55), mH, 0, .01, -.01, head);
-  Sph(.155, mH, 0, 0, -.05, head, 14).scale.set(1.08, .95, 1);
-  if (c.style === 'long') B(.3, .32, .12, mH, 0, -.14, -.09, head);
-  if (c.style === 'bun') Sph(.075, mH, 0, .12, -.15, head);
-  [-.06, .06].forEach(x => Sph(.019, M('#2a1a14'), x, .01, .148, head, 6));
-  [-.09, .09].forEach(x => { const ch = Sph(.03, M('#e8977a', { transparent: true, opacity: .5 }), x, -.05, .13, head, 6); ch.castShadow = false; });
+  Sph(.175, mS, 0, 0, 0, head, 28).scale.set(1, 1.03, .97);
+  [-1, 1].forEach(sd => Sph(.036, mS, sd * .172, -.01, -.005, head, 10).scale.set(.6, 1, 1));                    // ears
+  [-1, 1].forEach(sd => {
+    Sph(.022, mDark, sd * .062, .005, .155, head, 10).scale.set(1, 1.3, .6);                                     // eyes
+    const hl = Sph(.007, new THREE.MeshBasicMaterial({ color: '#ffffff' }), sd * .062 - .007, .016, .168, head, 6); hl.castShadow = false;
+    soft(.052, .012, .012, .005, mH, sd * .064, .062, .158, head).rotation.z = -sd * .12;                      // eyebrows
+    const ch = Sph(.032, M('#f08c7a', { transparent: true, opacity: .45, flatShading: false }), sd * .1, -.05, .14, head, 8); ch.castShadow = false;
+  });
+  Sph(.02, mS, 0, -.028, .172, head, 10).scale.set(1, .8, .8);                                                    // nose
+  const smile = add(new THREE.TorusGeometry(.024, .006, 6, 14, Math.PI), smooth('#8a4a3a'), 0, -.07, .16, head); smile.rotation.z = Math.PI; smile.castShadow = false;
+  add(new THREE.SphereGeometry(.188, 28, 16, 0, Math.PI * 2, 0, Math.PI * .56), mH, 0, .012, -.01, head);         // hair cap
+  Sph(.17, mH, 0, -.01, -.06, head, 20).scale.set(1.1, 1.02, 1);
+  if (c.style === 'long') {   // long wavy hair, side-swept bangs, clip
+    soft(.36, .44, .14, .07, mH, 0, -.22, -.1, head);
+    [-1, 1].forEach(sd => { Sph(.062, mH, sd * .155, -.13, .02, head, 12).scale.set(.85, 2.3, .9); Sph(.05, mH, sd * .15, -.33, -.02, head, 10); });
+    const bang = Sph(.13, mH, .03, .12, .1, head, 16); bang.scale.set(1.35, .42, .62); bang.rotation.set(-.35, 0, -.2);
+    Sph(.022, smooth('#e8b86a'), -.12, .12, .1, head, 8).scale.set(1.6, .7, .7);
+  } else {   // short tousled hair + round glasses
+    [[-.08, .15, .08], [0, .175, .1], [.08, .155, .07], [.04, .19, .02], [-.05, .19, 0], [.11, .1, .06]].forEach(([x, y, z]) => Sph(.055, mH, x, y, z, head, 10));
+    const gl = smooth('#3a2a22');
+    [-1, 1].forEach(sd => add(new THREE.TorusGeometry(.036, .006, 6, 18), gl, sd * .062, .005, .17, head));
+    B(.035, .006, .006, gl, 0, .01, .176, head);
+  }
   const book = B(.26, .2, .03, M('#3f6a6a'), 0, .32, .3, body); book.rotation.x = -.7;
   const mug = C(.045, .04, .09, 8, '#efe2c4', 0, -.44, .05, arms[1]);
   const can = group(0, -.45, .06, 0, arms[1]);
@@ -690,7 +756,9 @@ function makePerson(c) {
   C(.016, .016, 1.1, 5, '#5a5f64', 0, -.5, 0, vac); B(.3, .06, .12, M('#b5543f'), 0, -1.07, .05, vac);
   const duster = group(0, -.42, 0, 0, arms[1]);
   C(.012, .012, .3, 5, '#8a5634', 0, -.12, .05, duster).rotation.x = .4; Sph(.07, M('#e9c9e0'), 0, -.27, .12, duster, 8);
-  return { root, body, arms, head, thighs, knees, book, mug, can, rake, broom, vac, duster };
+  const pad = group(.23, -.42, .06, 0, arms[0]); B(.2, .04, .1, M('#2a2a32'), 0, 0, 0, pad); Sph(.012, M('#e85d5d'), .05, .025, 0, pad, 6); Sph(.012, M('#5d9ae8'), -.05, .025, 0, pad, 6);
+  const bowl = group(.2, -.44, .1, 0, arms[0]); C(.09, .06, .08, 14, smooth('#efe2c8'), 0, 0, 0, bowl); C(.075, .075, .01, 14, smooth('#e8d2a0'), 0, .035, 0, bowl);
+  return { root, body, arms, head, thighs, knees, book, mug, can, rake, broom, vac, duster, pad, bowl };
 }
 function makeCat(col, accent) {
   const root = new THREE.Group(); scene.add(root);
@@ -744,21 +812,24 @@ const LIV = [[-1.3, .6], [-2.9, .8]];
 const SPOTS = {
   cook:   { x: 2.0, z: -2.55, h: Math.PI, pose: 'stand', anim: 'stir', icon: '🍲', label: 'cooking soup' },
   coffee: { x: 2.8, z: -2.55, h: Math.PI, pose: 'stand', anim: 'coffee', icon: '☕', label: 'making morning coffee' },
-  prep:   { x: 1.05, z: -2.55, h: Math.PI, pose: 'stand', anim: 'chop', icon: '🥕', label: 'chopping veggies' },
+  prep:   { x: 1.05, z: -2.55, h: Math.PI, pose: 'stand', anim: 'chop', icon: '🥕', label: 'chopping veggies', share: ['bake'] },
+  bake:   { x: 1.05, z: -2.55, h: Math.PI, pose: 'stand', anim: 'mix', icon: '🧁', label: 'baking cookies', share: ['prep'] },
   wash:   { x: 3.6, z: -2.55, h: Math.PI, pose: 'stand', anim: 'wash', icon: '🫧', label: 'washing up' },
   eat1:   { x: .95, z: -1.4, h: Math.PI / 2, pose: 'sit', anim: 'eat', icon: '🥣', label: 'eating together', via: [[.9, -.6]] },
   eat2:   { x: 2.25, z: -1.4, h: -Math.PI / 2, pose: 'sit', anim: 'eat', icon: '🥣', label: 'eating together' },
   paint:  { x: 1.75, z: 1.8, h: -Math.PI / 2, pose: 'stand', anim: 'brush', icon: '🎨', label: 'painting' },
   sew:    { x: 3.95, z: 1.15, h: Math.PI / 2, pose: 'sit', anim: 'sew', icon: '🧵', label: 'sewing a quilt' },
-  draw:   { x: 3.95, z: 2.75, h: Math.PI / 2, pose: 'sit', anim: 'draw', icon: '✏️', label: 'sketching', share: 'laptop' },
-  laptop: { x: 3.95, z: 2.75, h: Math.PI / 2, pose: 'sit', anim: 'type', icon: '💻', label: 'on the laptop', share: 'draw' },
+  draw:   { x: 3.95, z: 2.75, h: Math.PI / 2, pose: 'sit', anim: 'draw', icon: '✏️', label: 'sketching', share: ['laptop'] },
+  laptop: { x: 3.95, z: 2.75, h: Math.PI / 2, pose: 'sit', anim: 'type', icon: '💻', label: 'on the laptop', share: ['draw'] },
   computer: { x: -1.0, z: -2.25, h: Math.PI / 2, pose: 'sit', anim: 'type', icon: '🖥️', label: 'working on the computer' },
   playcats: { x: -1.6, z: -.65, h: -Math.PI / 2, pose: 'floor', anim: 'wand', icon: '🪶', label: 'playing with the cats' },
-  tv1:    { x: -2.2, z: 1.4, h: -Math.PI / 2, pose: 'sit', anim: 'watch', icon: '📺', label: 'watching TV', via: LIV, share: 'knit' },
-  tv2:    { x: -2.2, z: 2.1, h: -Math.PI / 2, pose: 'sit', anim: 'watch', icon: '📺', label: 'watching TV', via: LIV, share: 'tea' },
+  tv1:    { x: -2.2, z: 1.4, h: -Math.PI / 2, pose: 'sit', anim: 'watch', icon: '📺', label: 'watching TV', via: LIV, share: ['knit', 'games'] },
+  tv2:    { x: -2.2, z: 2.1, h: -Math.PI / 2, pose: 'sit', anim: 'watch', icon: '📺', label: 'watching TV', via: LIV, share: ['tea', 'football'] },
+  games:  { x: -2.2, z: 1.4, h: -Math.PI / 2, pose: 'sit', anim: 'gamepad', icon: '🎮', label: 'playing video games', via: LIV, share: ['knit', 'tv1'] },
+  football: { x: -2.2, z: 2.1, h: -Math.PI / 2, pose: 'sit', anim: 'football', icon: '⚽', label: 'watching football', via: LIV, share: ['tea', 'tv2'] },
   read:   { x: -3.82, z: .6, h: -.6, pose: 'sit', anim: 'read', icon: '📖', label: 'reading by the fire', via: [[-1.3, .6]] },
-  knit:   { x: -2.2, z: 1.4, h: -Math.PI / 2, pose: 'sit', anim: 'knit', icon: '🧶', label: 'knitting', via: LIV, share: 'tv1' },
-  tea:    { x: -2.2, z: 2.1, h: -Math.PI / 2, pose: 'sit', anim: 'tea', icon: '☕', label: 'sipping tea', via: LIV, share: 'tv2' },
+  knit:   { x: -2.2, z: 1.4, h: -Math.PI / 2, pose: 'sit', anim: 'knit', icon: '🧶', label: 'knitting', via: LIV, share: ['tv1', 'games'] },
+  tea:    { x: -2.2, z: 2.1, h: -Math.PI / 2, pose: 'sit', anim: 'tea', icon: '☕', label: 'sipping tea', via: LIV, share: ['tv2', 'football'] },
   warm:   { x: -3.75, z: 1.75, h: -Math.PI / 2, pose: 'stand', anim: 'warm', icon: '🔥', label: 'warming up by the fire', via: LIV },
   rake:   { x: 2.2, z: 6.4, h: .9, pose: 'stand', anim: 'rake', icon: '🍂', label: 'raking leaves in the garden' },
   bench1: { x: 3.7, z: 7.2, h: Math.PI, pose: 'sit', anim: 'tea', icon: '🍵', label: 'enjoying the garden' },
@@ -780,7 +851,7 @@ const SPOTS = {
 const CAT_SPOTS = {
   catbed:  { x: -3.4, z: 2.95, y: .1, h: .8, act: 'nap', via: LIV },
   bedfoot: { x: -2.5, z: -1.5, y: .95, h: Math.PI / 2, act: 'nap' },
-  sofa:    { x: -2.2, z: 2.05, y: .44, h: -2.4, act: 'nap', via: LIV, blockedBy: ['tea', 'tv2'] },
+  sofa:    { x: -2.2, z: 2.05, y: .44, h: -2.4, act: 'nap', via: LIV, blockedBy: ['tea', 'tv2', 'football'] },
   nookcat: { x: 3.55, z: 3.2, y: .5, h: -Math.PI / 2, act: 'nap' },
   bowl1:   { x: 4.15, z: -.3, y: 0, h: Math.PI, act: 'eat' },
   bowl2:   { x: 4.6, z: -.3, y: 0, h: Math.PI, act: 'eat' },
@@ -789,7 +860,7 @@ const CAT_SPOTS = {
 const OPEN = { B: [[-1.0, -1.0], [-3.5, -.6], [-3.6, -1.0]], L: [[-1.2, 1.2], [-3.0, 1.2], [-1.2, 3.0], [-3.2, 2.4]],
                S: [[2.5, 1.0], [3.0, 2.2], [2.0, 2.6], [3.2, .8]], K: [[3.4, -1.2], [.9, -2.5], [2.8, -2.2], [.5, -.6]] };
 const PLAY = { x: 2.85, z: 2.0 }, PLAY_SPOTS = [PLAY, { x: -1.15, z: 2.0 }];
-const LAP = { knit: .56, tea: .56, tv1: .56, tv2: .56, read: .56, nook: .64 };   // lap height per seat
+const LAP = { knit: .56, tea: .56, tv1: .56, tv2: .56, games: .56, football: .56, read: .56, nook: .64 };   // lap height per seat
 const WAND_AT = { x: -2.95, z: -.65 };
 const ROOM_NAME = { B: 'bedroom', L: 'living room', S: 'studio', K: 'kitchen', Y: 'garden' };
 
@@ -808,7 +879,7 @@ function bubbleMat(emoji) {
 function bubbleSprite() { const s = new THREE.Sprite(bubbleMat('💤')); s.scale.set(.55, .55, 1); s.renderOrder = 10; s.visible = false; scene.add(s); return s; }
 
 const Q = new URLSearchParams(location.search);
-let simT = 0, hour = +(Q.get('hour') ?? 17.3), speed = +(Q.get('speed') ?? 1);
+let simT = 0, hour = +(Q.get('hour') ?? 6.97), speed = +(Q.get('speed') ?? 1);
 const night = () => hour >= 22 || hour < 6.5;
 const bedtime = p => hour >= p.bed || hour < p.wake;   // each person has their own bed/wake time
 // household routine: someone cooks at each mealtime, then both sit down and eat together
@@ -842,8 +913,8 @@ function updateHouse() {
 }
 
 const people = [
-  { name: 'June', rig: makePerson({ skin: '#e9b48f', hair: '#6a3a22', style: 'long', shirt: '#c9763f', pants: '#4a4a6a', collar: '#efe2c8' }), x: 0, z: 0 },
-  { name: 'Theo', rig: makePerson({ skin: '#a8714f', hair: '#2a1a12', style: 'short', shirt: '#5e7a5a', pants: '#3a3f55' }), x: 0, z: 0 },
+  { name: 'June', rig: makePerson({ skin: '#eab48f', hair: '#7a4126', style: 'long', outfit: 'cardigan', shirt: '#c9763f', trim: '#b5643a', inner: '#f3e6cf', pants: '#4f5f80', shoes: '#7a3a2a' }), x: 0, z: 0 },
+  { name: 'Theo', rig: makePerson({ skin: '#a8714f', hair: '#2a1a12', style: 'short', outfit: 'hoodie', shirt: '#6f8a66', trim: '#5e7756', pants: '#3a3f55', shoes: '#ece7dc' }), x: 0, z: 0 },
 ];
 const cats = [
   { name: 'Biscuit', rig: makeCat('#e0913f', '#f7e8d4'), x: -1.2, z: 1.2 },
@@ -852,21 +923,25 @@ const cats = [
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 let dayIdx = +(Q.get('day') ?? 4);   // start on a Friday
 const weekend = () => dayIdx % 7 >= 5;
-const FAVS = ['paint', 'sew', 'draw', 'laptop', 'computer', 'read', 'nook', 'knit', 'tea', 'playcats', 'rake', 'bench1', 'mums', 'browse'];
-function mood() {   // each day everyone fancies different things
+const FAVS = ['paint', 'sew', 'draw', 'laptop', 'computer', 'read', 'nook', 'knit', 'tea', 'playcats', 'rake', 'bench1', 'mums', 'browse', 'bake', 'games', 'football'];
+// things each person never chooses (and that don't appear in their menu)
+const DISLIKES = { June: ['games', 'football'], Theo: ['paint', 'sew', 'draw', 'knit', 'bake'] };
+const likes = (p, k) => !(DISLIKES[p.name] || []).includes(k);
+function mood(p) {   // each day everyone fancies different things
   const m = {}; for (const k in SPOTS) m[k] = rand(.4, 1.6);
-  m.fav = pick(FAVS); m[m.fav] *= 3.5; m.bench2 = m.bench1; return m;
+  m.fav = pick(FAVS.filter(k => likes(p, k))); m[m.fav] *= 3.5; m.bench2 = m.bench1; return m;
 }
 function planDay(p, i) {
-  Object.assign(p, { mood: mood(), recent: [], wake: 6.2 + i * .4 + rand(0, .4) + (weekend() ? 1.2 : 0), bed: 21.6 + i * .4 + rand(0, .4) + (weekend() ? .6 : 0) });
+  Object.assign(p, { mood: mood(p), recent: [], wake: 6.2 + i * .4 + rand(0, .4) + (weekend() ? 1.2 : 0), bed: 21.6 + i * .4 + rand(0, .4) + (weekend() ? .6 : 0) });
 }
 function newDay() { dayIdx++; house.gardenDay = Math.random() < .5; house.cleanDay = dayIdx % 7 === 5 || Math.random() < .2; pileLevel = .15; people.forEach(planDay); }
 house.gardenDay = Math.random() < .5; house.cleanDay = Q.has('clean') || dayIdx % 7 === 5 || Math.random() < .2;
 people.forEach(planDay);
+if (!Q.has('hour')) people.forEach((p, i) => p.wake = 7.0 + i * .2);   // first visit: watch them wake up at 7
 for (const a of [...people, ...cats]) Object.assign(a, { heading: 0, y: 0, path: [], mode: 'idle', timer: 0, spot: null, walkPhase: 0, ph: rand(0, 6), bubble: bubbleSprite(), bubbleT: 0, last: null });
 
 const taken = {};
-const free = (k, a) => (!taken[k] || taken[k] === a) && !(SPOTS[k] && SPOTS[k].share && taken[SPOTS[k].share] && taken[SPOTS[k].share] !== a);
+const free = (k, a) => (!taken[k] || taken[k] === a) && !((SPOTS[k] && SPOTS[k].share) || []).some(o => taken[o] && taken[o] !== a);
 function release(a) { for (const k in taken) if (taken[k] === a) delete taken[k]; }
 function goTo(a, key, table, speedMul = 1) {
   const sp = table[key], from = a.spot && table[a.spot] ? table[a.spot].via : (a.spot && SPOTS[a.spot] ? SPOTS[a.spot].via : []);
@@ -888,7 +963,7 @@ function choosePerson(p) {
   if (house.walkInvite === p) { house.walkInvite = null; return goTo(p, 'stroll2', SPOTS); }
   if (hour < 11 && !p.hadCoffee && free('coffee', p)) return goTo(p, 'coffee', SPOTS);   // one coffee every morning
   const evening = hour > 17 || hour < 9;
-  const w = { paint: 3, sew: 3, draw: 2.5, laptop: 2, computer: 2.5, read: 2, nook: 3, browse: 1, knit: 2, tea: 2, plants: 1.2, warm: evening ? 2 : .5, wash: .2,
+  const w = { paint: 3, sew: 3, draw: 2.5, laptop: 2, computer: 2.5, bake: weekend() ? 3 : 2, games: 3, football: weekend() && hour > 12 ? 4 : 1.2, read: 2, nook: 3, browse: 1, knit: 2, tea: 2, plants: 1.2, warm: evening ? 2 : .5, wash: .2,
               playcats: cats.some(wandReady) ? 2.5 : 0, tv1: .5 };
   const g = (house.gardenDay ? 2 : 1) * (weekend() ? 1.5 : 1), partnerOnBench = people.some(q => q !== p && q.mode === 'act' && /^bench/.test(q.spot));
   if (hour >= 9 && hour < 17.5) Object.assign(w, { rake: 1.2 * g, mums: .8 * g, stroll1: 1.2 * g });            // garden time on nice afternoons
@@ -896,7 +971,7 @@ function choosePerson(p) {
   if ((hour >= 7 && hour < 10) || (hour >= 16 && hour < 18)) w.jog = hour < 10 ? 1.6 : .8;                    // morning / late-afternoon runs
   const c = house.cleanDay ? 4 : .35;                                                                            // cleaning, mostly on cleaning days
   Object.assign(w, { sweep: c, vacuum: c, dust: c * .8, makebed: hour < 12 ? 1 + c : 0 });
-  for (const k in w) w[k] *= (p.mood[k] ?? 1) * (p.recent.includes(k) ? .25 : 1);
+  for (const k in w) w[k] *= (likes(p, k) ? 1 : 0) * (p.mood[k] ?? 1) * (p.recent.includes(k) ? .25 : 1);
   if (p.last === 'eat1' || p.last === 'eat2') w.wash = 6;
   if (p.last) w[p.last] = 0;
   for (const k in w) if (!free(k, p)) w[k] = 0;
@@ -906,6 +981,7 @@ function startPersonAct(p) {
   const sp = SPOTS[p.target]; p.spot = p.target; p.last = p.target; p.mode = 'act';
   p.x = sp.x; p.z = sp.z; p.heading = sp.h; p.timer = sp.pose === 'lie' ? 9e9 : p.target === 'cook' || p.target === 'prep' || sp.anim === 'eat' ? rand(25, 35) : p.target === 'coffee' ? rand(18, 24) : rand(45, 75); p.callT = 0; p.bubbleT = 0; p.dur = p.timer; if (p.target === 'coffee') p.hadCoffee = true;
   p.recent = [p.target, ...(p.recent || [])].slice(0, 4);
+  if (p.target === 'bake') SPOTS.bake.label = pick(['baking cookies', 'baking banana bread', 'baking an apple pie', 'baking cinnamon rolls']);
   if (sp.loop) { p.loopA = Math.PI / 2; p.timer = p.dur = sp.loop.laps * 2 * Math.PI * (sp.loop.rx + sp.loop.rz) / 2 / sp.loop.speed; }
   if (p.target === 'stroll1' && p.cmd && p.cmd.together === 'walk') { const q = people.find(o => o !== p); p.waitFor = q; p.waitT = 60; }
   else if (p.target === 'stroll1' && !p.cmd) {   // sometimes ask the other one to come along
@@ -934,7 +1010,7 @@ function joinWand(c, i) {
 }
 function chooseCat(c) {
   if (c.lapOf) { if (c.lapOf.lapCat === c) c.lapOf.lapCat = null; c.lapOf = null; }
-  const other = cats.find(o => o !== c), cooking = people.some(p => p.spot === 'cook' && p.mode === 'act');
+  const other = cats.find(o => o !== c), cooking = people.some(p => (p.spot === 'cook' || p.spot === 'bake') && p.mode === 'act');
   const laps = people.filter(p => p.mode === 'act' && LAP[p.spot] !== undefined && !p.lapCat);
   const w = { nap: night() ? 8 : 3, eat: house.meal && house.meal.stage === 'eat' ? 5 : 1.5, wander: 2.5, groom: 1.5, play: !night() && !play && !catBusy(other) ? 3 : 0,
               beg: cooking && free('beg', c) ? 4 : 0, lap: laps.length ? 3 : 0 };
@@ -977,7 +1053,8 @@ function startPlay(a, b, at) {
 // ---------------------------------------------------------------- player choices (dropdown per character)
 const MENU = [
   ['Together', [['T:cook', '🍲 Cook together'], ['T:eat', '🥣 Eat together'], ['T:movie', '🍿 Movie night'], ['T:walk', '🚶 Walk together'], ['T:bench', '🌅 Sit in the garden together'], ['T:sleep', '💤 Go to bed']]],
-  ['Creative', [['paint', '🎨 Paint'], ['sew', '🧵 Sew'], ['draw', '✏️ Sketch'], ['knit', '🧶 Knit']]],
+  ['Creative', [['paint', '🎨 Paint'], ['sew', '🧵 Sew'], ['draw', '✏️ Sketch'], ['knit', '🧶 Knit'], ['bake', '🧁 Bake']]],
+  ['Fun', [['games', '🎮 Video games'], ['football', '⚽ Watch football']]],
   ['Cozy', [['read', '📖 Read by the fire'], ['nook', '📚 Reading nook'], ['tea', '☕ Tea on the sofa'], ['tv1', '📺 Watch TV'], ['warm', '🔥 Warm up by the fire'], ['coffee', '☕ Make coffee'], ['browse', '📚 Browse the bookshelf']]],
   ['Work', [['laptop', '💻 Laptop'], ['computer', '🖥️ Computer']]],
   ['Cats', [['playcats', '🪶 Play with the cats']]],
@@ -988,11 +1065,13 @@ const TOGETHER = { cook: ['cook', 'prep'], eat: ['eat1', 'eat2'], movie: ['tv1',
 const statusEl = document.getElementById('status'), menuEl = document.getElementById('menu');
 const LABEL = Object.fromEntries(MENU.flatMap(([, items]) => items));
 let chosenDur = 60;   // in-game minutes (= sim seconds)
-statusEl.innerHTML = people.map((p, i) => `<div class="row"><b>${p.name}</b><span id="st${i}"></span></div>
+statusEl.innerHTML = `<button id="fold"><span class="t">🏡 Household</span><span class="mini" id="mini"></span><span class="chev">▾</span></button><div id="statusBody">` + people.map((p, i) => `<div class="row"><b>${p.name}</b><span id="st${i}"></span></div>
   <div class="cmdrow"><button class="pick" id="pick${i}"><span class="lbl"></span><span class="car">▼</span></button><span class="left" id="left${i}"></span></div>
   <div class="bar"><div id="bar${i}"></div></div>`).join('')
   + `<div class="cats">${cats.map((c, i) => `<div class="row"><b>${c.name}</b><span id="cst${i}"></span></div>`).join('')}</div>
-  <div id="durRow">Chosen activities last <span class="seg">${[[30, '30m'], [60, '1h'], [120, '2h']].map(([d, l]) => `<button data-d="${d}" class="${d === 60 ? 'on' : ''}">${l}</button>`).join('')}</span></div>`;
+  <div id="durRow">Chosen activities last <span class="seg">${[[30, '30m'], [60, '1h'], [120, '2h']].map(([d, l]) => `<button data-d="${d}" class="${d === 60 ? 'on' : ''}">${l}</button>`).join('')}</span></div></div>`;
+if (innerWidth < 760) statusEl.classList.add('collapsed');   // phones start with the panel folded
+document.getElementById('fold').onclick = () => { statusEl.classList.toggle('collapsed'); closeMenu(); };
 document.querySelectorAll('.seg button').forEach(b => b.onclick = () => { chosenDur = +b.dataset.d; document.querySelectorAll('.seg button').forEach(o => o.classList.toggle('on', o === b)); });
 const selects = people.map((p, i) => {   // pill button per character; .value mirrors the chosen activity
   const el = document.getElementById(`pick${i}`);
@@ -1003,7 +1082,7 @@ let menuFor = -1;
 function openMenu(i) {
   if (menuFor === i && menuEl.classList.contains('open')) return closeMenu();
   menuFor = i; const cur = selects[i].value;
-  menuEl.innerHTML = `<h4>What should ${people[i].name} do?</h4>` + MENU.map(([g, items]) => `<div class="sec">${g === 'Together' ? '💞 Together' : g}</div><div class="grid">${items.map(([v, l]) => {
+  menuEl.innerHTML = `<h4>What should ${people[i].name} do?</h4>` + MENU.map(([g, items]) => [g, items.filter(([v]) => v.startsWith('T:') || likes(people[i], v))]).filter(([, items]) => items.length).map(([g, items]) => `<div class="sec">${g === 'Together' ? '💞 Together' : g}</div><div class="grid">${items.map(([v, l]) => {
     const [e, ...t] = l.split(' '); return `<button class="chip${v.startsWith('T:') ? ' together' : ''}${v === cur ? ' cur' : ''}" data-v="${v}"><span class="e">${e}</span>${t.join(' ')}</button>`; }).join('')}</div>`).join('')
     + `<button class="free" data-v="">✨ Let them go about their day</button>`;
   menuEl.querySelectorAll('[data-v]').forEach(b => b.onclick = e => { e.stopPropagation(); command(people[i], b.dataset.v); closeMenu(); });
@@ -1035,7 +1114,7 @@ function command(p, value) {
     return;
   }
   const sp = SPOTS[value];
-  for (const k of [value, sp.share].filter(Boolean)) {   // bump the other person off this spot (unless the player put them there)
+  for (const k of [value, ...(sp.share || [])]) {   // bump the other person off this spot (unless the player put them there)
     const q = taken[k];
     if (q && q !== p && people.includes(q)) { if (q.cmd) { q.cmd = null; selects[people.indexOf(q)].value = ''; } interrupt(q); }
   }
@@ -1046,7 +1125,7 @@ function command(p, value) {
 // start asleep in bed if the page opens at night, otherwise painting and sewing
 people.forEach((p, i) => {
   if (i === 0 && Q.has('do')) { p.x = 1.5; p.z = 1.5; p.didForce = true; return goTo(p, Q.get('do'), SPOTS); }   // testing aid: ?do=<activity>
-  const k = bedtime(p) ? ['sleep1', 'sleep2'][i] : ['paint', 'sew'][i]; p.target = k; taken[k] = p; startPersonAct(p);
+  const k = bedtime(p) ? ['sleep1', 'sleep2'][i] : ['paint', 'laptop'][i]; p.target = k; taken[k] = p; startPersonAct(p);
 });
 Object.assign(cats[1], { target: 'catbed' }); taken.catbed = cats[1]; startCatAct(cats[1]);
 chooseCat(cats[0]);
@@ -1096,7 +1175,7 @@ function updatePerson(p, dt) {
 
   const r = p.rig, sp = p.mode === 'act' ? SPOTS[p.spot] : null, T = simT + p.ph;
   let hipY = .76, th = [0, 0], kn = [0, 0], ax = [0, 0], az = [0, 0], hx = 0, bob = 0, lie = false;
-  r.book.visible = r.mug.visible = r.can.visible = r.rake.visible = r.broom.visible = r.vac.visible = r.duster.visible = false;
+  r.book.visible = r.mug.visible = r.can.visible = r.rake.visible = r.broom.visible = r.vac.visible = r.duster.visible = r.pad.visible = r.bowl.visible = false;
   if (p.mode === 'walk') { const s = Math.sin(p.walkPhase); th = [s * .45, -s * .45]; kn = [Math.max(0, -s) * .6, Math.max(0, s) * .6]; ax = [-s * .35, s * .35]; bob = Math.abs(Math.cos(p.walkPhase)) * .025; }
   else if (sp) {
     if (sp.loop && !p.waitFor) {
@@ -1125,6 +1204,9 @@ function updatePerson(p, dt) {
         if (p.timer > p.dur * .55) { ax = [0, -1.25]; hx = .2; }
         else { ax = [0, -1.0 - Math.max(0, Math.sin(T * .9)) * .9]; r.mug.visible = true; p.heading = sp.h + .6; }
         break;
+      case 'gamepad': ax = [-1.0 + Math.sin(T * 7) * .03, -1.0 - Math.sin(T * 8) * .03]; az = [.38, -.38]; hx = -.05; r.pad.visible = true; break;
+      case 'football': { const goal = Math.sin(T * .35) > .93; ax = goal ? [-2.8, -2.8] : [-.35, -.35]; az = goal ? [-.2, .2] : [.15, -.15]; break; }
+      case 'mix': ax = [-.9, -1.0]; az = [.3, Math.sin(T * 5) * .25 - .1]; hx = .4; r.bowl.visible = true; break;
       case 'type': ax = [-1.05 + Math.sin(T * 9) * .04, -1.05 - Math.sin(T * 9 + 1) * .04]; az = [.22, -.22]; hx = .1; break;
       case 'watch': ax = [-.35, -.35]; az = [.15, -.15]; hx = -.05; break;
       case 'wand': ax = [0, -1.0 + Math.sin(T * 2.6) * .2]; az = [0, Math.sin(T * 1.3) * .35]; hx = .25; break;
@@ -1309,15 +1391,15 @@ document.getElementById('music').onclick = e => {
   const { ctx, master } = audio; ctx.resume();
   master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setValueAtTime(master.gain.value, ctx.currentTime);
   master.gain.linearRampToValueAtTime(musicOn ? .7 : 0, ctx.currentTime + 2);
-  e.target.textContent = musicOn ? '♪ Music: on' : '♪ Music: off';
+  document.getElementById('music').innerHTML = `♪<span class="txt"> Music: ${musicOn ? 'on' : 'off'}</span>`;
 };
 document.getElementById('zoomIn').onclick = () => zoomBy(1.25);
 document.getElementById('zoomOut').onclick = () => zoomBy(1 / 1.25);
 document.getElementById('home').onclick = () => { camTarget.set(0, .3, 0); camera.zoom = 1.3; camera.updateProjectionMatrix(); };
 document.getElementById('rotL').onclick = () => camAzTarget -= Math.PI / 2;
 document.getElementById('rotR').onclick = () => camAzTarget += Math.PI / 2;
-document.getElementById('speed').textContent = `Speed ${speed}×`;
-document.getElementById('speed').onclick = e => { speed = speed === 1 ? 5 : speed === 5 ? 20 : 1; e.target.textContent = `Speed ${speed}×`; };
+document.getElementById('speed').innerHTML = `<span class="txt">Speed </span>${speed}×`;
+document.getElementById('speed').onclick = e => { speed = speed === 1 ? 5 : speed === 5 ? 20 : 1; document.getElementById('speed').innerHTML = `<span class="txt">Speed </span>${speed}×`; };
 
 // ---------------------------------------------------------------- main loop
 const clock = new THREE.Clock();
@@ -1348,11 +1430,15 @@ function frame() {
   const brewing = people.some(p => p.mode === 'act' && p.spot === 'coffee' && p.timer > p.dur * .55);
   coffeeLight.material.emissiveIntensity = brewing ? 2 : 0; coffeeCup.visible = brewing;
   coffeeSteam.forEach(s => { s.visible = brewing; const pr = (T * .5 + s.userData.o) % 1; s.position.set(2.8 + Math.sin(T * 2 + s.userData.o * 7) * .02, 1.07 + pr * .3, -3.1); s.material.opacity = .5 * (1 - pr); });
-  const tvOn = using('tv1') || using('tv2');
-  tvMat.color.set(tvOn ? '#ffffff' : '#111111'); tvLight.intensity = tvOn ? .9 + Math.sin(T * 2.3) * .25 : 0; if (tvOn) drawTV(T);
+  const tvOn = ['tv1', 'tv2', 'games', 'football'].some(using);
+  tvMat.color.set(tvOn ? '#ffffff' : '#111111'); tvLight.intensity = tvOn ? .9 + Math.sin(T * 2.3) * .25 : 0;
+  if (tvOn) (using('games') ? drawGame : using('football') ? drawFootball : drawTV)(T);
+  const baking = people.some(p => p.spot === 'bake' && p.mode === 'act');
+  if (baking) cookieTray.userData.ready = simT + 600;   // cookies cool on the counter for a while afterwards
+  cookieTray.visible = !baking && simT < (cookieTray.userData.ready || 0);
   laptopMat.color.set(using('laptop') ? '#ffffff' : '#222222'); monitorMat.color.set(using('computer') ? '#ffffff' : '#222222');
   const cooking = people.some(p => p.spot === 'cook' && p.mode === 'act');
-  stoveGlow.intensity = cooking ? 1.2 : 0; ovenGlow.material.emissiveIntensity = cooking ? .8 : 0;
+  stoveGlow.intensity = cooking ? 1.2 : 0; ovenGlow.material.emissiveIntensity = cooking || using('bake') ? .8 : 0;
   steam.forEach(s => { s.visible = cooking; const pr = (T * .3 + s.userData.o) % 1; s.position.set(2.0 + Math.sin(T + s.userData.o * 9) * .08, 1.3 + pr, -3.15); s.scale.setScalar(1 + pr * 2); s.material.opacity = .45 * (1 - pr); });
 
   fallLeaves.forEach((l, i) => {
@@ -1389,6 +1475,7 @@ function frame() {
       document.getElementById(`bar${i}`).style.width = p.cmd ? `${100 * Math.max(0, p.cmd.until - simT) / p.cmd.dur}%` : '0%';
     });
     cats.forEach((c, i) => document.getElementById(`cst${i}`).textContent = st[people.length + i]);
+    document.getElementById('mini').textContent = [...people, ...cats].map((a, i) => `${a.name} ${[...st[i]][0] || ''}`).join(' · ');
   }
 
   renderer.render(scene, camera);
