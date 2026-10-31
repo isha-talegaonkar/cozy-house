@@ -8,18 +8,25 @@ Runs entirely in the browser with [Three.js](https://threejs.org) and no build s
 
 | File | What it holds |
 |---|---|
-| `index.html` | Page markup and the Three.js import map |
+| `index.html` | Page markup, the Three.js import map, and the on-screen error note |
 | `styles.css` | Panels, buttons, activity menu, mobile layout |
-| `src/main.js` | The per-frame loop: camera, fire, screens, steam, falling leaves, status panel |
+| `src/main.js` | The frame loop: advances time and calls each module's update in order |
 | `src/scene.js` | Renderer, scene, orthographic camera, pan/zoom/rotate input |
-| `src/helpers.js` | Shape helpers (boxes, soft rounded boxes, spheres), shared materials, canvas textures |
+| `src/helpers.js` | Shape helpers, shared materials, canvas textures, fairy-light twinkle |
+| `src/layout.js` | House footprint and inner-wall positions |
+| `src/season.js` | Current season and weather (with SPRING… and AUTO/CLEAR/RAIN constants), fire and garden rules |
+| `src/clock.js` | In-game time, speed, weekdays and the midnight rollover |
 | `src/plants.js` | Leaf textures and every plant type |
-| `src/house.js` | Floors, walls with cutaway versions, windows, every room's furniture and props, the TV |
-| `src/yard.js` | Garden: lawn, path, fence, lamp post, bench, patio, trees, falling and fallen leaves |
-| `src/characters.js` | June and Theo's models and outfits, the cats |
-| `src/sim.js` | Clock, navigation, activities, daily routine, cats, player commands, per-character updates |
-| `src/ui.js` | Household panel, activity picker, buttons |
+| `src/house.js` | Floors, cutaway walls, every room's furniture, the TV, Christmas decor, and `animateHouse` |
+| `src/yard.js` | Garden, trees, flowers, leaves, snow, rain, fireflies, and `animateYard` |
+| `src/characters.js` | June and Theo's models (faces, hair, outfits, props) and the cats |
+| `src/wardrobe.js` | Seasonal outfits and pyjamas |
+| `src/activities.js` | Where each activity happens and how it's labelled; the cats' spots |
+| `src/nav.js` | Rooms, doors and path-finding |
+| `src/bubbles.js` | Thought bubbles over heads |
+| `src/sim.js` | Daily routines, choosing what to do, cats' behaviour, player commands, per-character animation |
+| `src/ui.js` | Household panel, activity picker, season/weather pickers, buttons |
 | `src/daycycle.js` | Sun, sky and lamp lighting through the day |
-| `src/audio.js` | Generated music and fire crackle |
+| `src/audio.js` | Generated seasonal music, birdsong, crickets, rain and fire crackle |
 
-Handy URL options for trying things out: `?hour=18.4` (start time), `?speed=5`, `?movie`, `?together`, `?clean`, `?do=<activity>`, `?zoom=2&x=0&z=0`.
+Handy URL options for trying things out: `?season=winter`, `?weather=rain`, `?hour=18.4` (start time), `?speed=5`, `?movie`, `?together`, `?clean`, `?do=<activity>`, `?zoom=2&x=0&z=0`.

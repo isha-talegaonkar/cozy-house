@@ -1,6 +1,6 @@
 import { pick, rand } from './helpers.js';
 import { FALL, SPRING, SUMMER, WINTER, fireLit, raining, season } from './season.js';
-import { hour } from './sim.js';
+import { hour } from './clock.js';
 
 // ---------------------------------------------------------------- music (generated in the browser, no files)
 let audio = null, musicOn = false;

@@ -1,124 +1,15 @@
-import * as THREE from 'three';
-import { keys, scene } from './scene.js';
-import { canvasTex, lerpAngle, pick, rand } from './helpers.js';
+import { lerpAngle, pick, rand } from './helpers.js';
 import { UP, bowls, feather, paintStroke, popcorn, tmpV, wand, wandStick, yarn } from './house.js';
-import { growPile, resetPile } from './yard.js';
 import { makeCat, makePerson } from './characters.js';
-import { FALL, GARDEN, SPRING, SUMMER, WINTER, fireLit, onSeason, raining, season } from './season.js';
-import { BEDROOM_WALL_Z, KITCHEN_WALL_Z, MIDDLE_WALL_X, nearHouse } from './layout.js';
+import { FALL, GARDEN, SUMMER, WINTER, fireLit, onSeason, raining, season } from './season.js';
+import { growPile, resetPile } from './yard.js';
+import { keys } from './scene.js';
+import { Q, dayIdx, hour, night, onNewDay, simT, weekend } from './clock.js';
+import { ORDER, buildPath, roomOf, stepPath } from './nav.js';
+import { CAT_SPOTS, LAP, OPEN, PLAY, PLAY_SPOTS, SPOTS, TOGETHER, WAND_AT, updateBenchMood } from './activities.js';
+import { OUTFITS, PJS } from './wardrobe.js';
+import { bubbleSprite } from './bubbles.js';
 
-// ---------------------------------------------------------------- navigation
-const ORDER = ['B', 'L', 'S', 'K'];
-const DOORS = { 'B-L': { B: [-.8, -.5], L: [-.8, .5] }, 'L-S': { L: [-.5, 2.8], S: [.5, 2.8] }, 'S-K': { S: [3.0, -.1], K: [3.0, -1.1] }, 'L-Y': { L: [-1.0, 3.8], Y: [-1.0, 5.2] } };
-// which room a point is in: B(edroom), L(iving), S(tudio / hobby room), K(itchen), or Y(ard)
-export const roomOf = (x, z) => !nearHouse(x, z) ? 'Y' : x < MIDDLE_WALL_X ? (z < BEDROOM_WALL_Z ? 'B' : 'L') : (z < KITCHEN_WALL_Z ? 'K' : 'S');
-const ADJ = { B: ['L'], L: ['B', 'S', 'Y'], S: ['L', 'K'], K: ['S'], Y: ['L'] };
-function roomRoute(a, b) {   // breadth-first search over rooms
-  const prev = { [a]: null }, q = [a];
-  while (q.length) { const r = q.shift(); if (r === b) break; for (const n of ADJ[r]) if (!(n in prev)) { prev[n] = r; q.push(n); } }
-  const route = []; for (let r = b; r; r = prev[r]) route.unshift(r); return route;
-}
-function buildPath(a, tx, tz, via = [], fromVia = []) {
-  const r0 = roomOf(a.x, a.z), r1 = roomOf(tx, tz), pts = [];
-  if (r0 !== r1) {
-    pts.push(...[...fromVia].reverse());
-    const route = roomRoute(r0, r1);
-    for (let i = 0; i < route.length - 1; i++) { const p = route[i], q = route[i + 1], d = DOORS[`${p}-${q}`] || DOORS[`${q}-${p}`]; pts.push(d[p], d[q]); }
-    pts.push(...via);
-  }
-  pts.push([tx, tz]); return pts;
-}
-function stepPath(a, dt, speed) {
-  const [tx, tz] = a.path[0], dx = tx - a.x, dz = tz - a.z, d = Math.hypot(dx, dz);
-  if (d < .04) { a.path.shift(); return a.path.length === 0; }
-  const s = Math.min(d, speed * dt); a.x += dx / d * s; a.z += dz / d * s;
-  a.heading = lerpAngle(a.heading, Math.atan2(dx, dz), Math.min(1, dt * 8));
-  a.walkPhase += dt * speed * 11;
-  return false;
-}
-
-// ---------------------------------------------------------------- activities
-const LIV = [[-1.3, .6], [-2.9, .8]];
-export const SPOTS = {
-  cook:   { x: 2.0, z: -2.55, h: Math.PI, pose: 'stand', anim: 'stir', icon: '🍲', label: 'cooking soup' },
-  coffee: { x: 2.8, z: -2.55, h: Math.PI, pose: 'stand', anim: 'coffee', icon: '☕', label: 'making morning coffee' },
-  prep:   { x: 1.05, z: -2.55, h: Math.PI, pose: 'stand', anim: 'chop', icon: '🥕', label: 'chopping veggies', share: ['bake'] },
-  bake:   { x: 1.05, z: -2.55, h: Math.PI, pose: 'stand', anim: 'mix', icon: '🧁', label: 'baking cookies', share: ['prep'] },
-  wash:   { x: 3.6, z: -2.55, h: Math.PI, pose: 'stand', anim: 'wash', icon: '🫧', label: 'washing up' },
-  eat1:   { x: .95, z: -1.65, h: Math.PI / 2, pose: 'sit', anim: 'eat', icon: '🥣', label: 'eating together', via: [[.95, -1.1]] },
-  eat2:   { x: 2.25, z: -1.65, h: -Math.PI / 2, pose: 'sit', anim: 'eat', icon: '🥣', label: 'eating together' },
-  paint:  { x: 1.75, z: 1.8, h: -Math.PI / 2, pose: 'stand', anim: 'brush', icon: '🎨', label: 'painting' },
-  crochet: { x: .53, z: -.09, h: Math.PI / 4, pose: 'sit', anim: 'crochet', icon: '🧶', label: 'crocheting a blanket' },
-  draw:   { x: 3.95, z: 2.75, h: Math.PI / 2, pose: 'sit', anim: 'draw', icon: '✏️', label: 'sketching', share: ['laptop'] },
-  laptop: { x: 3.95, z: 2.75, h: Math.PI / 2, pose: 'sit', anim: 'type', icon: '💻', label: 'on the laptop', share: ['draw'] },
-  computer: { x: 3.95, z: 1.1, h: Math.PI / 2, pose: 'sit', anim: 'type', icon: '🖥️', label: 'working on the computer' },
-  playcats: { x: -1.6, z: -.65, h: -Math.PI / 2, pose: 'floor', anim: 'wand', icon: '🪶', label: 'playing with the cats' },
-  tv1:    { x: -2.2, z: 1.35, h: -Math.PI / 2, pose: 'sit', anim: 'watch', icon: '📺', label: 'watching TV', via: LIV, share: ['knit', 'games'] },
-  tv2:    { x: -2.2, z: 1.95, h: -Math.PI / 2, pose: 'sit', anim: 'watch', icon: '📺', label: 'watching TV', via: LIV, share: ['tea', 'football', 'sofa'] },
-  games:  { x: -2.2, z: 1.35, h: -Math.PI / 2, pose: 'sit', anim: 'gamepad', icon: '🎮', label: 'playing video games', via: LIV, share: ['knit', 'tv1'] },
-  football: { x: -2.2, z: 1.95, h: -Math.PI / 2, pose: 'sit', anim: 'football', icon: '⚽', label: 'watching football', via: LIV, share: ['tea', 'tv2', 'sofa'] },
-  read:   { x: -3.82, z: .6, h: -.6, pose: 'sit', anim: 'read', icon: '📖', label: 'reading by the fire', via: [[-1.3, .6]] },
-  knit:   { x: -2.2, z: 1.35, h: -Math.PI / 2, pose: 'sit', anim: 'knit', icon: '🧶', label: 'knitting', via: LIV, share: ['tv1', 'games'] },
-  tea:    { x: -2.2, z: 1.95, h: -Math.PI / 2, pose: 'sit', anim: 'tea', icon: '☕', label: 'sipping tea', via: LIV, share: ['tv2', 'football', 'sofa'] },
-  warm:   { x: -3.75, z: 1.75, h: -Math.PI / 2, pose: 'stand', anim: 'warm', icon: '🔥', label: 'warming up by the fire', via: LIV },
-  patio1: { x: -4.75, z: 8.0, h: Math.PI / 2, pose: 'sit', anim: 'tea', icon: '☕', label: 'tea on the patio' },
-  patio2: { x: -3.65, z: 8.0, h: -Math.PI / 2, pose: 'sit', anim: 'tea', icon: '☕', label: 'tea on the patio' },
-  rake:   { x: 2.2, z: 7.1, h: .9, pose: 'stand', anim: 'rake', icon: '🍂', label: 'raking leaves in the garden' },
-  bench1: { x: 4.3, z: 7.2, h: 0, pose: 'sit', anim: 'tea', icon: '🍵', label: 'enjoying the garden' },
-  bench2: { x: 3.7, z: 7.2, h: 0, pose: 'sit', anim: 'tea', icon: '🍵', label: 'enjoying the garden' },
-  mums:   { x: -3.7, z: 5.35, h: Math.PI, pose: 'stand', anim: 'water', icon: '🌼', label: 'watering the mums', via: [[-2.0, 5.7]] },
-  stroll1: { x: 0, z: 6.8, h: Math.PI / 2, pose: 'stand', anim: 'stroll', icon: '🚶', label: 'going for a walk', loop: { cx: 0, cz: .4, rx: 7.5, rz: 6.4, speed: .8, laps: 1 } },
-  stroll2: { x: 0, z: 7.2, h: Math.PI / 2, pose: 'stand', anim: 'stroll', icon: '🚶', label: 'going for a walk', loop: { cx: 0, cz: .4, rx: 7.9, rz: 6.8, speed: .8, laps: 1 } },
-  jog:    { x: 0, z: 6.5, h: Math.PI / 2, pose: 'stand', anim: 'jog', icon: '🏃', label: 'going for a run', loop: { cx: 0, cz: .4, rx: 7.3, rz: 6.1, speed: 2.2, laps: 2 } },
-  sweep:  { x: 1.6, z: -1.05, h: Math.PI / 2, pose: 'stand', anim: 'sweep', icon: '🧹', label: 'sweeping the kitchen', loop: { cx: 1.6, cz: -1.65, rx: 1.1, rz: .6, speed: .35, laps: 2 } },
-  vacuum: { x: -3.35, z: 1.9, h: Math.PI / 2, pose: 'stand', anim: 'vacuum', icon: '✨', label: 'vacuuming the living room', via: LIV, loop: { cx: -3.35, cz: 1.45, rx: .45, rz: .45, speed: .25, laps: 3 } },
-  dust:   { x: -4.25, z: 2.95, h: -Math.PI / 2, pose: 'stand', anim: 'dust', icon: '🪶', label: 'dusting the bookshelf', via: LIV },
-  makebed: { x: -2.5, z: -.95, h: Math.PI, pose: 'stand', anim: 'makebed', icon: '🛏️', label: 'making the bed' },
-  plants: { x: -.75, z: 1.5, h: Math.PI / 2, pose: 'stand', anim: 'water', icon: '🪴', label: 'watering the plants' },
-  nook:   { x: 2.3, z: 4.0, h: Math.PI, pose: 'sit', anim: 'read', icon: '📖', label: 'curled up in the reading nook' },
-  browse: { x: 2.1, z: .3, h: Math.PI, pose: 'stand', anim: 'browse', icon: '📚', label: 'browsing the bookshelf' },
-  sleep1: { x: -2.95, z: -1.3, h: 0, pose: 'lie', anim: 'sleep', icon: '💤', label: 'sleeping' },
-  sleep2: { x: -2.05, z: -1.3, h: 0, pose: 'lie', anim: 'sleep', icon: '💤', label: 'sleeping' },
-};
-const CAT_SPOTS = {
-  catbed:  { x: -3.4, z: 3.75, y: .1, h: .8, act: 'nap', via: LIV },
-  bedfoot: { x: -2.5, z: -1.5, y: .95, h: Math.PI / 2, act: 'nap' },
-  sofa:    { x: -2.95, z: 2.3, y: .44, h: -Math.PI / 2, act: 'nap', via: LIV },   // curled up on the sofa's return
-  nookcat: { x: 2.9, z: 4.0, y: .5, h: -Math.PI / 2, act: 'nap' },
-  bowl1:   { x: 4.25, z: -1.2, y: 0, h: Math.PI / 2, act: 'eat' },
-  bowl2:   { x: 4.25, z: -1.65, y: 0, h: Math.PI / 2, act: 'eat' },
-  beg:     { x: 2.55, z: -2.3, y: 0, h: -Math.PI / 2, act: 'beg' },
-};
-const OPEN = { B: [[-1.0, -1.0], [-3.5, -.6], [-3.6, -1.0]], L: [[-1.2, 1.2], [-3.0, 1.2], [-1.2, 3.0], [-2.5, 3.3], [-1.6, 3.8]],
-               S: [[2.5, 1.0], [3.0, 2.2], [2.0, 2.6], [3.2, .8], [2.0, .6]], K: [[3.4, -1.4], [.9, -2.5], [2.8, -2.2], [.5, -1.1]] };
-const PLAY = { x: 2.5, z: 1.85 }, PLAY_SPOTS = [PLAY, { x: -1.15, z: 2.0 }];
-const LAP = { crochet: .56, knit: .56, tea: .56, tv1: .56, tv2: .56, games: .56, football: .56, read: .56, nook: .64 };   // lap height per seat
-const WAND_AT = { x: -2.95, z: -.65 };
-export const ROOM_NAME = { B: 'bedroom', L: 'living room', S: 'studio', K: 'kitchen', Y: 'garden' };
-
-const ICON = {};
-function bubbleMat(emoji) {
-  if (!ICON[emoji]) {
-    const t = canvasTex(128, 128, g => {
-      g.fillStyle = 'rgba(255,248,234,.95)'; g.beginPath(); g.roundRect(10, 8, 108, 92, 34); g.fill();
-      g.beginPath(); g.arc(52, 110, 9, 0, 7); g.fill(); g.beginPath(); g.arc(40, 123, 5, 0, 7); g.fill();
-      g.font = '58px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(emoji, 64, 58);
-    });
-    ICON[emoji] = new THREE.SpriteMaterial({ map: t, depthTest: false, transparent: true });
-  }
-  return ICON[emoji];
-}
-function bubbleSprite() { const s = new THREE.Sprite(bubbleMat('💤')); s.scale.set(.55, .55, 1); s.renderOrder = 10; s.visible = false; scene.add(s); return s; }
-
-const Q = new URLSearchParams(location.search);
-export let simT = 0, hour = +(Q.get('hour') ?? 6.97), speed = +(Q.get('speed') ?? 1);
-export function advanceClock(dt) {   // 1 in-game minute = 1 second at 1x; returns sim seconds elapsed
-  const sdt = dt * speed; simT += sdt; hour += sdt / 60;
-  if (hour >= 24) { hour -= 24; newDay(); }
-  return sdt;
-}
-export function cycleSpeed() { const steps = [1, 2, 5, 20]; speed = steps[(steps.indexOf(speed) + 1) % steps.length]; return speed; }
-export const night = () => hour >= 22 || hour < 6.5;
 const MIN_ACT = 20;   // in-game minutes an activity runs before routines (meals, movie, walk invites) may interrupt it
 const settled = p => simT - (p.startedAt ?? -1e9) >= MIN_ACT;
 const cut = (p, t) => { p.timer = Math.min(p.timer, Math.max(t, (p.startedAt ?? -1e9) + MIN_ACT - simT)); };
@@ -128,14 +19,6 @@ const MEALS = [[7.75, 'breakfast', '🥞'], [12.5, 'lunch', '🥪'], [18.5, 'din
 const house = { meal: null, lastMeal: null };
 function startTV() { house.tv = { until: rand(21.2, 21.6) }; SPOTS.tv1.label = SPOTS.tv2.label = 'movie night together'; SPOTS.tv1.icon = SPOTS.tv2.icon = '🍿'; popcorn.visible = true; }
 function endTV() { house.tv = null; SPOTS.tv1.label = SPOTS.tv2.label = 'watching TV'; SPOTS.tv1.icon = SPOTS.tv2.icon = '📺'; popcorn.visible = false; }
-const TEA = { [WINTER]: ['sipping hot cocoa', '🍫'] };
-onSeason(s => { const [label, icon] = TEA[s] || ['sipping tea', '☕']; Object.assign(SPOTS.tea, { label, icon }); });
-const FLOWER_JOB = { [SPRING]: 'watering the tulips', [SUMMER]: 'watering the sunflowers', [FALL]: 'watering the mums', [WINTER]: 'checking on the garden' };
-onSeason(s => { SPOTS.mums.label = FLOWER_JOB[s]; });
-function updateBenchMood() {
-  const [label, icon] = hour < 17 ? ['enjoying the garden', '🍵'] : hour < 19.3 ? ['watching the sunset', '🌅'] : ['stargazing in the garden', '✨'];
-  Object.assign(SPOTS.bench1, { label, icon }); Object.assign(SPOTS.bench2, { label, icon });
-}
 export function updateMovieNight() {   // most evenings after dinner they curl up on the sofa for a movie
   updateBenchMood();
   if (hour < 19 || hour >= 23) { house.tvDecided = false; if (house.tv) endTV(); return; }
@@ -156,27 +39,6 @@ export function updateMeals() {
   SPOTS.prep.label = `chopping veggies for ${m[1]}`;
   SPOTS.eat1.label = SPOTS.eat2.label = `having ${m[1]} together`;
 }
-
-// pyjamas: worn from bedtime until the morning coffee (short sleeves and shorts in summer)
-const PJS = {
-  June: { top: 'pj', pattern: 'dots', color: '#f2c6cf', rib: '#ffffff', collar: 'crew', pants: '#f2c6cf', shoes: '#f6eee2' },
-  Theo: { top: 'pj', pattern: 'plaid', color: '#3d4f7a', rib: '#6d84b8', collar: 'crew', pants: '#3d4f7a', shoes: '#8a6a4a' },
-};
-// seasonal wardrobes
-const OUTFITS = {
-  June: {
-    [SPRING]: { top: 'knit', color: '#c9b6e0', rib: '#b8a3d2', collar: 'crew', pants: '#7f98bd', shoes: '#efe6d8' },
-    [SUMMER]: { top: 'tee', color: '#f2d27a', rib: '#e6c060', collar: 'crew', short: true, shorts: true, pants: '#7d95b5', shoes: '#e9d9c4' },
-    [FALL]:   { top: 'knit', color: '#d9a0a0', rib: '#c48a8a', collar: 'turtle', pants: '#26242a', shoes: '#f6eee2' },
-    [WINTER]: { top: 'knit', color: '#efe6d8', rib: '#ddd2c0', band: ['#b5343a', '#2f5a34'], collar: 'turtle', pants: '#26242a', shoes: '#8a5a3a' },
-  },
-  Theo: {
-    [SPRING]: { top: 'knit', color: '#8fb0c8', rib: '#7f9fb8', collar: 'crew', pants: '#b8a888', shoes: '#ece7dc' },
-    [SUMMER]: { top: 'tee', color: '#2f8a8a', rib: '#287878', collar: 'crew', short: true, shorts: true, pants: '#b8a888', shoes: '#ece7dc' },
-    [FALL]:   { top: 'knit', color: '#2f6a6a', rib: '#285a5a', band: ['#efe2c8', '#c9763f'], collar: 'crew', pants: '#4a4a52', shoes: '#8a6a4a' },
-    [WINTER]: { top: 'knit', color: '#2f5a3a', rib: '#284e32', band: ['#efe2c8', '#b5343a'], collar: 'crew', pants: '#4a4a52', shoes: '#5a3d28' },
-  },
-};
 export const people = [
   { name: 'June', rig: makePerson({ skin: '#c98e69', hair: '#2b1a12', style: 'long', bigSmile: true, oversized: true, outfit: OUTFITS.June.fall }), x: 0, z: 0 },
   { name: 'Theo', rig: makePerson({ skin: '#b98060', hair: '#1e1510', style: 'short', glasses: true, outfit: OUTFITS.Theo.fall }), x: 0, z: 0 },
@@ -186,9 +48,6 @@ export const cats = [
   { name: 'Biscuit', rig: makeCat('#e0913f', '#f7e8d4'), x: -1.2, z: 1.2 },
   { name: 'Mochi', rig: makeCat('#8d8a86', '#f2efe9'), x: -3.4, z: 2.95 },
 ];
-export const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-export let dayIdx = +(Q.get('day') ?? 4);   // start on a Friday
-const weekend = () => dayIdx % 7 >= 5;
 const FAVS = ['paint', 'crochet', 'draw', 'laptop', 'computer', 'read', 'nook', 'knit', 'tea', 'playcats', 'rake', 'bench1', 'mums', 'browse', 'bake', 'games', 'football'];
 // things each person never chooses (and that don't appear in their menu)
 const DISLIKES = { June: ['games', 'football'], Theo: ['paint', 'crochet', 'draw', 'knit', 'bake'] };
@@ -200,7 +59,8 @@ function mood(p) {   // each day everyone fancies different things
 function planDay(p, i) {
   Object.assign(p, { mood: mood(p), recent: [], wake: 6.2 + i * .4 + rand(0, .4) + (weekend() ? 1.2 : 0), bed: 21.6 + i * .4 + rand(0, .4) + (weekend() ? .6 : 0) });
 }
-function newDay() { dayIdx++; house.gardenDay = Math.random() < .5; house.cleanDay = dayIdx % 7 === 5 || Math.random() < .2; resetPile(); people.forEach(planDay); }
+function newDay() { house.gardenDay = Math.random() < .5; house.cleanDay = dayIdx % 7 === 5 || Math.random() < .2; resetPile(); people.forEach(planDay); }
+onNewDay(newDay);
 house.gardenDay = Math.random() < .5; house.cleanDay = Q.has('clean') || dayIdx % 7 === 5 || Math.random() < .2;
 people.forEach(planDay);
 if (!Q.has('hour')) people.forEach((p, i) => p.wake = 7.0 + i * .2);   // first visit: watch them wake up at 7
@@ -318,7 +178,6 @@ function startPlay(a, b, at) {
     c.path = buildPath(c, at.x + (i ? .5 : -.5), at.z, [], from); c.mode = 'walk'; c.pendingAct = 'playWait';
   });
 }
-const TOGETHER = { cook: ['cook', 'prep'], eat: ['eat1', 'eat2'], movie: ['tv1', 'tv2'], walk: ['stroll1', 'stroll2'], bench: ['bench1', 'bench2'], patio: ['patio1', 'patio2'], sleep: ['sleep1', 'sleep2'] };
 export const hooks = { showPick: (p, value) => {} };   // the UI fills this in to mirror commands on each character's picker
 function interrupt(p) {   // stop whatever they're doing right now
   if (p.spot === 'eat1' || p.spot === 'eat2') bowls[p.spot === 'eat1' ? 0 : 1].visible = false;
@@ -531,21 +390,4 @@ export function updatePlay(dt) {
     a.heading = Math.atan2(b.x - a.x, b.z - a.z); b.heading = Math.atan2(a.x - b.x, a.z - b.z);
   }
   if (e > 40) { play = null; [a, b].forEach(c => { c.mode = 'idle'; c.last = 'play'; }); yarn.position.set(PLAY.x, .08, PLAY.z); }
-}
-export const CAT_ICON = { nap: '💤', eat: '🐟', groom: '✨', beg: '❤️', lap: '💕', wand: '🪶' };
-export const CAT_LABEL = { nap: 'napping', eat: 'eating', groom: 'grooming', beg: 'begging for a treat', idle: 'exploring', wand: 'chasing the feather toy' };
-
-export function updateBubble(a, isCat, dt) {
-  a.bubbleT += dt;
-  let icon = null;
-  if (isCat) icon = a.mode === 'playing' ? '🧶' : a.mode === 'act' ? CAT_ICON[a.act] : null;
-  else icon = a.mode === 'act' ? SPOTS[a.spot].icon : null;
-  const show = icon && (a.bubbleT % 18) < 5;
-  a.bubble.visible = !!show;
-  if (show) {
-    a.bubble.material = bubbleMat(icon);
-    const hp = new THREE.Vector3(); (isCat ? a.rig.head : a.rig.head).getWorldPosition(hp);
-    a.bubble.position.set(hp.x, hp.y + (isCat ? .4 : .55) + Math.sin(simT * 1.5 + a.ph) * .04, hp.z);
-    const k = Math.min(1, (a.bubbleT % 18) * 3, (5 - a.bubbleT % 18) * 3); a.bubble.scale.setScalar((isCat ? .42 : .55) * Math.max(.01, k));
-  }
 }

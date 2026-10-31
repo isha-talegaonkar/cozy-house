@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { scene } from './scene.js';
 import { lights, shades } from './house.js';
 import { lantern, postMat } from './yard.js';
-import { DAYS, dayIdx, hour, night } from './sim.js';
+import { DAYS, dayIdx, hour, night } from './clock.js';
 import { FALL, SEASONS, SPRING, SUMMER, WINTER, raining, season } from './season.js';
 
 // ---------------------------------------------------------------- lighting + day cycle

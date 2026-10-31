@@ -1,6 +1,9 @@
 import { SEASONS, WEATHER, onSeason, onWeather, setSeason, setWeather, weather } from './season.js';
 import { camTarget, camera, rotateView, zoomBy } from './scene.js';
-import { CAT_ICON, CAT_LABEL, ROOM_NAME, SPOTS, cats, command, cycleSpeed, hooks, likes, people, roomOf, simT, speed } from './sim.js';
+import { CAT_ICON, CAT_LABEL, SPOTS } from './activities.js';
+import { ROOM_NAME, roomOf } from './nav.js';
+import { cats, command, hooks, likes, people } from './sim.js';
+import { cycleSpeed, simT, speed } from './clock.js';
 
 // ---------------------------------------------------------------- player choices (dropdown per character)
 const MENU = [
