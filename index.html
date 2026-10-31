@@ -164,6 +164,10 @@ function add(geo, mat, x, y, z, parent = scene) {
 }
 const B = (w, h, d, mat, x, y, z, parent) => add(new THREE.BoxGeometry(w, h, d), mat, x, y, z, parent);
 const C = (rt, rb, h, seg, mat, x, y, z, parent) => add(new THREE.CylinderGeometry(rt, rb, h, seg), mat, x, y, z, parent);
+// soft fabric / rounded shapes with smooth shading
+const soft = (w, h, d, r, mat, x, y, z, parent) => add(new RoundedBoxGeometry(w, h, d, 4, r), mat, x, y, z, parent);
+const fabric = (c, o = {}) => M(c, { flatShading: false, roughness: 1, ...o });
+const smooth = c => M(c, { flatShading: false });
 const Sph = (r, mat, x, y, z, parent, seg = 10) => add(new THREE.SphereGeometry(r, seg, Math.max(6, seg - 2)), mat, x, y, z, parent);
 function group(x, y, z, ry = 0, parent = scene) { const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; parent.add(g); return g; }
 function canvasTex(w, h, draw, repeat) {
@@ -177,8 +181,8 @@ const lerpAngle = (a, b, k) => { let d = ((b - a + Math.PI) % (Math.PI * 2) + Ma
 // ---------------------------------------------------------------- materials
 const wood = M('#8a5634'), darkWood = M('#5e371f'), lightWood = M('#b98a5e');
 const stone = M('#8f857c'), wallMat = M('#ecdcc0'), frameMat = M('#5a3624');
-const terracotta = M('#c2683f'), creamPot = M('#efe2c8'), sagePot = M('#8fa07a');
-const leafG = [M('#4f7a43'), M('#3f6a3a'), M('#5f8a4a'), M('#6f9a52')];
+const terracotta = smooth('#c2683f'), creamPot = smooth('#efe2c8'), sagePot = smooth('#8fa07a');
+const leafG = [smooth('#4f7a43'), smooth('#3f6a3a'), smooth('#5f8a4a'), smooth('#6f9a52')];
 const glassMat = new THREE.MeshStandardMaterial({ color: '#cfe3ef', transparent: true, opacity: .22, roughness: .1, depthWrite: false, side: THREE.DoubleSide });
 
 // ---------------------------------------------------------------- floors
@@ -287,32 +291,32 @@ function plant(kind, x, z, s = 1, parent = scene, y = 0) {
   const pot = pick([terracotta, creamPot, sagePot]);
   const lm = () => pick(leafG);
   if (kind === 'monstera') {
-    C(.2, .15, .32, 10, pot, 0, .16, 0, g);
+    C(.2, .15, .32, 18, pot, 0, .16, 0, g);
     for (let i = 0; i < 7; i++) {
       const a = i / 7 * Math.PI * 2, h = .5 + (i % 3) * .18, L = new THREE.Group(); L.position.set(0, .3, 0); L.rotation.y = a; g.add(L);
       add(new THREE.CylinderGeometry(.01, .01, h), '#4a6a3a', 0, h / 2, .05, L).rotation.x = .3;
-      const leaf = Sph(.2, lm(), 0, h, .22, L, 8); leaf.scale.set(1, .12, 1.2); leaf.rotation.x = .35;
+      const leaf = Sph(.2, lm(), 0, h, .22, L, 16); leaf.scale.set(1, .12, 1.2); leaf.rotation.x = .35;
     }
   } else if (kind === 'snake') {
-    C(.14, .12, .28, 8, pot, 0, .14, 0, g);
-    for (let i = 0; i < 6; i++) { const b = B(.07, rand(.5, .8), .02, i % 2 ? '#3f6a3a' : '#5a7a3a', rand(-.06, .06), .55, rand(-.06, .06), g); b.rotation.set(rand(-.15, .15), rand(0, 3), rand(-.15, .15)); }
+    C(.14, .12, .28, 18, pot, 0, .14, 0, g);
+    for (let i = 0; i < 6; i++) { const b = soft(.07, rand(.5, .8), .025, .012, smooth(i % 2 ? '#3f6a3a' : '#5a7a3a'), rand(-.06, .06), .55, rand(-.06, .06), g); b.rotation.set(rand(-.15, .15), rand(0, 3), rand(-.15, .15)); }
   } else if (kind === 'fern') {
-    C(.18, .14, .26, 10, pot, 0, .13, 0, g);
-    for (let i = 0; i < 10; i++) { const L = group(0, .28, 0, i / 10 * Math.PI * 2, g); const f = B(.08, .02, .45, lm(), 0, .1, .2, L); f.rotation.x = -.5 + (i % 2) * .25; }
+    C(.18, .14, .26, 18, pot, 0, .13, 0, g);
+    for (let i = 0; i < 10; i++) { const L = group(0, .28, 0, i / 10 * Math.PI * 2, g); const f = Sph(.06, lm(), 0, .1, .22, L, 12); f.scale.set(1, .25, 4); f.rotation.x = -.5 + (i % 2) * .25; }
   } else if (kind === 'fiddle') {
-    C(.18, .14, .34, 10, pot, 0, .17, 0, g);
+    C(.18, .14, .34, 18, pot, 0, .17, 0, g);
     C(.025, .03, 1.3, 6, '#5a3d28', 0, .95, 0, g);
-    for (let i = 0; i < 9; i++) { const l = Sph(.13, lm(), Math.cos(i * 2.4) * .14, .8 + i * .1, Math.sin(i * 2.4) * .14, g, 8); l.scale.set(1, .5, 1.3); l.rotation.set(rand(-.4, .4), i * 2.4, 0); }
+    for (let i = 0; i < 9; i++) { const l = Sph(.13, lm(), Math.cos(i * 2.4) * .14, .8 + i * .1, Math.sin(i * 2.4) * .14, g, 14); l.scale.set(1, .5, 1.3); l.rotation.set(rand(-.4, .4), i * 2.4, 0); }
   } else if (kind === 'pothos') {
-    C(.1, .08, .14, 8, pot, 0, .07, 0, g);
-    Sph(.12, lm(), 0, .17, 0, g, 8).scale.y = .6;
+    C(.1, .08, .14, 18, pot, 0, .07, 0, g);
+    Sph(.12, lm(), 0, .17, 0, g, 14).scale.y = .6;
     for (let v = 0; v < 4; v++) { const a = v / 4 * Math.PI * 2 + .4; for (let k = 0; k < 6; k++) Sph(.045, lm(), Math.cos(a) * (.12 + k * .012), .1 - k * .1, Math.sin(a) * (.12 + k * .012), g, 6); }
   } else if (kind === 'succulent') {
-    C(.07, .06, .08, 8, pot, 0, .04, 0, g);
-    for (let i = 0; i < 6; i++) { const c = add(new THREE.ConeGeometry(.03, .1, 5), '#8fae7a', Math.cos(i) * .03, .12, Math.sin(i) * .03, g); c.rotation.set(Math.cos(i) * .5, 0, Math.sin(i) * .5); }
+    C(.07, .06, .08, 18, pot, 0, .04, 0, g);
+    for (let i = 0; i < 6; i++) { const c = add(new THREE.ConeGeometry(.03, .1, 10), smooth('#8fae7a'), Math.cos(i) * .03, .12, Math.sin(i) * .03, g); c.rotation.set(Math.cos(i) * .5, 0, Math.sin(i) * .5); }
   } else { // small leafy
-    C(.1, .08, .14, 8, pot, 0, .07, 0, g);
-    add(new THREE.IcosahedronGeometry(.13, 0), lm(), 0, .22, 0, g); add(new THREE.IcosahedronGeometry(.09, 0), lm(), .07, .3, .03, g);
+    C(.1, .08, .14, 18, pot, 0, .07, 0, g);
+    add(new THREE.IcosahedronGeometry(.13, 2), lm(), 0, .22, 0, g); add(new THREE.IcosahedronGeometry(.09, 2), lm(), .07, .3, .03, g);
   }
   return g;
 }
@@ -354,15 +358,20 @@ plant('small', -4.5, 0, 1, scene, 1.4).position.z = 2.3;
 const rug = C(1.1, 1.1, .02, 32, '#8e3b2f', -3.25, .01, 1.75); rug.scale.z = .8;
 C(.9, .9, .025, 32, '#c46a4a', -3.25, .01, 1.75).scale.z = .8;
 
-const sofaMat = M('#6f7d4e'), sofaArm = M('#5d6840');
-B(.8, .42, 1.4, sofaMat, -2.15, .21, 1.75); B(.25, .95, 1.4, sofaMat, -1.86, .475, 1.75);
-B(.85, .6, .18, sofaArm, -2.15, .3, .96); B(.85, .6, .18, sofaArm, -2.15, .3, 2.54);
-B(.14, .3, .38, M('#c9763f'), -1.98, .62, 1.2); B(.14, .3, .38, M('#e6c48a'), -1.98, .62, 2.3);
-B(.6, .04, .7, M('#e6c48a'), -2.2, .45, 2.2);   // throw blanket
+const sofaMat = fabric('#6f7d4e'), sofaBase = fabric('#5d6840');
+soft(.86, .26, 1.62, .07, sofaBase, -2.15, .13, 1.75);                                  // base
+[1.4, 2.1].forEach(z => soft(.74, .17, .69, .08, sofaMat, -2.19, .335, z));            // seat cushions
+soft(.26, .96, 1.62, .1, sofaBase, -1.84, .48, 1.75);                                   // back frame
+[1.4, 2.1].forEach(z => soft(.2, .44, .67, .09, sofaMat, -1.99, .62, z).rotation.z = -.12);   // back cushions
+[.96, 2.54].forEach(z => soft(.88, .56, .22, .1, sofaBase, -2.15, .28, z));            // rolled arms
+soft(.16, .3, .36, .08, fabric('#c9763f'), -2.02, .66, 1.12).rotation.set(.2, 0, -.15);
+soft(.16, .3, .36, .08, fabric('#e6c48a'), -2.02, .66, 2.38).rotation.set(-.2, 0, -.15);
+soft(.62, .04, .7, .02, fabric('#e6c48a'), -2.2, .45, 2.2);                            // throw blanket
 
 const arm = group(-3.85, 0, .55, -.6);
-B(.7, .42, .7, M('#b5543f'), 0, .21, 0, arm); B(.7, .9, .18, M('#a04a37'), 0, .45, -.3, arm);
-B(.16, .6, .7, M('#a04a37'), -.35, .3, 0, arm); B(.16, .6, .7, M('#a04a37'), .35, .3, 0, arm);
+soft(.72, .26, .72, .07, fabric('#a04a37'), 0, .13, 0, arm); soft(.56, .16, .58, .08, fabric('#b5543f'), 0, .34, .04, arm);
+soft(.74, .92, .2, .1, fabric('#a04a37'), 0, .46, -.3, arm); soft(.5, .38, .14, .07, fabric('#b5543f'), 0, .62, -.18, arm).rotation.x = -.15;
+soft(.17, .58, .72, .08, fabric('#a04a37'), -.35, .29, 0, arm); soft(.17, .58, .72, .08, fabric('#a04a37'), .35, .29, 0, arm);
 
 const bookCols = ['#8e3b2f', '#3f6a6a', '#c9a36b', '#7d8a58', '#5a4a6a', '#b5543f', '#e6c48a'];
 // open bookcase; local +z faces the room, `gap` leaves half of one shelf free for decor
@@ -390,7 +399,8 @@ C(.14, .16, .03, 12, '#3a2418', -4.6, .02, .05); C(.012, .012, 1.5, 6, '#3a2418'
 shades.push(lampShade(-4.6, 1.55, .05));
 pointLight('#ffc27a', -4.5, 1.4, .2, 2.5);
 
-const catBed = C(.32, .3, .1, 16, M('#8e6a8e'), -3.4, .05, 2.95); C(.25, .25, .04, 16, '#e6c48a', -3.4, .11, 2.95);
+C(.3, .3, .06, 24, smooth('#8e6a8e'), -3.4, .03, 2.95); add(new THREE.TorusGeometry(.26, .07, 12, 28), smooth('#8e6a8e'), -3.4, .09, 2.95).rotation.x = Math.PI / 2;
+C(.24, .24, .05, 24, fabric('#e6c48a'), -3.4, .09, 2.95);
 plant('monstera', -0.3, 1.5, 1.1);
 plant('fiddle', -2.0, 3.15, 1);
 plant('fern', -4.55, 3.3, .8, scene, 0).position.x = -3.9;
@@ -398,8 +408,6 @@ plant('fern', -4.55, 3.3, .8, scene, 0).position.x = -3.9;
 // --- bedroom
 const screenTex = canvasTex(64, 40, (g) => { g.fillStyle = '#2b2f3a'; g.fillRect(0, 0, 64, 40); ['#e6c48a', '#8fbf9a', '#c9a6e8', '#9fc3e8'].forEach((c, i) => { for (let r = 0; r < 3; r++) { g.fillStyle = c; g.fillRect(4 + (r % 2) * 6, 4 + (i * 3 + r) * 3, 18 + ((i + r) * 7) % 30, 1.5); } }); });
 // soft fabric: rounded boxes with smooth shading
-const soft = (w, h, d, r, mat, x, y, z, parent) => add(new RoundedBoxGeometry(w, h, d, 4, r), mat, x, y, z, parent);
-const fabric = (c, o = {}) => M(c, { flatShading: false, roughness: 1, ...o });
 const linenTex = canvasTex(256, 256, (g, w, h) => {
   g.fillStyle = '#ece0cc'; g.fillRect(0, 0, w, h);
   for (let i = 0; i < 9000; i++) { g.fillStyle = Math.random() < .5 ? 'rgba(255,255,255,.18)' : 'rgba(150,120,90,.08)'; g.fillRect(Math.random() * w, Math.random() * h, 2, 1); }
@@ -544,7 +552,7 @@ plant('succulent', 0, 0, 1.1, sShelf, .52).position.x = .3;
 
 // reading nook: a window seat under the studio's south window
 B(1.4, .42, .42, lightWood, 3.2, .21, 3.21);
-B(1.36, .08, .4, M('#7d8a58'), 3.2, .46, 3.21);
+soft(1.36, .1, .4, .04, fabric('#7d8a58'), 3.2, .46, 3.21);
 [[2.68, '#c9763f'], [2.98, '#e6c48a'], [3.74, '#b5543f']].forEach(([x, c]) => Sph(.14, M(c, { flatShading: false }), x, .62, 3.33, scene, 12).scale.set(1, .9, .45));
 B(.5, .03, .42, M('#c96a68'), 3.55, .515, 3.21);
 [0, 1, 2].forEach(i => B(.22, .05, .16, M(bookCols[i + 2]), 2.62, .525 + i * .05, 3.12).rotation.y = i * .3);
@@ -562,11 +570,11 @@ for (let i = 0; i < 16; i++) { dummy.position.set(-1.0 + rand(-.12, .12), -.39, 
 stones.receiveShadow = true; scene.add(stones);
 // pumpkins + mums by the door
 [[-1.9, 4.0, .2], [-1.6, 4.25, .14], [-.15, 4.05, .17]].forEach(([x, z, r]) => { Sph(r, M('#e07b39'), x, -.4 + r * .7, z).scale.y = .75; C(.015, .02, .08, 5, '#4a3a20', x, -.4 + r * 1.3, z); });
-function mum(x, z, c) { Sph(.22, M(c), x, -.25, z, scene, 8).scale.y = .7; C(.14, .11, .2, 8, terracotta, x, -.32, z); }
+function mum(x, z, c) { Sph(.22, smooth(c), x, -.25, z, scene, 18).scale.y = .7; C(.14, .11, .2, 18, terracotta, x, -.32, z); }
 [[-4.3, 3.9, '#e8a23a'], [-3.2, 3.9, '#b5543f'], [1.0, 3.9, '#e8c25a'], [3.2, 3.9, '#c9512c'], [4.4, 3.9, '#e8a23a']].forEach(a => mum(...a));
 // hedges
 [[-5.6, -2.5], [-5.6, -.5], [-5.6, 1.0], [5.6, -2.8], [5.6, -.2], [5.6, 2.6], [-3.5, -4.1], [-1.5, -4.1], [1.0, -4.1], [3.0, -4.1]].forEach(([x, z]) =>
-  add(new THREE.IcosahedronGeometry(.42, 1), pick([M('#4f6a3a'), M('#5a7040'), M('#7a6a30')]), x, -.15, z).scale.y = .8);
+  add(new THREE.IcosahedronGeometry(.42, 3), pick([smooth('#4f6a3a'), smooth('#5a7040'), smooth('#7a6a30')]), x, -.15, z).scale.y = .8);
 // fence
 const pickets = new THREE.InstancedMesh(new THREE.BoxGeometry(.09, .7, .05), M('#e9dcc4'), 300);
 let pc = 0; const F = 12;
@@ -602,17 +610,17 @@ let pileLevel = .15;
 const trees = [];
 function tree(x, z, s, kind = 'fall') {
   const g = group(x, -.4, z), mats = [];
-  const mm = c => { const m = M(c, { transparent: true }); mats.push(m); return m; };
+  const mm = c => { const m = M(c, { transparent: true, flatShading: false }); mats.push(m); return m; };
   if (kind === 'pine') {
     add(new THREE.CylinderGeometry(.12 * s, .18 * s, 1 * s, 6), mm('#3b2418'), 0, .5 * s, 0, g);
-    [[1.3, 1.6, 1.4], [1.0, 1.4, 2.3], [.7, 1.2, 3.1]].forEach(([r, h, y]) => add(new THREE.ConeGeometry(r * s, h * s, 7), mm(pick(['#3f5a3a', '#355034'])), 0, y * s, 0, g));
+    [[1.3, 1.6, 1.4], [1.0, 1.4, 2.3], [.7, 1.2, 3.1]].forEach(([r, h, y]) => add(new THREE.ConeGeometry(r * s, h * s, 18), mm(pick(['#3f5a3a', '#355034'])), 0, y * s, 0, g));
   } else {
     const trunk = mm('#4a3020');
-    add(new THREE.CylinderGeometry(.13 * s, .22 * s, 2 * s, 7), trunk, 0, 1 * s, 0, g);
+    add(new THREE.CylinderGeometry(.13 * s, .22 * s, 2 * s, 12), trunk, 0, 1 * s, 0, g);
     const br = add(new THREE.CylinderGeometry(.05 * s, .08 * s, .9 * s, 5), trunk, .25 * s, 1.8 * s, 0, g); br.rotation.z = -.6;
     const cols = [pick(fallCols), pick(fallCols), pick(fallCols)];
     [[0, 2.6, 0, 1.0], [.6, 2.3, .3, .75], [-.6, 2.4, -.2, .8], [.1, 3.2, .1, .7], [-.2, 2.2, .6, .6]].forEach(([dx, dy, dz, r], i) =>
-      add(new THREE.IcosahedronGeometry(r * s, 1), mm(cols[i % 3]), dx * s, dy * s, dz * s, g));
+      add(new THREE.IcosahedronGeometry(r * s, 3), mm(cols[i % 3]), dx * s, dy * s, dz * s, g));
   }
   trees.push({ g, mats, x, z, top: (kind === 'pine' ? 2.6 : 2.6) * s - .4, r: 1.0 * s, decid: kind !== 'pine', op: 1 });
 }
@@ -1237,7 +1245,7 @@ const KEYS = [
 const cA = new THREE.Color(), cB = new THREE.Color();
 let lampLevel = 0;
 function updateDay() {
-  let i = 0; while (KEYS[i + 1][0] <= hour) i++;
+  let i = 0; while (i < KEYS.length - 2 && KEYS[i + 1][0] <= hour) i++;
   const [h0, s0, u0, si0, hi0, l0] = KEYS[i], [h1, s1, u1, si1, hi1, l1] = KEYS[i + 1], k = (hour - h0) / (h1 - h0);
   const sky = cA.set(s0).lerp(cB.set(s1), k);
   scene.background = sky.clone(); scene.fog.color.copy(sky);
@@ -1316,7 +1324,8 @@ const clock = new THREE.Clock();
 let lastStatus = '';
 function frame() {
   const dt = Math.min(.05, clock.getDelta()), T = clock.elapsedTime, sdt = dt * speed;
-  simT += sdt; hour += sdt / 60;   // 1 in-game minute = 1 second at 1x if (hour >= 24) { hour -= 24; newDay(); }
+  simT += sdt; hour += sdt / 60;   // 1 in-game minute = 1 second at 1x
+  if (hour >= 24) { hour -= 24; newDay(); }
   leafPile.scale.set(1, pileLevel, 1).multiplyScalar(.5 + pileLevel * .5);
 
   camAz += (camAzTarget - camAz) * Math.min(1, dt * 4);
