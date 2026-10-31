@@ -6,8 +6,9 @@ html, body { touch-action: none; overscroll-behavior: none; }
          border-radius: 14px; padding: 10px 14px; backdrop-filter: blur(6px); box-shadow: 0 6px 24px rgba(0,0,0,.25); }
 #hud { top: 14px; left: 14px; }
 #hud .title { font-size: 20px; letter-spacing: .5px; }
-#seasons { display: flex; margin: 8px 0 2px; width: max-content; }
-#seasons button { padding: 3px 9px; font-size: 12.5px; }
+#seasons, #weather { display: flex; margin: 8px 0 2px; width: max-content; }
+#seasons button, #weather button { padding: 3px 9px; font-size: 12.5px; }
+#weather { margin-top: 5px; }
 #clock { opacity: .85; margin-top: 2px; font-size: 14px; }
 #status { top: 14px; right: 14px; font-size: 14px; line-height: 1.6; min-width: 240px; max-width: 340px; }
 #status b { font-weight: normal; color: #ffd9a0; display: inline-block; width: 64px; }
@@ -62,6 +63,6 @@ button:hover { background: rgba(255, 200, 140, .25); }
   #status .cmdrow, #status .bar { margin-left: 64px; }
   #controls { bottom: 8px; gap: 5px; padding: 6px; max-width: calc(100% - 16px); }
   #controls button { padding: 6px 9px; font-size: 13px; } #controls .txt { display: none; }
-  #note { display: none; } #seasons .txt { display: none; }
+  #note { display: none; } #seasons .txt, #weather .txt { display: none; }
   #menu { position: fixed; left: 8px !important; right: 8px; top: auto !important; bottom: 8px; width: auto; max-height: 62vh; border-radius: 18px 18px 14px 14px; }
 }

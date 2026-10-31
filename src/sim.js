@@ -4,7 +4,7 @@ import { canvasTex, lerpAngle, pick, rand } from './helpers.js';
 import { UP, bowls, feather, paintStroke, popcorn, tmpV, wand, wandStick, yarn } from './house.js';
 import { growPile, resetPile } from './yard.js';
 import { makeCat, makePerson } from './characters.js';
-import { GARDEN, fireLit, onSeason, season } from './season.js';
+import { GARDEN, fireLit, onSeason, raining, season } from './season.js';
 
 // ---------------------------------------------------------------- navigation
 const ORDER = ['B', 'L', 'S', 'K'];
@@ -224,8 +224,8 @@ function choosePerson(p) {
   const evening = hour > 17 || hour < 9;
   const w = { paint: 3, crochet: 3, draw: 2.5, laptop: 2, computer: 2.5, bake: weekend() ? 3 : 2, games: 3, football: weekend() && hour > 12 ? 4 : 1.2, read: 2, nook: 3, browse: 1, knit: 2, tea: 2, plants: 1.2, warm: fireLit(hour) ? (evening ? 2 : .5) * (season === 'winter' ? 1.8 : 1) : 0, wash: .2,
               playcats: cats.some(wandReady) ? 2.5 : 0, tv1: .5 };
-  if (season === 'winter') { w.tea *= 1.5; w.read *= 1.4; w.nook *= 1.3; w.tv1 *= 1.6; w.bake *= 1.3; }        // cosy indoor days
-  const g = (house.gardenDay ? 2 : 1) * (weekend() ? 1.5 : 1) * GARDEN[season], partnerOnBench = people.some(q => q !== p && q.mode === 'act' && /^bench/.test(q.spot));
+  if (season === 'winter' || raining) { w.tea *= 1.5; w.read *= 1.4; w.nook *= 1.3; w.tv1 *= 1.6; w.bake *= 1.3; }        // cosy indoor days
+  const g = (house.gardenDay ? 2 : 1) * (weekend() ? 1.5 : 1) * GARDEN[season] * (raining ? 0 : 1), partnerOnBench = people.some(q => q !== p && q.mode === 'act' && /^bench/.test(q.spot));
   if (hour >= 9 && hour < 17.5) Object.assign(w, { rake: season === 'fall' ? 1.2 * g : 0, mums: season === 'winter' ? 0 : .8 * g, stroll1: 1.2 * g });            // garden time on nice afternoons
   if (hour >= 9 && hour < 21) w.bench1 = w.bench2 = (partnerOnBench ? 6 : hour >= 17.5 ? 1.8 : 1) * g;          // incl. sunset + stargazing
   const partnerOnPatio = people.some(q => q !== p && q.mode === 'act' && /^patio/.test(q.spot));
@@ -363,6 +363,7 @@ export function updatePerson(p, dt) {
     if (hm && hm.stage === 'cook' && p === hm.cook && p.spot !== 'cook' && p.spot !== 'coffee') cut(p, 1.5);
     if (hm && hm.stage === 'cook' && p === hm.helper && p.spot !== 'coffee') { if (p.spot === 'prep') p.timer = Math.max(p.timer, 1); else cut(p, 1.5); }
     if (hm && hm.stage === 'eat' && !hm.ate.has(p) && !eating && sp.pose !== 'lie' && p.spot !== 'coffee') cut(p, 1.5);
+    if (raining && !p.cmd && roomOf(p.x, p.z) === 'Y') p.timer = Math.min(p.timer, 1.5);   // head inside when it starts to rain
     const atTV = p.spot === 'tv1' || p.spot === 'tv2';
     if (house.tv && !hm && atTV) p.timer = Math.max(p.timer, 1);
     if (house.tv && !hm && !atTV && sp.pose !== 'lie') cut(p, 1.5);

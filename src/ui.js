@@ -1,4 +1,4 @@
-import { SEASONS, onSeason, setSeason } from './season.js';
+import { SEASONS, WEATHER, onSeason, onWeather, setSeason, setWeather, weather } from './season.js';
 import { camTarget, camera, rotateView, zoomBy } from './scene.js';
 import { cats, command, cycleSpeed, hooks, likes, people, speed } from './sim.js';
 
@@ -62,3 +62,9 @@ onSeason(s => {
   seasonsEl.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.s === s));
   document.querySelector('#hud .title').textContent = `${SEASONS[s].icon} The Cozy House`;
 });
+
+// weather picker: Auto (rainy spells come and go), Clear, Rain
+const weatherEl = document.getElementById('weather');
+weatherEl.innerHTML = Object.entries(WEATHER).map(([k, v]) => `<button data-w="${k}" title="${v.name}">${v.icon}<span class="txt"> ${v.name}</span></button>`).join('');
+weatherEl.querySelectorAll('button').forEach(b => b.onclick = () => setWeather(b.dataset.w));
+onWeather(() => weatherEl.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.w === weather)));

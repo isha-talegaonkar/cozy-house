@@ -2,10 +2,10 @@ import * as THREE from 'three';
 import { camAz, camera, renderer, scene, updateCamera } from './scene.js';
 import { rand } from './helpers.js';
 import { xmas, xmasBulbs, xmasStar, candleFlames, coffeeCup, coffeeLight, coffeeSteam, cookieTray, drawFootball, drawGame, drawTV, feather, fireLight, flames, laptopMat, monitorMat, ovenGlow, steam, stoveGlow, tableCandle, tvLight, tvMat, walls, wand, wandStick } from './house.js';
-import { dummy, fallLeaves, fireflies, fl, flakes, flies, snowflakes, spawnLeaf, trees, updatePile, xmasYardBulbs } from './yard.js';
+import { drops, rain, dummy, fallLeaves, fireflies, fl, flakes, flies, snowflakes, spawnLeaf, trees, updatePile, xmasYardBulbs } from './yard.js';
 import { CAT_ICON, CAT_LABEL, ROOM_NAME, SPOTS, advanceClock, cats, hour, people, roomOf, simT, updateBubble, updateCat, updateHouse, updatePerson, updatePlay, updateTV } from './sim.js';
 import { lampLevel, updateDay } from './daycycle.js';
-import { fireLit, season } from './season.js';
+import { fireLit, raining, season, updateWeather } from './season.js';
 import './plants.js';
 import './characters.js';
 import './ui.js';
@@ -16,7 +16,7 @@ const clock = new THREE.Clock();
 let lastStatus = '';
 function frame() {
   const dt = Math.min(.05, clock.getDelta()), T = clock.elapsedTime, sdt = advanceClock(dt);
-  updatePile();
+  updatePile(); updateWeather(simT);
 
   updateCamera(dt);
   walls.forEach(w => { const low = w.n[0] * Math.sin(camAz) + w.n[1] * Math.cos(camAz) > .1; w.tall.visible = !low; w.low.visible = low; });
@@ -72,7 +72,15 @@ function frame() {
     [...xmasBulbs, ...xmasYardBulbs].forEach((b, i) => b.material.color.setHSL([.12, .0, .55, .33, .95][i % 5], [.9, .9, .7, .7, .7][i % 5], .45 + .25 * Math.max(0, Math.sin(T * 2.2 + i * 1.7))));
     xmasStar.emissiveIntensity = 1 + .4 * Math.sin(T * 1.5);
   }
-  flies.visible = season === 'summer' && lampLevel > .6;   // fireflies on summer nights
+  if (rain.visible) {   // rain streaks, slightly slanted
+    drops.forEach((d, i) => {
+      d.y -= d.v * dt; d.x += 1.2 * dt;
+      if (d.y < -.4) { d.y = 10; d.x = rand(-16, 14); d.z = rand(-15, 15); }
+      dummy.position.set(d.x, d.y, d.z); dummy.rotation.set(0, 0, -.12); dummy.updateMatrix(); rain.setMatrixAt(i, dummy.matrix);
+    });
+    rain.instanceMatrix.needsUpdate = true;
+  }
+  flies.visible = season === 'summer' && lampLevel > .6 && !raining;   // fireflies on clear summer nights
   if (flies.visible) {
     fireflies.forEach((f, i) => {
       dummy.position.set(f.x + Math.sin(T * .4 + f.ph) * .6, f.y + Math.sin(T * .9 + f.ph * 2) * .25, f.z + Math.cos(T * .35 + f.ph) * .6);

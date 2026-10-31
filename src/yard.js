@@ -4,7 +4,7 @@ import { B, C, M, Sph, add, darkWood, group, pick, rand, smooth, stone, terracot
 import { chair, pointLight, shades } from './house.js';
 export const xmasYardBulbs = [];   // twinkled in main.js
 import { plant } from './plants.js';
-import { onSeason } from './season.js';
+import { onSeason, onWeather, raining, season } from './season.js';
 
 // ---------------------------------------------------------------- yard
 const ground = add(new THREE.CircleGeometry(60, 48), '#6e6a3a', 0, -.42, 0); ground.rotation.x = -Math.PI / 2;
@@ -193,6 +193,18 @@ snowflakes.visible = false; scene.add(snowflakes);
   const bow = group(.5, 1.62, 7.77, 0, w); [-1, 1].forEach(sd => Sph(.05, fabric('#b5343a'), sd * .05, 0, 0, bow, 10).scale.set(1.2, .7, .5));
 }
 
+// rain: falling streaks (moved in main.js) and puddles on the lawn
+export const drops = Array.from({ length: 700 }, () => ({ x: rand(-15, 15), y: rand(-.4, 10), z: rand(-15, 15), v: rand(8, 11) }));
+export const rain = new THREE.InstancedMesh(new THREE.BoxGeometry(.012, .38, .012), new THREE.MeshBasicMaterial({ color: '#b8c8d8', transparent: true, opacity: .5, depthWrite: false }), drops.length);
+rain.visible = false; scene.add(rain);
+const puddles = group(0, 0, 0);
+[[-2.3, 6.2, 1.1], [1.8, 5.6, .8], [3.4, 8.6, 1.3], [-6.5, 2.5, .9], [7.2, -2.0, 1.2], [-7.4, -5.2, 1.0], [.6, -6.0, .9], [-1.6, 9.6, .7]].forEach(([x, z, r]) => {
+  const p = add(new THREE.CircleGeometry(r, 28), new THREE.MeshStandardMaterial({ color: '#5d6874', roughness: .05, metalness: .4, transparent: true, opacity: .75 }), x, -.395, z, puddles);
+  p.rotation.x = -Math.PI / 2; p.scale.y = rand(.5, .8); p.castShadow = false;
+});
+puddles.visible = false;
+onWeather(() => { rain.visible = puddles.visible = raining; snowflakes.visible = season === 'winter' && !raining; });
+
 // ---- seasons outdoors
 const PAL = { spring: { blossom: ['#e9a3b8', '#f2bfcd', '#fbe0e8'], green: ['#6aa84f', '#86c060', '#a6d67a'] }, summer: ['#3f7a34', '#4f8f3f', '#62a24c'] };
 const PETALS = ['#f2bfcd', '#fbe0e8', '#ffffff', '#e9a3b8'];
@@ -203,7 +215,7 @@ onSeason(s => {
     t.canopy.forEach(m => m.visible = s !== 'winter');
   }
   for (const t of trees) { t.snow.forEach(m => m.visible = s === 'winter'); t.twigs.visible = !t.decid || s === 'winter'; }
-  snowflakes.visible = s === 'winter';
+  snowflakes.visible = s === 'winter' && !raining;
   Object.entries(decor).forEach(([k, g]) => g.visible = k === s);
   leafPile.visible = s === 'fall';
   // fallen leaves: petals under trees in spring, leaves in fall, nothing in summer/winter
