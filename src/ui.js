@@ -1,3 +1,4 @@
+import { SEASONS, onSeason, setSeason } from './season.js';
 import { camTarget, camera, rotateView, zoomBy } from './scene.js';
 import { cats, command, cycleSpeed, hooks, likes, people, speed } from './sim.js';
 
@@ -22,7 +23,7 @@ statusEl.innerHTML = `<button id="fold"><span class="t">🏡 Household</span><sp
   <div id="durRow">Chosen activities last <span class="seg">${[[30, '30m'], [60, '1h'], [120, '2h']].map(([d, l]) => `<button data-d="${d}" class="${d === 60 ? 'on' : ''}">${l}</button>`).join('')}</span></div></div>`;
 if (innerWidth < 760) statusEl.classList.add('collapsed');   // phones start with the panel folded
 document.getElementById('fold').onclick = () => { statusEl.classList.toggle('collapsed'); closeMenu(); };
-document.querySelectorAll('.seg button').forEach(b => b.onclick = () => { chosenDur = +b.dataset.d; document.querySelectorAll('.seg button').forEach(o => o.classList.toggle('on', o === b)); });
+document.querySelectorAll('#durRow .seg button').forEach(b => b.onclick = () => { chosenDur = +b.dataset.d; document.querySelectorAll('#durRow .seg button').forEach(o => o.classList.toggle('on', o === b)); });
 const selects = people.map((p, i) => {   // pill button per character; .value mirrors the chosen activity
   const el = document.getElementById(`pick${i}`);
   const pk = { el, _v: '', get value() { return this._v; }, set value(v) { this._v = v; el.querySelector('.lbl').textContent = LABEL[v] || '✨ Let them be'; el.classList.toggle('on', !!v); } };
@@ -52,3 +53,12 @@ document.getElementById('rotL').onclick = () => rotateView(-1);
 document.getElementById('rotR').onclick = () => rotateView(1);
 document.getElementById('speed').innerHTML = `<span class="txt">Speed </span>${speed}×`;
 document.getElementById('speed').onclick = e => { cycleSpeed(); document.getElementById('speed').innerHTML = `<span class="txt">Speed </span>${speed}×`; };
+
+// season picker in the top-left panel
+const seasonsEl = document.getElementById('seasons');
+seasonsEl.innerHTML = Object.entries(SEASONS).map(([k, v]) => `<button data-s="${k}" title="${v.name}">${v.icon}<span class="txt"> ${v.name}</span></button>`).join('');
+seasonsEl.querySelectorAll('button').forEach(b => b.onclick = () => setSeason(b.dataset.s));
+onSeason(s => {
+  seasonsEl.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.s === s));
+  document.querySelector('#hud .title').textContent = `${SEASONS[s].icon} The Cozy House`;
+});

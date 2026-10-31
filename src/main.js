@@ -3,8 +3,9 @@ import { camAz, camera, renderer, scene, updateCamera } from './scene.js';
 import { rand } from './helpers.js';
 import { candleFlames, coffeeCup, coffeeLight, coffeeSteam, cookieTray, drawFootball, drawGame, drawTV, feather, fireLight, flames, laptopMat, monitorMat, ovenGlow, steam, stoveGlow, tableCandle, tvLight, tvMat, walls, wand, wandStick } from './house.js';
 import { dummy, fallLeaves, fl, spawnLeaf, trees, updatePile } from './yard.js';
-import { CAT_ICON, CAT_LABEL, ROOM_NAME, SPOTS, advanceClock, cats, people, roomOf, simT, updateBubble, updateCat, updateHouse, updatePerson, updatePlay, updateTV } from './sim.js';
+import { CAT_ICON, CAT_LABEL, ROOM_NAME, SPOTS, advanceClock, cats, hour, people, roomOf, simT, updateBubble, updateCat, updateHouse, updatePerson, updatePlay, updateTV } from './sim.js';
 import { lampLevel, updateDay } from './daycycle.js';
+import { fireLit } from './season.js';
 import './plants.js';
 import './characters.js';
 import './ui.js';
@@ -27,8 +28,9 @@ function frame() {
 
   updateDay();
   const flick = 1 + Math.sin(T * 11) * .1 + Math.sin(T * 5.3) * .08 + (Math.random() - .5) * .06;
-  fireLight.intensity = (4 + lampLevel * 6) * flick;
-  flames.forEach(f => { const s = 1 + Math.sin(T * 10 + f.userData.k) * .18; f.scale.set(1, s, 1); f.position.y = .1 + f.userData.h * s / 2; });
+  const lit = fireLit(hour);   // no fire on summer days
+  fireLight.intensity = lit ? (4 + lampLevel * 6) * flick : 0;
+  flames.forEach(f => { f.visible = lit; const s = 1 + Math.sin(T * 10 + f.userData.k) * .18; f.scale.set(1, s, 1); f.position.y = .1 + f.userData.h * s / 2; });
   candleFlames.forEach((c, i) => c.scale.setScalar(1 + Math.sin(T * 12 + i) * .15)); tableCandle.scale.setScalar(1 + Math.sin(T * 13) * .15);
   const using = k => people.some(p => p.mode === 'act' && p.spot === k);
   const brewing = people.some(p => p.mode === 'act' && p.spot === 'coffee' && p.timer > p.dur * .55);

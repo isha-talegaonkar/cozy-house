@@ -3,10 +3,13 @@ import { scene } from './scene.js';
 import { B, C, M, Sph, add, darkWood, group, pick, rand, smooth, stone, terracotta, wood } from './helpers.js';
 import { chair, pointLight, shades } from './house.js';
 import { plant } from './plants.js';
+import { onSeason } from './season.js';
 
 // ---------------------------------------------------------------- yard
 const ground = add(new THREE.CircleGeometry(60, 48), '#6e6a3a', 0, -.42, 0); ground.rotation.x = -Math.PI / 2;
 const lawn = add(new THREE.PlaneGeometry(24, 24), '#7d7742', 0, -.41, 0); lawn.rotation.x = -Math.PI / 2;
+const GROUND = { spring: ['#5d8a3c', '#6c9a44'], summer: ['#50803a', '#5f9040'], fall: ['#6e6a3a', '#7d7742'], winter: ['#d9e0e8', '#e9eef4'] };
+onSeason(s => { ground.material.color.set(GROUND[s][0]); lawn.material.color.set(GROUND[s][1]); });
 B(1.4, .3, .6, stone, -1.0, -.27, 4.65); B(.8, .02, .4, M('#a8432a'), -1.0, -.1, 4.7);
 const stones = new THREE.InstancedMesh(new THREE.CylinderGeometry(.24, .26, .05, 7), M('#a39a8e'), 16);
 export const dummy = new THREE.Object3D();

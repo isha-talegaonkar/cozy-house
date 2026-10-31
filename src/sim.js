@@ -4,6 +4,7 @@ import { canvasTex, lerpAngle, pick, rand } from './helpers.js';
 import { UP, bowls, feather, paintStroke, popcorn, tmpV, wand, wandStick, yarn } from './house.js';
 import { growPile, resetPile } from './yard.js';
 import { makeCat, makePerson } from './characters.js';
+import { GARDEN, fireLit, onSeason, season } from './season.js';
 
 // ---------------------------------------------------------------- navigation
 const ORDER = ['B', 'L', 'S', 'K'];
@@ -125,6 +126,8 @@ const MEALS = [[7.75, 'breakfast', '🥞'], [12.5, 'lunch', '🥪'], [18.5, 'din
 const house = { meal: null, lastMeal: null };
 function startTV() { house.tv = { until: rand(21.2, 21.6) }; SPOTS.tv1.label = SPOTS.tv2.label = 'movie night together'; SPOTS.tv1.icon = SPOTS.tv2.icon = '🍿'; popcorn.visible = true; }
 function endTV() { house.tv = null; SPOTS.tv1.label = SPOTS.tv2.label = 'watching TV'; SPOTS.tv1.icon = SPOTS.tv2.icon = '📺'; popcorn.visible = false; }
+const FLOWER_JOB = { spring: 'watering the tulips', summer: 'watering the sunflowers', fall: 'watering the mums', winter: 'checking on the garden' };
+onSeason(s => { SPOTS.mums.label = FLOWER_JOB[s]; });
 function updateBenchMood() {
   const [label, icon] = hour < 17 ? ['enjoying the garden', '🍵'] : hour < 19.3 ? ['watching the sunset', '🌅'] : ['stargazing in the garden', '✨'];
   Object.assign(SPOTS.bench1, { label, icon }); Object.assign(SPOTS.bench2, { label, icon });
@@ -201,14 +204,15 @@ function choosePerson(p) {
   if (house.walkInvite === p) { house.walkInvite = null; return goTo(p, 'stroll2', SPOTS); }
   if (hour < 11 && !p.hadCoffee && free('coffee', p)) return goTo(p, 'coffee', SPOTS);   // one coffee every morning
   const evening = hour > 17 || hour < 9;
-  const w = { paint: 3, crochet: 3, draw: 2.5, laptop: 2, computer: 2.5, bake: weekend() ? 3 : 2, games: 3, football: weekend() && hour > 12 ? 4 : 1.2, read: 2, nook: 3, browse: 1, knit: 2, tea: 2, plants: 1.2, warm: evening ? 2 : .5, wash: .2,
+  const w = { paint: 3, crochet: 3, draw: 2.5, laptop: 2, computer: 2.5, bake: weekend() ? 3 : 2, games: 3, football: weekend() && hour > 12 ? 4 : 1.2, read: 2, nook: 3, browse: 1, knit: 2, tea: 2, plants: 1.2, warm: fireLit(hour) ? (evening ? 2 : .5) * (season === 'winter' ? 1.8 : 1) : 0, wash: .2,
               playcats: cats.some(wandReady) ? 2.5 : 0, tv1: .5 };
-  const g = (house.gardenDay ? 2 : 1) * (weekend() ? 1.5 : 1), partnerOnBench = people.some(q => q !== p && q.mode === 'act' && /^bench/.test(q.spot));
-  if (hour >= 9 && hour < 17.5) Object.assign(w, { rake: 1.2 * g, mums: .8 * g, stroll1: 1.2 * g });            // garden time on nice afternoons
+  if (season === 'winter') { w.tea *= 1.5; w.read *= 1.4; w.nook *= 1.3; w.tv1 *= 1.6; w.bake *= 1.3; }        // cosy indoor days
+  const g = (house.gardenDay ? 2 : 1) * (weekend() ? 1.5 : 1) * GARDEN[season], partnerOnBench = people.some(q => q !== p && q.mode === 'act' && /^bench/.test(q.spot));
+  if (hour >= 9 && hour < 17.5) Object.assign(w, { rake: season === 'fall' ? 1.2 * g : 0, mums: season === 'winter' ? 0 : .8 * g, stroll1: 1.2 * g });            // garden time on nice afternoons
   if (hour >= 9 && hour < 21) w.bench1 = w.bench2 = (partnerOnBench ? 6 : hour >= 17.5 ? 1.8 : 1) * g;          // incl. sunset + stargazing
   const partnerOnPatio = people.some(q => q !== p && q.mode === 'act' && /^patio/.test(q.spot));
   if (hour >= 8 && hour < 20.5) w.patio1 = w.patio2 = (partnerOnPatio ? 6 : 1) * g;
-  if ((hour >= 7 && hour < 10) || (hour >= 16 && hour < 18)) w.jog = hour < 10 ? 1.6 : .8;                    // morning / late-afternoon runs
+  if ((hour >= 7 && hour < 10) || (hour >= 16 && hour < 18)) w.jog = (hour < 10 ? 1.6 : .8) * (season === 'winter' ? .4 : 1);                    // morning / late-afternoon runs
   const c = house.cleanDay ? 4 : .35;                                                                            // cleaning, mostly on cleaning days
   Object.assign(w, { sweep: c, vacuum: c, dust: c * .8, makebed: hour < 12 ? 1 + c : 0 });
   for (const k in w) w[k] *= (likes(p, k) ? 1 : 0) * (p.mood[k] ?? 1) * (p.recent.includes(k) ? .25 : 1);
