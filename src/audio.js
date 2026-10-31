@@ -53,7 +53,7 @@ function makeAudio() {
     if (season === 'spring' && day && Math.random() < .035) chirp(ctx.currentTime + rand(.1, 1));
     crackleGain.gain.setTargetAtTime(fireLit(hour) ? .25 : 0, ctx.currentTime, 1.5);
     cricketGain.gain.setTargetAtTime(season === 'summer' && night && !raining ? .035 : 0, ctx.currentTime, 2);
-    rainGain.gain.setTargetAtTime(raining ? .5 : 0, ctx.currentTime, 2);
+    rainGain.gain.setTargetAtTime(raining ? .45 : 0, ctx.currentTime, 4);
     if (raining && Math.random() < .004) thunder(ctx.currentTime + rand(.2, 1.5));
   }, 300);
   // fire crackle loop
@@ -69,12 +69,19 @@ function makeAudio() {
   for (let i = 0; i < kl; i++) { const t = i / ctx.sampleRate, burst = Math.floor(t * 3.5) % 2 === 0 ? 1 : 0, pulse = Math.sin(2 * Math.PI * 28 * t) > 0 ? 1 : 0; kd[i] = Math.sin(2 * Math.PI * 4400 * t) * burst * pulse * .3; }
   const crickets = ctx.createBufferSource(); crickets.buffer = kb; crickets.loop = true;
   const cricketGain = ctx.createGain(); cricketGain.gain.value = 0; crickets.connect(cricketGain).connect(master); crickets.start();
-  // rain: soft noise, band-limited so it sounds like rain on the roof
-  const rl = ctx.sampleRate * 4, rb = ctx.createBuffer(2, rl, ctx.sampleRate);
-  for (let ch = 0; ch < 2; ch++) { const d = rb.getChannelData(ch); for (let i = 0; i < rl; i++) d[i] = (Math.random() * 2 - 1) * (Math.random() < .002 ? 2.5 : 1) * .5; }
+  // rain: a soft, steady wash (pink-ish noise, gently swelling) heard from inside a cosy room
+  const rl = ctx.sampleRate * 8, rb = ctx.createBuffer(2, rl, ctx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = rb.getChannelData(ch); let b0 = 0, b1 = 0, b2 = 0;
+    for (let i = 0; i < rl; i++) {
+      const w = Math.random() * 2 - 1; b0 = .99765 * b0 + w * .099; b1 = .963 * b1 + w * .2965; b2 = .57 * b2 + w * 1.0527;
+      const swell = .8 + .2 * Math.sin(i / rl * Math.PI * 2 * 2 + ch);   // slow loudness drift (two cycles per loop, so it joins seamlessly)
+      d[i] = (b0 + b1 + b2 + w * .1848) * .12 * swell;
+    }
+  }
   const rsrc = ctx.createBufferSource(); rsrc.buffer = rb; rsrc.loop = true;
-  const rlp = ctx.createBiquadFilter(); rlp.type = 'lowpass'; rlp.frequency.value = 2200;
-  const rhp = ctx.createBiquadFilter(); rhp.type = 'highpass'; rhp.frequency.value = 350;
+  const rlp = ctx.createBiquadFilter(); rlp.type = 'lowpass'; rlp.frequency.value = 1100;
+  const rhp = ctx.createBiquadFilter(); rhp.type = 'highpass'; rhp.frequency.value = 160;
   const rainGain = ctx.createGain(); rainGain.gain.value = 0; rsrc.connect(rlp).connect(rhp).connect(rainGain).connect(master); rsrc.start();
   function thunder(t) {   // a low, far-away rumble
     const tl = ctx.sampleRate * 4, tb = ctx.createBuffer(1, tl, ctx.sampleRate), td = tb.getChannelData(0);

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { camAz, camera, renderer, scene, updateCamera } from './scene.js';
 import { rand } from './helpers.js';
 import { xmas, xmasBulbs, xmasStar, candleFlames, coffeeCup, coffeeLight, coffeeSteam, cookieTray, drawFootball, drawGame, drawTV, feather, fireLight, flames, laptopMat, monitorMat, ovenGlow, steam, stoveGlow, tableCandle, tvLight, tvMat, walls, wand, wandStick } from './house.js';
-import { drops, rain, dummy, fallLeaves, fireflies, fl, flakes, flies, snowflakes, spawnLeaf, trees, updatePile, xmasYardBulbs } from './yard.js';
+import { placeDrop, drops, rain, dummy, fallLeaves, fireflies, fl, flakes, flies, snowflakes, spawnLeaf, trees, updatePile, xmasYardBulbs } from './yard.js';
 import { CAT_ICON, CAT_LABEL, ROOM_NAME, SPOTS, advanceClock, cats, hour, people, roomOf, simT, updateBubble, updateCat, updateHouse, updatePerson, updatePlay, updateTV } from './sim.js';
 import { lampLevel, updateDay } from './daycycle.js';
 import { fireLit, raining, season, updateWeather } from './season.js';
@@ -75,7 +75,7 @@ function frame() {
   if (rain.visible) {   // rain streaks, slightly slanted
     drops.forEach((d, i) => {
       d.y -= d.v * dt; d.x += 1.2 * dt;
-      if (d.y < -.4) { d.y = 10; d.x = rand(-16, 14); d.z = rand(-15, 15); }
+      if (d.y < -.4) { d.y = 10; placeDrop(d); }
       dummy.position.set(d.x, d.y, d.z); dummy.rotation.set(0, 0, -.12); dummy.updateMatrix(); rain.setMatrixAt(i, dummy.matrix);
     });
     rain.instanceMatrix.needsUpdate = true;

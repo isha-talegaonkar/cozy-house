@@ -22,8 +22,7 @@ export function updateDay() {
   let i = 0; while (i < KEYS.length - 2 && KEYS[i + 1][0] <= hour) i++;
   const [h0, s0, u0, si0, hi0, l0] = KEYS[i], [h1, s1, u1, si1, hi1, l1] = KEYS[i + 1], k = (hour - h0) / (h1 - h0);
   const sky = cA.set(s0).lerp(cB.set(s1), k).lerp(cB.set(TINT[season][0]), TINT[season][1]);
-  if (raining) sky.lerp(cB.set('#7d8794'), .5);   // grey, rainy sky
-  scene.fog.near = raining ? 24 : 38; scene.fog.far = raining ? 55 : 70;
+  if (raining) sky.lerp(cB.set('#7d8794'), .45);   // grey, rainy sky (fog distance unchanged so the house stays crisp)
   scene.background = sky.clone(); scene.fog.color.copy(sky);
   sun.color.set(u0).lerp(cB.set(u1), k); sun.intensity = (si0 + (si1 - si0) * k) * (raining ? .3 : 1);
   hemi.intensity = (hi0 + (hi1 - hi0) * k) * (season === 'winter' ? 1.25 : 1);   // snow bounces light around

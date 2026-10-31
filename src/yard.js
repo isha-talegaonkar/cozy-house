@@ -196,7 +196,10 @@ snowflakes.visible = false; scene.add(snowflakes);
 }
 
 // rain: falling streaks (moved in main.js) and puddles on the lawn
-export const drops = Array.from({ length: 700 }, () => ({ x: rand(-15, 15), y: rand(-.4, 10), z: rand(-15, 15), v: rand(8, 11) }));
+// rain only falls outside the house, so the rooms stay clear
+export const overHouse = (x, z) => x > -5.6 && x < 5.6 && z > -4.1 && z < 4.9;
+export function placeDrop(d) { do { d.x = rand(-16, 14); d.z = rand(-15, 15); } while (overHouse(d.x + 1, d.z)); }
+export const drops = Array.from({ length: 700 }, () => { const d = { y: rand(-.4, 10), v: rand(8, 11) }; placeDrop(d); return d; });
 export const rain = new THREE.InstancedMesh(new THREE.BoxGeometry(.012, .38, .012), new THREE.MeshBasicMaterial({ color: '#b8c8d8', transparent: true, opacity: .5, depthWrite: false }), drops.length);
 rain.visible = false; scene.add(rain);
 const puddles = group(0, 0, 0);
