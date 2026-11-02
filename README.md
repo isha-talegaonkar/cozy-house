@@ -1,32 +1,63 @@
 # 🍂 The Cozy House
 
-A slow-living, Sims-inspired little house to fall asleep to. Izzy, Nik and their cats Biscuit and Mochi go about their day (click any name in the household panel to rename them): painting, crocheting, gaming, cooking, reading by the fire and napping in sunbeams.
+A slow-living, Sims-inspired 3D house that runs in the browser. Izzy, Nik and their cats go about their day on their own: cooking, painting, gaming, reading by the fire and sleeping.
 
-Runs entirely in the browser with [Three.js](https://threejs.org) and no build step. Serve the folder with any static server (e.g. VS Code Live Server) or visit the GitHub Pages site. Opening `index.html` straight from disk won't work because browsers block ES modules on `file://`.
+**Live demo:** https://isha-talegaonkar.github.io/cozy-house/
 
-## Code layout
+## Features
 
-| File | What it holds |
+- Autonomous characters with their own interests, daily routines and cats
+- Pick activities for each character, including together activities
+- Four seasons and a weather setting (Auto, Clear, Rain)
+- Day/night cycle with Sims-style cutaway walls and rotatable view
+- Generated ambient music and sounds (no audio files)
+- Editable character names
+
+## Tech stack
+
+- [Three.js](https://threejs.org) via an import map
+- Vanilla JavaScript ES modules (no framework or build step)
+- Web Audio API
+- Hosted on GitHub Pages
+
+## Getting started
+
+Serve the project folder with any static server:
+
+```bash
+python3 -m http.server 8000
+```
+
+Then open http://localhost:8000. VS Code Live Server also works. Opening `index.html` directly from disk won't work, because browsers block ES modules on `file://`.
+
+### URL options
+
+| Option | Example |
 |---|---|
-| `index.html` | Page markup, the Three.js import map, and the on-screen error note |
-| `styles.css` | Panels, buttons, activity menu, mobile layout |
-| `src/main.js` | The frame loop: advances time and calls each module's update in order |
-| `src/scene.js` | Renderer, scene, orthographic camera, pan/zoom/rotate input |
-| `src/helpers.js` | Shape helpers, shared materials, canvas textures, fairy-light twinkle |
-| `src/layout.js` | House footprint and inner-wall positions |
-| `src/season.js` | Current season and weather (with SPRING… and AUTO/CLEAR/RAIN constants), fire and garden rules |
-| `src/clock.js` | In-game time, speed, weekdays and the midnight rollover |
-| `src/plants.js` | Leaf textures and every plant type |
-| `src/house.js` | Floors, cutaway walls, every room's furniture, the TV, Christmas decor, and `animateHouse` |
-| `src/yard.js` | Garden, trees, flowers, leaves, snow, rain, fireflies, and `animateYard` |
-| `src/characters.js` | Izzy and Nik's models (faces, hair, outfits, props) and the cats |
-| `src/wardrobe.js` | Seasonal outfits and pyjamas |
-| `src/activities.js` | Where each activity happens and how it's labelled; the cats' spots |
-| `src/nav.js` | Rooms, doors and path-finding |
-| `src/bubbles.js` | Thought bubbles over heads |
-| `src/sim.js` | Daily routines, choosing what to do, cats' behaviour, player commands, per-character animation |
-| `src/ui.js` | Household panel, activity picker, season/weather pickers, buttons |
-| `src/daycycle.js` | Sun, sky and lamp lighting through the day |
-| `src/audio.js` | Generated seasonal music, birdsong, crickets, rain and fire crackle |
+| Season | `?season=winter` |
+| Weather | `?weather=rain` |
+| Start time | `?hour=18.5` |
+| Speed | `?speed=5` |
 
-Handy URL options for trying things out: `?season=winter`, `?weather=rain`, `?hour=18.4` (start time), `?speed=5`, `?movie`, `?together`, `?clean`, `?do=<activity>`, `?zoom=2&x=0&z=0`.
+## Project structure
+
+```
+index.html        page markup and import map
+styles.css        UI styles
+src/
+  main.js         frame loop
+  scene.js        renderer, camera, input
+  house.js        rooms and furniture
+  yard.js         garden, trees, weather effects
+  characters.js   character and cat models
+  sim.js          routines and behaviour
+  activities.js   activity definitions
+  season.js       season and weather state
+  ui.js           panels and controls
+  audio.js        generated music and sounds
+  ...             helpers, layout, clock, nav, wardrobe, bubbles, plants, daycycle
+```
+
+## Credits
+
+Built with AI assistance (Claude Code).
