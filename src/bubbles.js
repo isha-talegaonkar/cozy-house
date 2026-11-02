@@ -4,7 +4,7 @@ import { scene } from './scene.js';
 import { simT } from './clock.js';
 import { CAT_ICON, SPOTS } from './activities.js';
 
-// Thought bubbles: the little emoji clouds that pop up over June, Theo and the cats.
+// Thought bubbles: the little emoji clouds that pop up over Izzy, Nik and the cats.
 const ICON = {};
 function bubbleMat(emoji) {
   if (!ICON[emoji]) {

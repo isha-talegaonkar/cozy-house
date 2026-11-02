@@ -25,7 +25,7 @@ function frame() {
                  brewing: doing('coffee', p => p.timer > p.dur * .55), baking: doing('bake'), cooking: doing('cook') });
   animateYard(dt, T, { camAz, lamp: lampLevel });
 
-  // life: household routines, June and Theo, the cats
+  // life: household routines, Izzy and Nik, the cats
   updateMeals(); updateMovieNight();
   wand.active = false; wandStick.visible = feather.visible = false;
   people.forEach(p => updatePerson(p, sdt));

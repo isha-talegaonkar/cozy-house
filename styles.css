@@ -14,6 +14,9 @@ html, body { touch-action: none; overscroll-behavior: none; }
 #clock { opacity: .85; margin-top: 2px; font-size: 14px; }
 #status { top: 14px; right: 14px; font-size: 14px; line-height: 1.6; min-width: 240px; max-width: 340px; }
 #status b { font-weight: normal; color: #ffd9a0; display: inline-block; width: 64px; }
+#status .nm { cursor: text; border-bottom: 1px dashed transparent; }
+#status .nm:hover { border-bottom-color: rgba(255,217,160,.5); }
+.nm-edit { width: 58px; font: inherit; color: #ffd9a0; background: rgba(255,214,160,.12); border: 1px solid rgba(255,220,170,.35); border-radius: 6px; padding: 0 4px; }
 #status .row { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #status .cmdrow { display: flex; gap: 8px; align-items: center; margin: 3px 0 0 64px; }
 #status .bar { height: 3px; width: 170px; margin: 5px 0 9px 64px; border-radius: 2px; background: rgba(255,220,170,.1); overflow: hidden; }

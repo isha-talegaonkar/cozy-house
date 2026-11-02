@@ -1,6 +1,6 @@
 # 🍂 The Cozy House
 
-A slow-living, Sims-inspired little house to fall asleep to. June, Theo and their cats Biscuit and Mochi go about their day: painting, crocheting, gaming, cooking, reading by the fire and napping in sunbeams.
+A slow-living, Sims-inspired little house to fall asleep to. Izzy, Nik and their cats Biscuit and Mochi go about their day (click any name in the household panel to rename them): painting, crocheting, gaming, cooking, reading by the fire and napping in sunbeams.
 
 Runs entirely in the browser with [Three.js](https://threejs.org) and no build step. Serve the folder with any static server (e.g. VS Code Live Server) or visit the GitHub Pages site. Opening `index.html` straight from disk won't work because browsers block ES modules on `file://`.
 
@@ -19,7 +19,7 @@ Runs entirely in the browser with [Three.js](https://threejs.org) and no build s
 | `src/plants.js` | Leaf textures and every plant type |
 | `src/house.js` | Floors, cutaway walls, every room's furniture, the TV, Christmas decor, and `animateHouse` |
 | `src/yard.js` | Garden, trees, flowers, leaves, snow, rain, fireflies, and `animateYard` |
-| `src/characters.js` | June and Theo's models (faces, hair, outfits, props) and the cats |
+| `src/characters.js` | Izzy and Nik's models (faces, hair, outfits, props) and the cats |
 | `src/wardrobe.js` | Seasonal outfits and pyjamas |
 | `src/activities.js` | Where each activity happens and how it's labelled; the cats' spots |
 | `src/nav.js` | Rooms, doors and path-finding |

@@ -40,18 +40,25 @@ export function updateMeals() {
   SPOTS.eat1.label = SPOTS.eat2.label = `having ${m[1]} together`;
 }
 export const people = [
-  { name: 'June', rig: makePerson({ skin: '#c98e69', hair: '#2b1a12', style: 'long', bigSmile: true, oversized: true, outfit: OUTFITS.June.fall }), x: 0, z: 0 },
-  { name: 'Theo', rig: makePerson({ skin: '#b98060', hair: '#1e1510', style: 'short', glasses: true, outfit: OUTFITS.Theo.fall }), x: 0, z: 0 },
+  { id: 'izzy', name: 'Izzy', rig: makePerson({ skin: '#c98e69', hair: '#2b1a12', style: 'long', bigSmile: true, oversized: true, outfit: OUTFITS.izzy.fall }), x: 0, z: 0 },
+  { id: 'nik', name: 'Nik', rig: makePerson({ skin: '#b98060', hair: '#1e1510', style: 'short', glasses: true, outfit: OUTFITS.nik.fall }), x: 0, z: 0 },
 ];
 onSeason(() => people.forEach(p => p.outfitKey = null));   // re-dress on the next frame
 export const cats = [
-  { name: 'Biscuit', rig: makeCat('#e0913f', '#f7e8d4'), x: -1.2, z: 1.2 },
-  { name: 'Mochi', rig: makeCat('#8d8a86', '#f2efe9'), x: -3.4, z: 2.95 },
+  { id: 'biscuit', name: 'Biscuit', rig: makeCat('#e0913f', '#f7e8d4'), x: -1.2, z: 1.2 },
+  { id: 'mochi', name: 'Mochi', rig: makeCat('#8d8a86', '#f2efe9'), x: -3.4, z: 2.95 },
 ];
+// names can be changed in the household panel; they're remembered between visits
+const NAMES_KEY = 'cozy-names';
+try { const saved = JSON.parse(localStorage.getItem(NAMES_KEY) || '{}'); [...people, ...cats].forEach(a => { if (saved[a.id]) a.name = saved[a.id]; }); } catch {}
+export function rename(a, name) {
+  a.name = name.trim().slice(0, 14) || a.name;
+  try { localStorage.setItem(NAMES_KEY, JSON.stringify(Object.fromEntries([...people, ...cats].map(x => [x.id, x.name])))); } catch {}
+}
 const FAVS = ['paint', 'crochet', 'draw', 'laptop', 'computer', 'read', 'nook', 'knit', 'tea', 'playcats', 'rake', 'bench1', 'mums', 'browse', 'bake', 'games', 'football'];
 // things each person never chooses (and that don't appear in their menu)
-const DISLIKES = { June: ['games', 'football'], Theo: ['paint', 'crochet', 'draw', 'knit', 'bake'] };
-export const likes = (p, k) => !(DISLIKES[p.name] || []).includes(k);
+const DISLIKES = { izzy: ['games', 'football'], nik: ['paint', 'crochet', 'draw', 'knit', 'bake'] };
+export const likes = (p, k) => !(DISLIKES[p.id] || []).includes(k);
 function mood(p) {   // each day everyone fancies different things
   const m = {}; for (const k in SPOTS) m[k] = rand(.4, 1.6);
   m.fav = pick(FAVS.filter(k => likes(p, k))); m[m.fav] *= 3.5; m.bench2 = m.bench1; m.patio2 = m.patio1; return m;
@@ -321,7 +328,7 @@ export function updatePerson(p, dt) {
   const pj = lie || bedtime(p) || (hour < 11 && !p.hadCoffee), want = pj ? 'pj-' + season : season;
   if (p.outfitKey !== want) {   // change clothes only when needed (textures are rebuilt)
     p.outfitKey = want;
-    r.setOutfit(pj ? { ...PJS[p.name], ...(season === SUMMER && { short: true, shorts: true }) } : OUTFITS[p.name][season]);
+    r.setOutfit(pj ? { ...PJS[p.id], ...(season === SUMMER && { short: true, shorts: true }) } : OUTFITS[p.id][season]);
   }   // eyes closed while sleeping, and a little blink every few seconds   // bundled up outdoors in winter
   r.root.position.set(p.x, (lie ? .72 : 0) + p.gy, p.z); r.root.rotation.set(lie ? -Math.PI / 2 : 0, p.heading, 0);
   if (sp && sp.anim === 'wand') {   // feather toy dances in front of them; stick runs from hand to toy

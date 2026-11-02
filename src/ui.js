@@ -2,7 +2,7 @@ import { SEASONS, WEATHER, onSeason, onWeather, setSeason, setWeather, weather }
 import { camTarget, camera, rotateView, zoomBy } from './scene.js';
 import { CAT_ICON, CAT_LABEL, SPOTS } from './activities.js';
 import { ROOM_NAME, roomOf } from './nav.js';
-import { cats, command, hooks, likes, people } from './sim.js';
+import { cats, command, hooks, likes, people, rename } from './sim.js';
 import { cycleSpeed, simT, speed } from './clock.js';
 
 // ---------------------------------------------------------------- player choices (dropdown per character)
@@ -19,10 +19,10 @@ const MENU = [
 const statusEl = document.getElementById('status'), menuEl = document.getElementById('menu');
 const LABEL = Object.fromEntries(MENU.flatMap(([, items]) => items));
 let chosenDur = 60;   // in-game minutes (= sim seconds)
-statusEl.innerHTML = `<button id="fold"><span class="t">🏡 Household</span><span class="mini" id="mini"></span><span class="chev">▾</span></button><div id="statusBody">` + people.map((p, i) => `<div class="row"><b>${p.name}</b><span id="st${i}"></span></div>
+statusEl.innerHTML = `<button id="fold"><span class="t">🏡 Household</span><span class="mini" id="mini"></span><span class="chev">▾</span></button><div id="statusBody">` + people.map((p, i) => `<div class="row"><b class="nm" data-who="p${i}" title="Click to rename">${p.name}</b><span id="st${i}"></span></div>
   <div class="cmdrow"><button class="pick" id="pick${i}"><span class="lbl"></span><span class="car">▼</span></button><span class="left" id="left${i}"></span></div>
   <div class="bar"><div id="bar${i}"></div></div>`).join('')
-  + `<div class="cats">${cats.map((c, i) => `<div class="row"><b>${c.name}</b><span id="cst${i}"></span></div>`).join('')}</div>
+  + `<div class="cats">${cats.map((c, i) => `<div class="row"><b class="nm" data-who="c${i}" title="Click to rename">${c.name}</b><span id="cst${i}"></span></div>`).join('')}</div>
   <div id="durRow">Chosen activities last <span class="seg">${[[30, '30m'], [60, '1h'], [120, '2h']].map(([d, l]) => `<button data-d="${d}" class="${d === 60 ? 'on' : ''}">${l}</button>`).join('')}</span></div></div>`;
 if (innerWidth < 760) statusEl.classList.add('collapsed');   // phones start with the panel folded
 document.getElementById('fold').onclick = () => { statusEl.classList.toggle('collapsed'); closeMenu(); };
@@ -90,3 +90,14 @@ export function updateStatus() {
   cats.forEach((c, i) => document.getElementById(`cst${i}`).textContent = st[people.length + i]);
   document.getElementById('mini').textContent = [...people, ...cats].map((a, i) => `${a.name} ${[...st[i]][0] || ''}`).join(' · ');
 }
+
+// ---------------------------------------------------------------- rename: click a name in the panel, type, Enter
+statusEl.addEventListener('click', e => {
+  const b = e.target.closest('.nm'); if (!b || b.querySelector('input')) return;
+  const who = b.dataset.who, a = (who[0] === 'p' ? people : cats)[+who.slice(1)];
+  const input = Object.assign(document.createElement('input'), { value: a.name, maxLength: 14, className: 'nm-edit' });
+  b.textContent = ''; b.appendChild(input); input.focus(); input.select();
+  const done = save => { if (save) rename(a, input.value); b.textContent = a.name; lastStatus = ''; };
+  input.addEventListener('keydown', ev => { ev.stopPropagation(); if (ev.key === 'Enter') input.blur(); if (ev.key === 'Escape') { input.value = a.name; input.blur(); } });
+  input.addEventListener('blur', () => done(true), { once: true });
+});
