@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { scene } from './scene.js';
-import { B, C, M, Sph, add, canvasTex, fabric, group, smooth, soft } from './helpers.js';
+import { B, C, M, Sph, add, canvasTex, excludeTree, fabric, group, smooth, soft } from './helpers.js';
 import { yarn } from './house.js';
 
 // ---------------------------------------------------------------- characters
@@ -27,7 +27,7 @@ function teeTexture(base) {   // soft cotton: flat colour with a faint weave
   return canvasTex(64, 64, g => { g.fillStyle = base; g.fillRect(0, 0, 64, 64); for (let i = 0; i < 400; i++) { g.fillStyle = `rgba(${Math.random() < .5 ? '255,255,255' : '0,0,0'},.05)`; g.fillRect(Math.random() * 64, Math.random() * 64, 2, 1); } });
 }
 export function makePerson(c) {
-  const root = new THREE.Group(); root.rotation.order = 'YXZ'; scene.add(root);
+  const root = new THREE.Group(); root.rotation.order = 'YXZ'; scene.add(root); excludeTree(root);
   // chibi proportions: big round head, big sparkly eyes, small body
   const mS = smooth(c.skin), mP = fabric('#444'), mH = smooth(c.hair), mShoe = smooth('#444'), mDark = smooth('#22160f');   // clothes are coloured by setOutfit
   const white = new THREE.MeshBasicMaterial({ color: '#ffffff' });
@@ -149,7 +149,7 @@ export function makePerson(c) {
   return { setEyes, root, body, arms, head, thighs, knees, book, mug, can, rake, broom, vac, duster, pad, bowl, yarn, beanie, scarf, setOutfit };
 }
 export function makeCat(col, accent) {
-  const root = new THREE.Group(); scene.add(root);
+  const root = new THREE.Group(); scene.add(root); excludeTree(root);
   const m = M(col, { flatShading: false }), mA = M(accent, { flatShading: false });
   const body = group(0, .2, 0, 0, root);
   const torso = Sph(.15, m, 0, 0, 0, body, 14); torso.scale.set(.85, .8, 1.55);

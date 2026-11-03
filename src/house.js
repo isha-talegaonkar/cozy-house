@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { scene } from './scene.js';
-import { B, C, M, Sph, add, canvasTex, darkWood, fabric, frameMat, glassMat, group, lightWood, pick, rand, smooth, soft, stone, twinkle, wallMat, wood } from './helpers.js';
+import { B, C, M, Sph, add, canvasTex, darkWood, fabric, frameMat, glassMat, group, lightWood, pick, rand, smooth, soft, stone, twinkle, wallMat, wood, keepGroup, excludeTree, animated, mutableMat } from './helpers.js';
 import { plant } from './plants.js';
 import { WINTER, onSeason } from './season.js';
 
@@ -454,3 +454,9 @@ export function animateHouse({ T, simT, camAz, lit, lamp, using, brewing, baking
   // Christmas lights
   if (xmas.visible) { twinkle(xmasBulbs, T); xmasStar.emissiveIntensity = 1 + .4 * Math.sin(T * 1.5); }
 }
+
+// ---- what may and may not be merged at startup (see freeze.js)
+keepGroup(walls.map(w => [w.tall, w.low]), xmas, popcorn, mixingBowl, cookieTray);
+excludeTree(flames[0].parent);
+animated(candleFlames, tableCandle, steam, coffeeSteam, coffeeCup, yarn, wandStick, feather, bowls, xmasBulbs);
+mutableMat(shades, tvMat, laptopMat, monitorMat, coffeeLight.material, ovenGlow.material, xmasStar);

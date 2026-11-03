@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 
 // ---------------------------------------------------------------- renderer / camera
-export const renderer = new THREE.WebGLRenderer({ antialias: true });
-const phone = matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 820;
-renderer.setPixelRatio(Math.min(devicePixelRatio, phone ? 1.5 : 2));   // a little lighter on phones to save graphics memory
+export const phone = matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 820;
+export const renderer = new THREE.WebGLRenderer({ antialias: !phone, powerPreference: phone ? 'low-power' : 'default' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, phone ? 1.25 : 2));   // lighter on phones: no antialiasing, lower resolution
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;

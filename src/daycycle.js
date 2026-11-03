@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { scene } from './scene.js';
+import { phone, scene } from './scene.js';
 import { lights, shades } from './house.js';
 import { lantern, postMat } from './yard.js';
 import { DAYS, dayIdx, hour, night } from './clock.js';
@@ -8,7 +8,7 @@ import { FALL, SEASONS, SPRING, SUMMER, WINTER, raining, season } from './season
 // ---------------------------------------------------------------- lighting + day cycle
 const hemi = new THREE.HemisphereLight('#c8d0e8', '#5a4030', .8); scene.add(hemi);
 const sun = new THREE.DirectionalLight('#ffd9a8', 2.4);
-sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -.0005;
+sun.castShadow = true; sun.shadow.mapSize.setScalar(phone ? 1024 : 2048); sun.shadow.bias = -.0005;
 Object.assign(sun.shadow.camera, { left: -16, right: 16, top: 16, bottom: -16, near: 1, far: 80 });
 scene.add(sun, sun.target);
 const KEYS = [

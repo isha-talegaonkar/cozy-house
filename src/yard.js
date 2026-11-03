@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { scene } from './scene.js';
-import { B, C, M, Sph, add, darkWood, fabric, group, pick, rand, smooth, soft, stone, terracotta, twinkle, wood } from './helpers.js';
+import { phone, scene } from './scene.js';
+import { B, C, M, Sph, add, darkWood, fabric, group, pick, rand, smooth, soft, stone, terracotta, twinkle, wood, keepGroup, animated, mutableMat } from './helpers.js';
 import { chair, pointLight, shades } from './house.js';
 export const xmasYardBulbs = [];   // twinkled in main.js
 import { plant } from './plants.js';
@@ -102,14 +102,14 @@ const snowMat = M('#f4f7fb', { transparent: true, flatShading: false });
 function tree(x, z, s, kind = 'leafy') {
   const g = group(x, -.4, z, rand(0, 6)), mats = [];
   const mm = c => { const m = M(c, { transparent: true, flatShading: false }); mats.push(m); return m; };
-  const snow = [], twigs = group(0, 0, 0, 0, g);
+  const snow = [], twigs = group(0, 0, 0, 0, g), canopyG = group(0, 0, 0, 0, g), snowG = group(0, 0, 0, 0, g);
   let leafy = {};   // canopy details the seasons need (leafy trees only)
   if (kind === 'pine') {   // soft layered fir
     add(new THREE.CylinderGeometry(.1 * s, .17 * s, 1.2 * s, 10), mm('#4a3020'), 0, .6 * s, 0, g);
     const greens = [mm('#2f4a30'), mm('#3a5a38'), mm('#46683f')];
     [[1.35, 1.2, 1.2], [1.1, 1.1, 1.9], [.85, 1.0, 2.55], [.55, .9, 3.15]].forEach(([r, h, y], i) => {
       const c = add(new THREE.ConeGeometry(r * s, h * s, 20, 1), greens[Math.min(2, i)], 0, y * s, 0, g); c.rotation.y = i * .5;
-      snow.push(add(new THREE.ConeGeometry(r * s * .8, h * s * .45, 20, 1), snowMat, 0, (y + h * .3) * s, 0, g));   // winter snow cap
+      add(new THREE.ConeGeometry(r * s * .8, h * s * .45, 20, 1), snowMat, 0, (y + h * .3) * s, 0, snowG);   // winter snow cap
     });
   } else {   // fluffy autumn tree: trunk, branches and a cloud of puffs (darker underneath, lighter on top)
     const bark = mm('#4a3020'), pal = pick(TREE_PALETTES), shades = pal.map(mm), canopy = [];
@@ -122,21 +122,23 @@ function tree(x, z, s, kind = 'leafy') {
       tw.rotation.z = -(.5 + (i % 3) * .25); tw.position.x = Math.sin(.5 + (i % 3) * .25) * .35 * s;
     }
     const cy = 2.65, far = Math.hypot(x, z) > 14;
-    const core = add(puffGeos[0], shades[0], 0, cy * s, 0, g); core.scale.setScalar(.95 * s); canopy.push(core);   // dense core
+    const core = add(puffGeos[0], shades[0], 0, cy * s, 0, canopyG); core.scale.setScalar(.95 * s); canopy.push(core);   // dense core
     const n = far ? 9 : 15;
     for (let i = 0; i < n; i++) {
       const a = i * 2.399 + rand(-.3, .3), el = rand(-.5, 1.0), r = rand(.38, .56);
       const px = Math.cos(a) * Math.cos(el) * 1.0, py = Math.sin(el) * .8, pz = Math.sin(a) * Math.cos(el) * 1.0;
       const shade = shades[py > .35 ? 2 : py > -.1 ? 1 : 0];
-      const p = add(puffGeos[i % 3], shade, px * s, (cy + py) * s, pz * s, g); p.scale.setScalar(r * s); p.rotation.set(rand(0, 6), rand(0, 6), 0); canopy.push(p);
+      const p = add(puffGeos[i % 3], shade, px * s, (cy + py) * s, pz * s, canopyG); p.scale.setScalar(r * s); p.rotation.set(rand(0, 6), rand(0, 6), 0); canopy.push(p);
     }
-    leafy = { shades, canopy, fallPal: pal, blossom: Math.random() < .4 };
+    leafy = { shades, canopy: [canopyG], fallPal: pal, blossom: Math.random() < .4 };
   }
-  trees.push({ g, mats, x, z, top: 2.6 * s - .4, r: 1.0 * s, decid: kind !== 'pine', op: 1, snow, twigs, ...leafy });
+  trees.push({ g, mats, x, z, top: 2.6 * s - .4, r: 1.0 * s, decid: kind !== 'pine', op: 1, snow: [snowG], twigs, ...leafy });
+  keepGroup(canopyG, snowG, twigs); mutableMat(mats);
 }
 [[-7.5, -7.5, 1.3], [-2.5, -7.8, 1.1, 'pine'], [3.5, -8.2, 1.4], [8.5, -6.5, 1.2], [-9.5, -1.5, 1.2], [9.2, 1.0, 1.3],
  [-8.6, 5.8, 1.1], [8.6, 6.8, 1.0, 'pine'], [-5.8, 9.4, 1.2], [5.5, 9.8, 1.3], [-10.4, -10, 1.1, 'pine'], [10.6, -10.4, 1.2]].forEach(a => tree(...a));
-for (let i = 0; i < 26; i++) { const a = i / 26 * Math.PI * 2 + rand(-.1, .1), r = rand(16, 22); tree(Math.cos(a) * r, Math.sin(a) * r, rand(1.1, 1.6), Math.random() < .3 ? 'pine' : 'leafy'); }
+const RING = phone ? 12 : 26;   // distant trees on the horizon (fewer on phones)
+for (let i = 0; i < RING; i++) { const a = i / RING * Math.PI * 2 + rand(-.1, .1), r = rand(16, 22); tree(Math.cos(a) * r, Math.sin(a) * r, rand(1.1, 1.6), Math.random() < .3 ? 'pine' : 'leafy'); }
 const leafTrees = trees.filter(t => t.decid && Math.hypot(t.x, t.z) < 14);
 let dropTrees = leafTrees;   // trees that currently drop leaves or petals
 
@@ -287,3 +289,8 @@ export function animateYard(dt, T, { camAz, lamp }) {
   }
   if (decor[WINTER].visible) twinkle(xmasYardBulbs, T + 7);
 }
+
+// ---- what may and may not be merged at startup (see freeze.js)
+keepGroup(Object.values(decor), leafPile, puddles);
+animated(xmasYardBulbs);
+mutableMat(ground.material, lawn.material, postMat, lantern.material);

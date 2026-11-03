@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { camAz, camera, renderer, scene, updateCamera } from './scene.js';
-import { animateHouse, feather, wand, wandStick } from './house.js';
+import { camAz, camera, phone, renderer, scene, updateCamera } from './scene.js';
+import { animateHouse, feather, lights, wand, wandStick } from './house.js';
 import { animateYard } from './yard.js';
 import { advanceClock, hour, simT } from './clock.js';
 import { cats, people, updateCat, updateMeals, updateMovieNight, updatePerson, updatePlay } from './sim.js';
@@ -8,6 +8,8 @@ import { updateBubble } from './bubbles.js';
 import { lampLevel, updateDay } from './daycycle.js';
 import { fireLit, updateWeather } from './season.js';
 import { updateStatus } from './ui.js';
+import { Q } from './clock.js';
+import { freezeStatic } from './freeze.js';
 import './plants.js';
 import './characters.js';
 import './audio.js';
@@ -37,4 +39,7 @@ function frame() {
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }
+const frozen = freezeStatic(scene);   // merge everything that never moves
+if (phone) lights.slice(3).forEach(l => l.visible = false);   // phones: keep the main lamps, skip the extra lamp lights (each light costs every pixel)
+if (Q.has('debug')) { window.cozy = { renderer, scene }; console.log('static meshes merged:', frozen); }   // ?debug: inspect from the console, e.g. cozy.renderer.info
 frame();

@@ -35,3 +35,10 @@ export const glassMat = new THREE.MeshStandardMaterial({ color: '#cfe3ef', trans
 // fairy lights: cycle warm, white, blue, green and pink bulbs, each pulsing at its own pace
 export const twinkle = (bulbs, T) => bulbs.forEach((b, i) =>
   b.material.color.setHSL([.12, 0, .55, .33, .95][i % 5], [.9, .9, .7, .7, .7][i % 5], .45 + .25 * Math.max(0, Math.sin(T * 2.2 + i * 1.7))));
+
+// ---- hints for freeze.js, which merges meshes that never move into a few big ones (far fewer draw calls)
+export const FREEZE = { keep: new Set(), exclude: new Set(), skip: new Set(), mutable: new Set() };
+export const keepGroup = (...g) => g.flat(Infinity).forEach(x => FREEZE.keep.add(x));         // group whose visibility/transform changes: merge inside it, not across it
+export const excludeTree = (...g) => g.flat(Infinity).forEach(x => FREEZE.exclude.add(x));    // leave this whole subtree alone (characters, fire)
+export const animated = (...m) => m.flat(Infinity).forEach(x => FREEZE.skip.add(x));          // meshes that move or blink
+export const mutableMat = (...m) => m.flat(Infinity).forEach(x => FREEZE.mutable.add(x));     // materials changed at runtime: only merge meshes sharing that exact material
