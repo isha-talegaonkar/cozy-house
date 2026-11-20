@@ -70,7 +70,6 @@ function newDay() { house.gardenDay = Math.random() < .5; house.cleanDay = dayId
 onNewDay(newDay);
 house.gardenDay = Math.random() < .5; house.cleanDay = Q.has('clean') || dayIdx % 7 === 5 || Math.random() < .2;
 people.forEach(planDay);
-if (!Q.has('hour')) people.forEach((p, i) => p.wake = 7.0 + i * .2);   // first visit: watch them wake up at 7
 for (const a of [...people, ...cats]) Object.assign(a, { heading: 0, y: 0, path: [], mode: 'idle', timer: 0, spot: null, walkPhase: 0, ph: rand(0, 6), bubble: bubbleSprite(), bubbleT: 0, last: null });
 
 const taken = {};
