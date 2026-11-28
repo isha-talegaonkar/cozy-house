@@ -23,27 +23,38 @@ export function updateCamera(dt) {
   keyPan(dt);
   camera.position.copy(cd).multiplyScalar(CAM_D).add(camTarget); camera.lookAt(camTarget);
 }
+// The canvas is sized by CSS (fixed, full screen); we size the drawing buffer to match whatever size it really has.
+// (Phones report innerWidth/innerHeight unreliably around rotation and toolbar changes, which left the canvas
+// smaller than the screen: touches outside it did nothing and "home" centred on the wrong spot.)
+const cv = renderer.domElement;
 function resize() {
-  const w = innerWidth, h = innerHeight, a = w / h, v = 8.2;
-  renderer.setSize(w, h);
+  const w = cv.clientWidth || innerWidth, h = cv.clientHeight || innerHeight, a = w / h, v = 8.2;
+  renderer.setSize(w, h, false);
   camera.left = -v * a; camera.right = v * a; camera.top = v; camera.bottom = -v; camera.updateProjectionMatrix();
 }
 addEventListener('resize', resize); resize();
+if (window.ResizeObserver) new ResizeObserver(resize).observe(cv);
 // ---- pan (drag / arrow keys) + zoom (scroll / pinch / buttons)
 const QV = new URLSearchParams(location.search);   // optional ?zoom=&x=&z= starting view
 export const camTarget = new THREE.Vector3(+(QV.get('x') ?? 0), .3, +(QV.get('z') ?? 0));
 if (QV.has('zoom')) { camera.zoom = +QV.get('zoom'); camera.updateProjectionMatrix(); }
 export const zoomBy = f => { camera.zoom = Math.min(3, Math.max(.5, camera.zoom * f)); camera.updateProjectionMatrix(); };
 function panBy(dxPx, dyPx) {
-  const k = (camera.top - camera.bottom) / camera.zoom / innerHeight;
+  const k = (camera.top - camera.bottom) / camera.zoom / (cv.clientHeight || innerHeight);
   const right = new THREE.Vector3(Math.cos(camAz), 0, -Math.sin(camAz)), away = new THREE.Vector3(-Math.sin(camAz), 0, -Math.cos(camAz));
   camTarget.addScaledVector(right, -dxPx * k).addScaledVector(away, dyPx * k / Math.sin(CAM_EL));
   camTarget.x = Math.max(-14, Math.min(14, camTarget.x)); camTarget.z = Math.max(-14, Math.min(14, camTarget.z));
 }
-const cv = renderer.domElement, pointers = new Map();
+// Drags and pinches are read on the whole window (anything but the panels), not just the canvas, and the browser's
+// own touch gestures are cancelled outright: iOS doesn't always honour touch-action, and when it takes a gesture
+// for itself it cancels our pointers, so dragging and pinching seemed to do nothing.
+const pointers = new Map();
+const onUI = t => !!(t && t.closest && t.closest('.panel, #menu, #err'));
 cv.style.cursor = 'grab'; cv.style.touchAction = 'none';
-cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); pointers.set(e.pointerId, [e.clientX, e.clientY]); cv.style.cursor = 'grabbing'; });
-cv.addEventListener('pointermove', e => {
+addEventListener('touchstart', e => { if (!onUI(e.target)) e.preventDefault(); }, { passive: false });
+addEventListener('touchmove', e => { if (!onUI(e.target)) e.preventDefault(); }, { passive: false });
+addEventListener('pointerdown', e => { if (onUI(e.target)) return; pointers.set(e.pointerId, [e.clientX, e.clientY]); cv.style.cursor = 'grabbing'; });
+addEventListener('pointermove', e => {
   if (!pointers.has(e.pointerId)) return;
   const [px, py] = pointers.get(e.pointerId);
   if (pointers.size === 1) panBy(e.clientX - px, e.clientY - py);
@@ -55,7 +66,7 @@ cv.addEventListener('pointermove', e => {
   pointers.set(e.pointerId, [e.clientX, e.clientY]);
 });
 const endPointer = e => { pointers.delete(e.pointerId); if (!pointers.size) cv.style.cursor = 'grab'; };
-cv.addEventListener('pointerup', endPointer); cv.addEventListener('pointercancel', endPointer);
+addEventListener('pointerup', endPointer); addEventListener('pointercancel', endPointer);
 // zoom the house (never the browser page) on scroll or trackpad pinch (ctrlKey) anywhere on the page
 // mouse wheel zooms; trackpad two-finger swipe pans; trackpad pinch (ctrlKey) zooms
 const isTrackpad = e => e.deltaX !== 0 || (e.wheelDeltaY ? e.wheelDeltaY === -3 * e.deltaY : e.deltaMode === 0 && Math.abs(e.deltaY) < 40);
